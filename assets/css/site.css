@@ -277,7 +277,8 @@ a:hover {
   position: absolute;
   left: 12px;
   right: 12px;
-  bottom: 20px;
+  bottom: 2px;
+  top: 10px;
   z-index: 2;
 
   background: rgba(246, 246, 246, 0.836);
