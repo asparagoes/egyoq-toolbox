@@ -16,14 +16,14 @@
     "title": "MCQ Quiz Loader",
     "description": "No description provided.",
     "url": "./tool/mcq-quiz-loader/",
-    "thumbnail": "./assets/thumbs/mcq-quiz-loader.png",
+    "thumbnail": "./assets/thumbs/default.png",
     "tags": []
   },
   {
     "title": "Test Tool",
     "description": "No description provided.",
     "url": "./tool/test-tool/",
-    "thumbnail": "./assets/thumbs/test-tool.png",
+    "thumbnail": "./assets/thumbs/default.png",
     "tags": []
   }
 ]
