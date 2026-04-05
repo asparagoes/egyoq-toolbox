@@ -88,7 +88,7 @@ async function captureAll() {
 
   try {
     for (const slug of slugs) {
-      const url = `http://127.0.0.1:${PORT}/tool/${slug}/`;
+      const url = `http://127.0.0.1:${PORT}/tool/${slug}/index.html`;
       const outPath = path.join(THUMBS_DIR, `${slug}.png`);
 
       const page = await browser.newPage({
