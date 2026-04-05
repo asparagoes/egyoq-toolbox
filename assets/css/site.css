@@ -298,8 +298,6 @@ a:hover {
   pointer-events: none;
 }
 
-.tool-card:hover .tool-description-popover,
-.tool-card:focus-within .tool-description-popover,
 .tool-card.show-desc .tool-description-popover {
   opacity: 1;
   visibility: visible;

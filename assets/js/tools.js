@@ -53,6 +53,21 @@ function createToolCard(tool) {
   popover.textContent = descText;
   thumbWrap.appendChild(popover);
 
+  const showPopover = () => {
+    if (description.classList.contains("is-truncated")) {
+      node.classList.add("show-desc");
+    }
+  };
+
+  const hidePopover = () => {
+    node.classList.remove("show-desc");
+  };
+
+  description.addEventListener("mouseenter", showPopover);
+  description.addEventListener("mouseleave", hidePopover);
+  description.addEventListener("focus", showPopover);
+  description.addEventListener("blur", hidePopover);
+
   return node;
 }
 
@@ -71,6 +86,7 @@ function updateDescriptionPopovers() {
       description.classList.add("is-truncated");
     } else {
       description.classList.remove("is-truncated");
+      card.classList.remove("show-desc");
       popover.remove();
     }
   });
