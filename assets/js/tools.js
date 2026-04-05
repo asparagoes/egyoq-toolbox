@@ -45,7 +45,35 @@ function createToolCard(tool) {
   title.textContent = tool.title || "Untitled Tool";
   description.textContent = tool.description || "No description provided.";
 
+  const popover = document.createElement("div");
+  popover.className = "tool-description-popover";
+  popover.setAttribute("aria-hidden", "true");
+  popover.textContent = tool.description || "No description provided.";
+
+  const body = node.querySelector(".tool-card-body");
+  body.appendChild(popover);
+
   return node;
+}
+
+function updateDescriptionPopovers() {
+  const cards = toolsGrid.querySelectorAll(".tool-card");
+
+  cards.forEach((card) => {
+    const description = card.querySelector(".tool-description");
+    const popover = card.querySelector(".tool-description-popover");
+
+    if (!description || !popover) return;
+
+    const isTruncated = description.scrollHeight > description.clientHeight + 1;
+
+    if (isTruncated) {
+      description.classList.add("is-truncated");
+    } else {
+      description.classList.remove("is-truncated");
+      popover.remove();
+    }
+  });
 }
 
 function renderTools(tools) {
@@ -68,6 +96,8 @@ function renderTools(tools) {
 
   toolsGrid.appendChild(fragment);
   toolsStatus.textContent = `${tools.length} tool${tools.length === 1 ? "" : "s"} shown`;
+
+  updateDescriptionPopovers();
 }
 
 function filterTools(query) {
@@ -114,6 +144,10 @@ async function loadTools() {
 
 searchInput.addEventListener("input", (event) => {
   filterTools(event.target.value);
+});
+
+window.addEventListener("resize", () => {
+  updateDescriptionPopovers();
 });
 
 loadTools();
