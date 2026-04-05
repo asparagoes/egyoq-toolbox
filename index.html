@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>egyoq’s toolbox</title>
+  <meta
+    name="description"
+    content="Small tools for studying, hobbies, and random useful things."
+  />
+  <link rel="stylesheet" href="./assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="site-brand" href="./">_(·˘ㅅ˘)_</a>
+
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="./">tools</a>
+        <a href="https://egyoq.bearblog.dev/blog/" target="_blank" rel="noopener noreferrer">blog</a>
+        <a href="./about/">about</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <h1 class="page-title">egyoq’s toolbox</h1>
+      <p class="page-subtitle">
+        Small tools for studying, hobbies, and random useful things.
+      </p>
+
+      <label class="search-wrap" for="tool-search">
+        <span class="sr-only">Search tools</span>
+        <input
+          id="tool-search"
+          class="search-input"
+          type="search"
+          placeholder="Search for keywords"
+          autocomplete="off"
+        />
+      </label>
+    </section>
+
+    <section class="tools-section">
+      <div id="tools-status" class="tools-status" aria-live="polite"></div>
+      <div id="tools-grid" class="tools-grid"></div>
+    </section>
+  </main>
+
+  <template id="tool-card-template">
+    <article class="tool-card">
+      <a class="tool-card-link" href="">
+        <div class="tool-thumb-wrap">
+          <img class="tool-thumb" src="" alt="" loading="lazy" />
+        </div>
+
+        <div class="tool-card-body">
+          <h2 class="tool-title"></h2>
+          <p class="tool-description"></p>
+        </div>
+      </a>
+    </article>
+  </template>
+
+  <script src="./assets/js/tools.js"></script>
+</body>
+</html>

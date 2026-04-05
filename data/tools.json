@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Grade Calculator",
+    "description": "Calculate weighted grades, averages, and final standing.",
+    "url": "./tool/grade-calculator/",
+    "thumbnail": "./assets/thumbs/grade-calculator.png",
+    "tags": ["school", "grades", "calculator"]
+  },
+  {
+    "title": "MCQ Quiz Loader",
+    "description": "Load quiz content and review questions quickly.",
+    "url": "./tool/mcq-quiz-loader/",
+    "thumbnail": "./assets/thumbs/mcq-quiz-loader.png",
+    "tags": ["study", "quiz", "review", "mcq"]
+  }
+]
