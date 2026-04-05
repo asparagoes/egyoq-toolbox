@@ -3,7 +3,7 @@
     "title": "Grade Calculator",
     "description": "Track subject grades across prelims, midterms, and finals with weighted categories, transmutation, goals, and autosave.",
     "url": "./tool/grade-calculator/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/grade-calculator.png",
     "tags": [
       "study",
       "school",
@@ -16,14 +16,14 @@
     "title": "MCQ Quiz Loader",
     "description": "No description provided.",
     "url": "./tool/mcq-quiz-loader/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/mcq-quiz-loader.png",
     "tags": []
   },
   {
     "title": "Test Tool",
     "description": "No description provided.",
     "url": "./tool/test-tool/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/test-tool.png",
     "tags": []
   }
 ]
