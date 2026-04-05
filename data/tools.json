@@ -1,10 +1,16 @@
 [
   {
     "title": "Grade Calculator",
-    "description": "No description provided.",
+    "description": "Track subject grades across prelims, midterms, and finals with weighted categories, transmutation, goals, and autosave.",
     "url": "./tool/grade-calculator/",
     "thumbnail": "./assets/thumbs/default.png",
-    "tags": []
+    "tags": [
+      "study",
+      "school",
+      "grades",
+      "calculator",
+      "academic"
+    ]
   },
   {
     "title": "MCQ Quiz Loader",
