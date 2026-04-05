@@ -258,11 +258,12 @@ a:hover {
 
 .tool-description-popover {
   position: absolute;
-  left: 16px;
-  right: 16px;
+  left: 50%;
   bottom: calc(100% + 12px);
+  transform: translateX(-50%) translateY(6px);
   z-index: 20;
 
+  width: min(88%, 560px);
   background: rgba(255, 255, 255, 0.18);
   color: var(--text);
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -281,7 +282,6 @@ a:hover {
 
   opacity: 0;
   visibility: hidden;
-  transform: translateY(6px);
   transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
   pointer-events: none;
 }
@@ -291,7 +291,7 @@ a:hover {
 .tool-card.show-desc .tool-description-popover {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
 }
 
 .empty-state {
