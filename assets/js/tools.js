@@ -29,9 +29,11 @@ function createToolCard(tool) {
   const img = node.querySelector(".tool-thumb");
   const title = node.querySelector(".tool-title");
   const description = node.querySelector(".tool-description");
+  const thumbWrap = node.querySelector(".tool-thumb-wrap");
 
   const href = tool.url;
   const thumb = tool.thumbnail || DEFAULT_THUMB;
+  const descText = tool.description || "No description provided.";
 
   link.href = href;
 
@@ -43,15 +45,13 @@ function createToolCard(tool) {
   };
 
   title.textContent = tool.title || "Untitled Tool";
-  description.textContent = tool.description || "No description provided.";
+  description.textContent = descText;
 
   const popover = document.createElement("div");
   popover.className = "tool-description-popover";
   popover.setAttribute("aria-hidden", "true");
-  popover.textContent = tool.description || "No description provided.";
-
-  const body = node.querySelector(".tool-card-body");
-  body.appendChild(popover);
+  popover.textContent = descText;
+  thumbWrap.appendChild(popover);
 
   return node;
 }
