@@ -258,7 +258,7 @@ a:hover {
 
 .tool-thumb-wrap {
   aspect-ratio: var(--thumb-ratio);
-  overflow: visible;
+  overflow: hidden;
   border-radius: var(--radius) var(--radius) 0 0;
   background: #d39a67;
   border: 1px solid var(--line);
@@ -275,32 +275,25 @@ a:hover {
 
 .tool-description-popover {
   position: absolute;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%) translateY(6px);
-  z-index: 20;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
 
-  width: calc(100% - 28px);
-  max-width: calc(100% - 28px);
-
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(246, 246, 246, 0.96);
   color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 20px;
-  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem;
 
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-
-  box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
 
   font-size: 0.92rem;
-  line-height: 1.5;
+  line-height: 1.45;
 
   opacity: 0;
   visibility: hidden;
+  transform: translateY(8px);
   transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
   pointer-events: none;
 }
@@ -310,7 +303,7 @@ a:hover {
 .tool-card.show-desc .tool-description-popover {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 
 .empty-state {
