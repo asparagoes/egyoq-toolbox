@@ -1,16 +1,16 @@
 [
   {
     "title": "Grade Calculator",
-    "description": "Calculate weighted grades, averages, and final standing.",
+    "description": "No description provided.",
     "url": "./tool/grade-calculator/",
-    "thumbnail": "./assets/thumbs/grade-calculator.png",
-    "tags": ["school", "grades", "calculator"]
+    "thumbnail": "./assets/thumbs/default.png",
+    "tags": []
   },
   {
     "title": "MCQ Quiz Loader",
-    "description": "Load quiz content and review questions quickly.",
+    "description": "No description provided.",
     "url": "./tool/mcq-quiz-loader/",
-    "thumbnail": "./assets/thumbs/mcq-quiz-loader.png",
-    "tags": ["study", "quiz", "review", "mcq"]
+    "thumbnail": "./assets/thumbs/default.png",
+    "tags": []
   }
 ]
