@@ -1,7 +1,7 @@
 [
   {
     "title": "Grade Calculator",
-    "description": "Track subject grades across prelims, midterms, and finals with weighted categories, transmutation, goals, and autosave.",
+    "description": "Track subject grades across different terms with weighted categories, transmutation, and more.",
     "url": "./tool/grade-calculator/",
     "thumbnail": "./assets/thumbs/grade-calculator.png",
     "tags": [
