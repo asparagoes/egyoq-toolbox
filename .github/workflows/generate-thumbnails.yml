@@ -1,0 +1,51 @@
+name: Generate tool thumbnails
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "tool/**"
+      - "scripts/capture-thumbnails.js"
+      - ".github/workflows/generate-thumbnails.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-thumbnails:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install playwright serve-handler
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium
+
+      - name: Capture thumbnails
+        run: node scripts/capture-thumbnails.js
+
+      - name: Commit updated thumbnails
+        run: |
+          if git diff --quiet assets/thumbs; then
+            echo "No thumbnail changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/thumbs
+          git commit -m "Auto-generate tool thumbnails"
+          git push
