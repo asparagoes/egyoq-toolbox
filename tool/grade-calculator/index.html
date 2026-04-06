@@ -6,7 +6,7 @@
   <title>Grade Calculator</title>
   <meta name="tool:description" content="Track subject grades across different terms with weighted categories, transmutation, goals, and autosave." />
   <meta name="tool:tags" content="study,school,grades,calculator,academic" />
-  <meta name="theme-color" content="#d2691e" />
+  <meta name="theme-color" content="#4f7ef8" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -23,10 +23,14 @@
       --text2: #4a5568;
       --muted: #7a8ea6;
 
-      --accent: #d2691e;
-      --accent-strong: #b85c18;
-      --accent-soft: #fdf3ea;
-      --accent-border: #f0c4a0;
+      --accent: #4f7ef8;
+      --accent-strong: #3b6ef0;
+      --accent-soft: #eef3ff;
+      --accent-border: #b8ccfd;
+      --toolbox-accent: #d2691e;
+      --toolbox-accent-strong: #b85c18;
+      --toolbox-soft: #fdf3ea;
+      --toolbox-border: #f0c4a0;
 
       --green: #22c55e;
       --green-soft: #f0fdf4;
@@ -100,17 +104,6 @@
       flex-wrap: wrap;
     }
 
-    .toolbox-link {
-      font-weight: 800;
-      font-size: 18px;
-      color: var(--accent);
-      line-height: 1;
-      padding: 6px 2px;
-    }
-    .toolbox-link:hover {
-      color: var(--accent-strong);
-    }
-
     .logo {
       font-weight: 800;
       font-size: 16px;
@@ -118,11 +111,12 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      min-width: 0;
     }
 
     .logo-icon {
       width: 30px; height: 30px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+      background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -600,7 +594,7 @@
       transition: all .15s;
     }
     .input:hover { border-color: var(--border2); }
-    .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(210,105,30,.12); }
+    .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,126,248,.12); }
 
     select.input { cursor: pointer; }
 
@@ -668,33 +662,67 @@
     .pill.midterms { background: var(--midterms-soft); border-color: #bfdbfe; color: var(--midterms); }
     .pill.finals { background: var(--finals-soft); border-color: #fbcfe8; color: var(--finals); }
 
-    .editable-token {
+    .setup-edit-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .setup-inline-name {
+      flex: 1 1 240px;
+      min-width: 0;
+    }
+    .setup-name-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 800;
+      padding: 3px 4px;
+      border-radius: 6px;
+      transition: background .12s ease, box-shadow .12s ease;
+    }
+    .setup-name-input:hover { background: var(--surface3); }
+    .setup-name-input:focus {
+      background: var(--accent-soft);
+      box-shadow: inset 0 -2px 0 var(--accent-border);
+    }
+    .setup-weight-field {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
+      padding: 3px 6px;
+      border-radius: 8px;
+      background: var(--surface2);
       border: 1px solid var(--border);
-      background: var(--surface);
-      border-radius: 999px;
-      padding: 6px 10px;
-      cursor: pointer;
-      transition: .15s ease;
-      min-width: 0;
-      max-width: 100%;
     }
-    .editable-token:hover {
-      border-color: var(--accent-border);
-      background: var(--accent-soft);
-    }
-    .editable-token .token-text {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .editable-token.weight {
-      font-family: var(--mono);
+    .setup-weight-input {
+      width: 72px;
+      border: none;
+      outline: none;
+      background: transparent;
       color: var(--accent);
+      font-family: var(--mono);
+      font-size: 16px;
       font-weight: 700;
+      text-align: right;
+      padding: 0;
+    }
+    .setup-weight-input:focus { color: var(--accent-strong); }
+    .setup-inline-suffix {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .setup-action-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
     }
 
     .semester-summary {
@@ -706,7 +734,7 @@
     }
     .sem-header {
       padding: 10px 14px;
-      background: linear-gradient(135deg, #fdf3ea 0%, #fff8f3 100%);
+      background: linear-gradient(135deg, var(--accent-soft) 0%, #f7faff 100%);
       border-bottom: 1px solid var(--border);
       font-weight: 800;
       font-size: 13px;
@@ -787,6 +815,22 @@
       font-size: 12px;
       color: var(--muted);
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .page-footer a {
+      color: inherit;
+    }
+    .footer-home-link {
+      color: var(--toolbox-accent);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .footer-home-link:hover {
+      color: var(--toolbox-accent-strong);
     }
 
     .hamburger { display: none; }
@@ -878,9 +922,15 @@
       header {
         padding: 10px 12px;
       }
+      .header-left {
+        min-width: 0;
+      }
       .header-actions {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: flex-start;
+      }
+      .subject-card-head {
+        align-items: stretch;
       }
       .card-header,
       .card-body {
@@ -890,16 +940,29 @@
       .subject-header {
         width: 100%;
         align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
       }
       .subject-name-input {
         width: 100%;
       }
       .term-tabs {
         width: 100%;
-        justify-content: flex-start;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .term-tab {
+        text-align: center;
+      }
+      .subject-card-actions {
+        width: 100%;
+        justify-content: flex-end;
       }
       .summary-strip {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .summary-strip .summary-chip:last-child {
+        grid-column: 1 / -1;
       }
       .sem-row {
         grid-template-columns: 1fr 1fr;
@@ -918,9 +981,6 @@
       .logo {
         font-size: 15px;
       }
-      .toolbox-link {
-        font-size: 16px;
-      }
       .header-actions {
         gap: 6px;
       }
@@ -931,18 +991,33 @@
         padding: 5px 8px;
         font-size: 11px;
       }
-      .summary-strip {
-        grid-template-columns: 1fr;
-      }
       .sheet-title {
         padding: 9px 10px;
       }
       table.score-table {
         min-width: 620px;
       }
-      .editable-token {
+      .subject-card-actions {
+        justify-content: stretch;
+      }
+      .subject-card-actions .btn {
+        flex: 1 1 calc(50% - 4px);
+        justify-content: center;
+      }
+      .setup-inline-name,
+      .setup-weight-field,
+      .setup-action-row .btn {
         width: 100%;
-        justify-content: space-between;
+      }
+      .setup-weight-field {
+        justify-content: flex-start;
+      }
+      .setup-weight-input {
+        width: 100%;
+        text-align: left;
+      }
+      .setup-action-row .btn {
+        justify-content: center;
       }
       .sem-row {
         grid-template-columns: 1fr;
@@ -960,6 +1035,12 @@
         padding-right: 14px;
       }
     }
+
+    @media (max-width: 420px) {
+      .summary-strip {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -971,8 +1052,6 @@
     <button class="btn ghost icon hamburger" id="btnMenu" title="Menu">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
-
-    <a class="toolbox-link" href="../../" aria-label="Back to toolbox">_(: 」∠)_</a>
 
     <div class="logo">
       <div class="logo-icon">📊</div>
@@ -1099,7 +1178,7 @@
     <div class="stack">
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header subject-card-head">
           <div class="subject-header">
             <input class="subject-name-input" id="subjectName" placeholder="Subject name…" autocomplete="off" />
             <div class="term-tabs" id="termTabs">
@@ -1108,7 +1187,7 @@
               <div class="term-tab finals" data-term="finals">Finals</div>
             </div>
           </div>
-          <div class="row">
+          <div class="row subject-card-actions">
             <button class="btn small ghost" id="btnDuplicate">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 11V2h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
               Duplicate
@@ -1216,7 +1295,10 @@
         </div>
       </section>
 
-      <div class="page-footer">Made with 🧡 by <a href=https://www.instagram.com/egyoq>egyoq</a>.</div>
+      <div class="page-footer">
+        <div>Made with 🧡 by <a href="https://www.instagram.com/egyoq">egyoq</a>.</div>
+        <a class="footer-home-link" href="../../" aria-label="Back to home">_(: 」∠)_ back-to-home</a>
+      </div>
     </div>
   </main>
 </div>
@@ -1455,24 +1537,6 @@
       "\"":"&quot;",
       "'":"&#039;"
     }[c]));
-  }
-
-  function promptEditText(label, currentValue){
-    const next = prompt(`Edit ${label}:`, currentValue || "");
-    if (next === null) return null;
-    const trimmed = next.trim();
-    return trimmed || currentValue || "";
-  }
-
-  function promptEditNumber(label, currentValue, min=0, max=100){
-    const next = prompt(`Edit ${label}:`, String(currentValue ?? ""));
-    if (next === null) return null;
-    const parsed = parseFloat(next.trim());
-    if (!Number.isFinite(parsed)){
-      toast(`Please enter a valid number for ${label}.`, 'danger');
-      return null;
-    }
-    return clamp(parsed, min, max);
   }
 
   function updateDisplays(){
@@ -1875,6 +1939,7 @@
 
   function renderSetupNode(subj, node, parent){
     const hasChildren = !!(node.children && node.children.length);
+    const fallbackName = (node.name && String(node.name).trim()) || (parent ? 'Sub category' : 'Category');
 
     const wrap = document.createElement('div');
     wrap.className = `setup-node${parent ? ' child-node' : ''}`;
@@ -1890,41 +1955,81 @@
       ${hasChildren ? `<span class="pill" style="font-size:10px;">parent</span>` : ''}
     `;
 
-    const nameBtn = document.createElement('button');
-    nameBtn.type = 'button';
-    nameBtn.className = 'editable-token';
-    nameBtn.innerHTML = `<span class="token-text">${escapeHtml(node.name)}</span>`;
-    nameBtn.onclick = ()=>{
-      const next = promptEditText('category name', node.name);
-      if (next === null) return;
-      node.name = next;
-      saveState();
-      render();
-    };
-
-    const weightBtn = document.createElement('button');
-    weightBtn.type = 'button';
-    weightBtn.className = 'editable-token weight';
-    weightBtn.innerHTML = `<span class="token-text">${round2(num(node.weight))}%</span>`;
-    weightBtn.onclick = ()=>{
-      const next = promptEditNumber('weight', node.weight, 0, 100);
-      if (next === null) return;
-      node.weight = next;
-      saveState();
-      render();
-    };
-
-    left.appendChild(nameBtn);
-    left.appendChild(weightBtn);
-
-    const actions = document.createElement('div');
-    actions.className = 'row';
-
     const body = document.createElement('div');
     body.className = 'setup-node-body';
 
+    const editRow = document.createElement('div');
+    editRow.className = 'setup-edit-row';
+
+    const nameWrap = document.createElement('div');
+    nameWrap.className = 'setup-inline-name';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'setup-name-input';
+    nameInput.placeholder = parent ? 'Sub category name' : 'Category name';
+    nameInput.autocomplete = 'off';
+    nameInput.spellcheck = false;
+    nameInput.value = node.name || '';
+    nameInput.oninput = ()=>{
+      node.name = nameInput.value;
+      saveState();
+    };
+    nameInput.onblur = ()=>{
+      node.name = nameInput.value.trim() || fallbackName;
+      saveState();
+      render();
+    };
+    nameInput.onkeydown = (e)=>{
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        nameInput.blur();
+      }
+    };
+    nameWrap.appendChild(nameInput);
+
+    const weightWrap = document.createElement('label');
+    weightWrap.className = 'setup-weight-field';
+
+    const weightInput = document.createElement('input');
+    weightInput.type = 'number';
+    weightInput.className = 'setup-weight-input';
+    weightInput.inputMode = 'decimal';
+    weightInput.min = '0';
+    weightInput.max = '100';
+    weightInput.step = '0.01';
+    weightInput.value = round2(num(node.weight));
+
+    const commitWeight = (shouldRender = false)=>{
+      const parsed = parseFloat(weightInput.value.trim());
+      node.weight = Number.isFinite(parsed) ? clamp(parsed, 0, 100) : 0;
+      saveState();
+      if (shouldRender) render();
+    };
+
+    weightInput.oninput = ()=> commitWeight(false);
+    weightInput.onblur = ()=>{
+      commitWeight(true);
+    };
+    weightInput.onkeydown = (e)=>{
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        weightInput.blur();
+      }
+    };
+
+    const weightSuffix = document.createElement('span');
+    weightSuffix.className = 'setup-inline-suffix';
+    weightSuffix.textContent = '%';
+
+    weightWrap.appendChild(weightInput);
+    weightWrap.appendChild(weightSuffix);
+
+    editRow.appendChild(nameWrap);
+    editRow.appendChild(weightWrap);
+
     const actionRow = document.createElement('div');
-    actionRow.className = 'row';
+    actionRow.className = 'setup-action-row';
 
     const btnToggle = document.createElement('button');
     btnToggle.type = 'button';
@@ -1986,11 +2091,11 @@
     actionRow.appendChild(btnAddChild);
     actionRow.appendChild(btnDel);
 
+    body.appendChild(editRow);
     body.appendChild(actionRow);
 
     wrap.appendChild(nodeHeader);
     nodeHeader.appendChild(left);
-    nodeHeader.appendChild(actions);
     wrap.appendChild(body);
 
     if (hasChildren){
