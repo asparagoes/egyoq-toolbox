@@ -1087,6 +1087,18 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
+    }
+    .help-heading-text {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .help-term-list {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
     }
     .help-card p {
       color: var(--text2);
@@ -1351,6 +1363,16 @@
         padding-left: 14px;
         padding-right: 14px;
       }
+      .help-card h3 {
+        align-items: flex-start;
+        gap: 10px 8px;
+      }
+      .help-term-list {
+        width: 100%;
+      }
+      .help-heading-text {
+        flex: 0 0 100%;
+      }
     }
 
     @media (max-width: 420px) {
@@ -1438,7 +1460,14 @@
           <p>This tool can raise raw percentages using a base grade. Even if the raw score starts low, transmutation can convert it into the grading system your school uses. The highlighted <span class="help-mark">Score (B40)</span> values show that adjusted result.</p>
         </div>
         <div class="help-card">
-          <h3><span class="help-emphasis term prelims">Prelims</span><span class="help-emphasis term midterms">Midterms</span><span class="help-emphasis term finals">Finals</span> See your term grades</h3>
+          <h3>
+            <span class="help-term-list">
+              <span class="help-emphasis term prelims">Prelims</span>
+              <span class="help-emphasis term midterms">Midterms</span>
+              <span class="help-emphasis term finals">Finals</span>
+            </span>
+            <span class="help-heading-text">See your term grades</span>
+          </h3>
           <p>The tool computes your <span class="help-mark prelims">Prelims</span>, <span class="help-mark midterms">Midterms</span>, and <span class="help-mark finals">Finals</span> raw grades. It also combines them into your <span class="help-mark midterms">Midterm Grade</span> and <span class="help-mark">Final Grade</span> using the base grade/transmutation settings.</p>
         </div>
         <div class="help-card">
