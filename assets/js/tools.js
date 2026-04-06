@@ -78,23 +78,23 @@ async function resolveToolFavicon(tool) {
 }
 
 function mountToolFavicon(node, iconSpec) {
-  const badge = node.querySelector(".tool-favicon-badge");
-  if (!badge) return;
+  const icon = node.querySelector(".tool-favicon");
+  if (!icon) return;
 
-  badge.innerHTML = "";
+  icon.innerHTML = "";
 
   if (!iconSpec) {
-    badge.style.display = "none";
+    icon.style.display = "none";
     return;
   }
 
-  badge.style.display = "";
+  icon.style.display = "";
 
   if (iconSpec.type === "emoji") {
     const emoji = document.createElement("span");
     emoji.className = "tool-favicon-emoji";
     emoji.textContent = iconSpec.value;
-    badge.appendChild(emoji);
+    icon.appendChild(emoji);
     return;
   }
 
@@ -104,7 +104,7 @@ function mountToolFavicon(node, iconSpec) {
   img.decoding = "async";
   img.loading = "lazy";
   img.src = iconSpec.value;
-  badge.appendChild(img);
+  icon.appendChild(img);
 }
 
 function createToolCard(tool) {

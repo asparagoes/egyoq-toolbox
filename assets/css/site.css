@@ -261,49 +261,33 @@ a:hover {
   pointer-events: none;
 }
 
-.tool-favicon-badge {
+.tool-favicon {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: clamp(68px, 26%, 92px);
-  aspect-ratio: 1;
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.68);
-  border: 0;
-  box-shadow:
-    0 14px 28px rgba(16, 24, 40, 0.18),
-    0 0 36px rgba(210, 105, 30, 0.22);
-  backdrop-filter: blur(10px) saturate(135%);
-  -webkit-backdrop-filter: blur(10px) saturate(135%);
-  transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
-}
-
-.tool-favicon-badge::before {
-  content: "";
-  position: absolute;
-  inset: -10px;
-  border-radius: 28px;
-  background: radial-gradient(circle at 50% 50%, rgba(210, 105, 30, 0.18), transparent 70%);
-  z-index: -1;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .tool-favicon-image {
-  width: 62%;
-  height: 62%;
+  width: clamp(72px, 24%, 96px);
+  height: clamp(72px, 24%, 96px);
   object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(17, 24, 39, 0.12));
+  object-position: center;
+  display: block;
+  filter: drop-shadow(0 10px 18px rgba(16, 24, 40, 0.18));
 }
 
 .tool-favicon-emoji {
-  font-size: clamp(1.9rem, 7vw, 2.6rem);
+  font-size: clamp(2.6rem, 9vw, 3.5rem);
   line-height: 1;
   display: block;
   transform: translateY(-1px);
-  filter: drop-shadow(0 4px 10px rgba(17, 24, 39, 0.12));
+  filter: drop-shadow(0 10px 18px rgba(16, 24, 40, 0.18));
 }
 
 .tool-card-body {
@@ -368,11 +352,8 @@ a:hover {
   transform: translateY(0);
 }
 
-.tool-card.show-desc .tool-favicon-badge {
+.tool-card.show-desc .tool-favicon {
   transform: translate(-50%, -68%);
-  box-shadow:
-    0 16px 30px rgba(16, 24, 40, 0.2),
-    0 0 42px rgba(210, 105, 30, 0.24);
 }
 
 .empty-state {
@@ -451,12 +432,16 @@ a:hover {
     grid-template-columns: minmax(240px, 300px);
   }
 
-  .tool-favicon-badge {
-    width: clamp(62px, 24vw, 82px);
-    border-radius: 20px;
+  .tool-favicon-image {
+    width: clamp(64px, 22vw, 86px);
+    height: clamp(64px, 22vw, 86px);
   }
 
-  .tool-card.show-desc .tool-favicon-badge {
+  .tool-favicon-emoji {
+    font-size: clamp(2.2rem, 11vw, 3rem);
+  }
+
+  .tool-card.show-desc .tool-favicon {
     transform: translate(-50%, -64%);
   }
 }
