@@ -43,9 +43,11 @@ function extractIconHrefFromHtml(html, pageUrl) {
 
 async function resolveToolFavicon(tool) {
   const explicit =
-    normalizeText(tool.favicon) ? { type: "image", value: tool.favicon } :
-    normalizeText(tool.emoji) ? { type: "emoji", value: tool.emoji.trim() } :
-    null;
+    normalizeText(tool.favicon)
+      ? { type: "image", value: tool.favicon }
+      : normalizeText(tool.emoji)
+        ? { type: "emoji", value: tool.emoji.trim() }
+        : null;
 
   if (explicit) return explicit;
 
@@ -59,10 +61,14 @@ async function resolveToolFavicon(tool) {
 
   try {
     const response = await fetch(pageUrl, { cache: "force-cache" });
-    if (!response.ok) throw new Error(`Failed to fetch tool page (${response.status})`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch tool page (${response.status})`);
+    }
+
     const html = await response.text();
     const iconHref = extractIconHrefFromHtml(html, pageUrl);
     const result = iconHref ? { type: "image", value: iconHref } : null;
+
     faviconCache.set(pageUrl, result);
     return result;
   } catch {
@@ -72,31 +78,33 @@ async function resolveToolFavicon(tool) {
 }
 
 function mountToolFavicon(node, iconSpec) {
-  if (!iconSpec) return;
+  const badge = node.querySelector(".tool-favicon-badge");
+  if (!badge) return;
 
-  const overlay = node.querySelector(".tool-thumb-overlay");
-  if (!overlay || overlay.querySelector(".tool-favicon-badge")) return;
+  badge.innerHTML = "";
 
-  const badge = document.createElement("div");
-  badge.className = "tool-favicon-badge";
-  badge.setAttribute("aria-hidden", "true");
+  if (!iconSpec) {
+    badge.style.display = "none";
+    return;
+  }
+
+  badge.style.display = "";
 
   if (iconSpec.type === "emoji") {
     const emoji = document.createElement("span");
     emoji.className = "tool-favicon-emoji";
     emoji.textContent = iconSpec.value;
     badge.appendChild(emoji);
-  } else {
-    const img = document.createElement("img");
-    img.className = "tool-favicon-image";
-    img.alt = "";
-    img.decoding = "async";
-    img.loading = "lazy";
-    img.src = iconSpec.value;
-    badge.appendChild(img);
+    return;
   }
 
-  overlay.appendChild(badge);
+  const img = document.createElement("img");
+  img.className = "tool-favicon-image";
+  img.alt = "";
+  img.decoding = "async";
+  img.loading = "lazy";
+  img.src = iconSpec.value;
+  badge.appendChild(img);
 }
 
 function createToolCard(tool) {
@@ -106,7 +114,7 @@ function createToolCard(tool) {
   const img = node.querySelector(".tool-thumb");
   const title = node.querySelector(".tool-title");
   const description = node.querySelector(".tool-description");
-  const thumbWrap = node.querySelector(".tool-thumb-wrap");
+  const popover = node.querySelector(".tool-description-popover");
 
   const href = tool.url;
   const thumb = tool.thumbnail || DEFAULT_THUMB;
@@ -124,15 +132,9 @@ function createToolCard(tool) {
   title.textContent = tool.title || "Untitled Tool";
   description.textContent = descText;
 
-  const overlay = document.createElement("div");
-  overlay.className = "tool-thumb-overlay";
-
-  const popover = document.createElement("div");
-  popover.className = "tool-description-popover";
-  popover.setAttribute("aria-hidden", "true");
-  popover.textContent = descText;
-  overlay.appendChild(popover);
-  thumbWrap.appendChild(overlay);
+  if (popover) {
+    popover.textContent = descText;
+  }
 
   resolveToolFavicon(tool).then((iconSpec) => {
     mountToolFavicon(node, iconSpec);
@@ -169,10 +171,11 @@ function updateDescriptionPopovers() {
 
     if (isTruncated) {
       description.classList.add("is-truncated");
+      popover.hidden = false;
     } else {
       description.classList.remove("is-truncated");
       card.classList.remove("show-desc");
-      popover.remove();
+      popover.hidden = true;
     }
   });
 }
@@ -251,6 +254,7 @@ searchInput.addEventListener("input", (event) => {
 
 window.addEventListener("resize", () => {
   updateDescriptionPopovers();
+
   if (window.innerWidth > 700 && siteNav) {
     siteNav.classList.remove("is-open");
     siteNavToggle?.setAttribute("aria-expanded", "false");
@@ -266,6 +270,7 @@ if (siteNav && siteNavToggle) {
   document.addEventListener("click", (event) => {
     if (!siteNav.classList.contains("is-open")) return;
     if (siteNav.contains(event.target) || siteNavToggle.contains(event.target)) return;
+
     siteNav.classList.remove("is-open");
     siteNavToggle.setAttribute("aria-expanded", "false");
   });
