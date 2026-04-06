@@ -265,6 +265,28 @@
     }
     .sidebar-option:hover { background: var(--surface3); color: var(--text); }
     .sidebar-option .icon { font-size: 15px; width: 22px; text-align: center; }
+    .sidebar-disclaimer {
+      margin: 10px 4px 0;
+      padding: 12px 12px 13px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fff7d8 0%, #fff2c2 100%);
+      border: 1px solid #f1cf63;
+      box-shadow: 0 8px 18px rgba(241, 207, 99, .18);
+      color: #6b4f00;
+    }
+    .sidebar-disclaimer-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #8a6500;
+      margin-bottom: 6px;
+    }
+    .sidebar-disclaimer p {
+      font-size: 12px;
+      line-height: 1.5;
+      font-weight: 600;
+    }
 
     .card {
       background: var(--surface);
@@ -387,6 +409,19 @@
     }
     .summary-chip.highlight { background: var(--accent-soft); border-color: var(--accent-border); }
     .summary-chip.highlight .sc-val { color: var(--accent); }
+    .summary-chip.prelims-chip { background: var(--prelims-soft); border-color: #d8c7ff; }
+    .summary-chip.prelims-chip .sc-val { color: var(--prelims); }
+    .summary-chip.prelims-chip .sc-label { color: #7c67b8; }
+    .summary-chip.midterms-chip { background: var(--midterms-soft); border-color: #bfdbfe; }
+    .summary-chip.midterms-chip .sc-val { color: var(--midterms); }
+    .summary-chip.midterms-chip .sc-label { color: #5f84b9; }
+    .summary-chip.finals-chip { background: var(--finals-soft); border-color: #fbcfe8; }
+    .summary-chip.finals-chip .sc-val { color: var(--finals); }
+    .summary-chip.finals-chip .sc-label { color: #b36e90; }
+    .summary-chip.midterm-grade-chip { background: #edf4ff; border-color: #bfd4ff; }
+    .summary-chip.midterm-grade-chip .sc-val { color: var(--midterms); }
+    .summary-chip.final-grade-chip { background: #fff1f7; border-color: #f7b2cb; }
+    .summary-chip.final-grade-chip .sc-val { color: var(--finals); }
     .summary-chip.pass { background: var(--green-soft); border-color: var(--green-border); }
     .summary-chip.pass .sc-val { color: var(--green); }
     .summary-chip.fail { background: var(--red-soft); border-color: var(--red-border); }
@@ -419,6 +454,18 @@
       margin-bottom: 12px;
       min-width: 0;
     }
+    .sheet-block.term-prelims {
+      border-color: #d8c7ff;
+      box-shadow: 0 0 0 1px rgba(139,92,246,.05), var(--shadow-sm);
+    }
+    .sheet-block.term-midterms {
+      border-color: #bfdbfe;
+      box-shadow: 0 0 0 1px rgba(59,130,246,.05), var(--shadow-sm);
+    }
+    .sheet-block.term-finals {
+      border-color: #fbcfe8;
+      box-shadow: 0 0 0 1px rgba(236,72,153,.05), var(--shadow-sm);
+    }
     .sheet-block .sheet-title {
       border-radius: var(--radius) var(--radius) 0 0;
     }
@@ -436,6 +483,15 @@
       justify-content: space-between;
       gap: 10px;
       flex-wrap: wrap;
+    }
+    .sheet-block.term-prelims .sheet-title {
+      background: linear-gradient(135deg, var(--prelims-soft) 0%, #faf7ff 100%);
+    }
+    .sheet-block.term-midterms .sheet-title {
+      background: linear-gradient(135deg, var(--midterms-soft) 0%, #f7fbff 100%);
+    }
+    .sheet-block.term-finals .sheet-title {
+      background: linear-gradient(135deg, var(--finals-soft) 0%, #fff7fb 100%);
     }
 
     .sheet-name { font-weight: 700; font-size: 13px; color: var(--text); }
@@ -461,6 +517,12 @@
       background: var(--accent-soft);
       color: var(--accent);
     }
+    .sheet-block.term-prelims .metric-pill.transmuted { background: var(--prelims-soft); color: var(--prelims); }
+    .sheet-block.term-midterms .metric-pill.transmuted { background: var(--midterms-soft); color: var(--midterms); }
+    .sheet-block.term-finals .metric-pill.transmuted { background: var(--finals-soft); color: var(--finals); }
+    .sheet-block.term-prelims table.score-table thead th { color: #7c67b8; }
+    .sheet-block.term-midterms table.score-table thead th { color: #5f84b9; }
+    .sheet-block.term-finals table.score-table thead th { color: #b36e90; }
 
     .sheet-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
@@ -533,6 +595,9 @@
     .cell-input:focus { background: var(--accent-soft); color: var(--accent); }
     .row-score .cell-input:focus { color: var(--accent); }
     .row-score .cell-input { color: var(--text); }
+    .sheet-block.term-prelims .cell-input:focus { background: var(--prelims-soft); color: var(--prelims); }
+    .sheet-block.term-midterms .cell-input:focus { background: var(--midterms-soft); color: var(--midterms); }
+    .sheet-block.term-finals .cell-input:focus { background: var(--finals-soft); color: var(--finals); }
 
     .alert {
       padding: 10px 14px;
@@ -547,11 +612,39 @@
     .alert.info { background: var(--accent-soft); border: 1px solid var(--accent-border); color: var(--accent); }
 
     .setup-node {
+      position: relative;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
       box-shadow: var(--shadow-sm);
+    }
+    .setup-node::before,
+    .setup-node::after {
+      content: '';
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      border-top: 3px dashed transparent;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease, border-color .12s ease;
+      z-index: 2;
+    }
+    .setup-node::before { top: -1px; }
+    .setup-node::after { bottom: -1px; }
+    .setup-node.drop-before::before,
+    .setup-node.drop-after::after {
+      opacity: 1;
+      border-top-color: var(--accent);
+    }
+    .setup-node.sort-armed {
+      border-color: var(--accent-border);
+      box-shadow: 0 0 0 3px rgba(79,126,248,.12), var(--shadow-sm);
+    }
+    .setup-node.drag-source {
+      opacity: .35;
+      transform: scale(.99);
     }
 
     .setup-node-header {
@@ -563,7 +656,12 @@
       justify-content: space-between;
       gap: 10px;
       flex-wrap: wrap;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
     }
+    .setup-node-header:active { cursor: grabbing; }
 
     .setup-node-body { padding: 12px 14px; }
 
@@ -745,6 +843,13 @@
       flex-shrink: 0;
     }
     .setup-btn-label {
+      white-space: nowrap;
+    }
+    .setup-sort-hint {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .02em;
       white-space: nowrap;
     }
 
@@ -1027,6 +1132,21 @@
         flex: 1 1 calc(50% - 4px);
         justify-content: center;
       }
+      .summary-strip {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+      .summary-chip.prelims-chip,
+      .summary-chip.midterms-chip,
+      .summary-chip.finals-chip {
+        grid-column: span 2;
+      }
+      .summary-chip.midterm-grade-chip,
+      .summary-chip.final-grade-chip {
+        grid-column: span 3;
+      }
+      .summary-chip.status-chip {
+        grid-column: 1 / -1;
+      }
       .setup-weight-field {
         padding-left: 5px;
         padding-right: 5px;
@@ -1065,7 +1185,7 @@
 
     @media (max-width: 420px) {
       .summary-strip {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
       }
     }
   </style>
@@ -1118,8 +1238,8 @@
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-header">
       <div>
-        <div id="helpTitle" style="font-weight:800;font-size:16px;">How this tool works</div>
-        <div class="text-muted text-sm" style="margin-top:2px;">Simple guide for students</div>
+        <div id="helpTitle" style="font-weight:800;font-size:16px;">How to Use</div>
+        <div class="text-muted text-sm" style="margin-top:2px;">Should there be any inquiries, please don't hesitate to contact the <a href="mailto:aselverm_abucay@spcedu.davao.ph" style="color:#b85c18; text-decoration: underline;">developer</a>.</div>
       </div>
       <button class="btn small ghost" id="btnCloseHelp">Close</button>
     </div>
@@ -1199,6 +1319,10 @@
       <span class="icon">⬆️</span> Import JSON
     </label>
     <input type="file" id="fileImport2" accept="application/json" hidden />
+    <div class="sidebar-disclaimer">
+      <div class="sidebar-disclaimer-title">Disclaimer</div>
+      <p>This calculator is a student-made tool intended only to provide rough estimates. Results may not be fully accurate and should not be used as your sole basis for important academic decisions. For official guidance and certainty, please consult your professors, advisers, or your school’s official policies.</p>
+    </div>
   </aside>
 
   <main class="main">
@@ -1250,6 +1374,7 @@
             <div>
               <div style="font-weight:700;font-size:14px;">Category Weights</div>
               <div class="text-muted text-sm" style="margin-top:2px;">Top-level weights must total 100%. Children must total their parent’s weight.</div>
+              <div class="text-muted text-sm" style="margin-top:2px;">Long-press a category header to reorder within its level.</div>
             </div>
             <button class="btn small primary" id="btnAddTop">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
@@ -1323,7 +1448,7 @@
       </section>
 
       <div class="page-footer">
-        <div>Made with 🧡 by <a href="https://www.instagram.com/egyoq">egyoq</a>.</div>
+        <div>Made with 🧡 by <a href="https://www.instagram.com/egyoq" style="text-decoration: underline;">egyoq</a>.</div>
         <a class="footer-home-link" href="../../" aria-label="Back to home" style="color:#b85c18;">_(: 」∠)_</a>
       </div>
     </div>
@@ -1334,6 +1459,7 @@
 (function(){
   const TERMS = ["prelims","midterms","finals"];
   const STORAGE_KEY = "grade_calc_v4";
+  const SETUP_LONG_PRESS_MS = 280;
 
   const uid = () => Math.random().toString(36).slice(2,10) + "_" + Date.now().toString(36);
   const clamp = (x,a,b) => Math.min(b, Math.max(a, x));
@@ -1343,6 +1469,11 @@
   };
   const round2 = (x) => Math.round((x + Number.EPSILON) * 100) / 100;
   const $ = (id) => document.getElementById(id);
+  const setupSort = {
+    holdTimer: null,
+    candidate: null,
+    active: null
+  };
 
   function toast(msg, type='') {
     const t = document.createElement('div');
@@ -1407,6 +1538,23 @@
       }
     })(nodes);
     return out;
+  }
+
+  function findNodeById(nodes, targetId){
+    for (const node of nodes || []){
+      if (node.id === targetId) return node;
+      if (node.children){
+        const found = findNodeById(node.children, targetId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  function getSiblingList(subject, parentId){
+    if (!parentId) return subject.categories;
+    const parentNode = findNodeById(subject.categories, parentId);
+    return parentNode && Array.isArray(parentNode.children) ? parentNode.children : null;
   }
 
   let state = loadState();
@@ -1584,12 +1732,12 @@
       const sem = computeSemester(subj);
       const finalPass = sem.finalGrade >= 75;
       const chips = [
-        {t:"Prelims", v:round2(sem.prelims), cls:""},
-        {t:"Midterms", v:round2(sem.midterms), cls:""},
-        {t:"Finals", v:round2(sem.finals), cls:""},
-        {t:"Midterm Grade", v:round2(sem.midGrade), cls:"highlight"},
-        {t:"Final Grade", v:round2(sem.finalGrade), cls:`highlight ${finalPass?'pass':'fail'}`},
-        {t:"Status", v:finalPass ? "PASSING" : "BELOW 75", cls:finalPass ? "pass" : "fail"},
+        {t:"Prelims", v:round2(sem.prelims), cls:"prelims-chip"},
+        {t:"Midterms", v:round2(sem.midterms), cls:"midterms-chip"},
+        {t:"Finals", v:round2(sem.finals), cls:"finals-chip"},
+        {t:"Midterm Grade", v:round2(sem.midGrade), cls:"midterm-grade-chip"},
+        {t:"Final Grade", v:round2(sem.finalGrade), cls:`final-grade-chip ${finalPass?'pass':'fail'}`},
+        {t:"Status", v:finalPass ? "PASSING" : "BELOW 75", cls:`status-chip ${finalPass ? "pass" : "fail"}`},
       ];
 
       if (existingChips.length === chips.length){
@@ -1729,12 +1877,12 @@
       const sem = computeSemester(subj);
       const finalPass = sem.finalGrade >= 75;
       const chips = [
-        {t:"Prelims", v:round2(sem.prelims), cls:""},
-        {t:"Midterms", v:round2(sem.midterms), cls:""},
-        {t:"Finals", v:round2(sem.finals), cls:""},
-        {t:"Midterm Grade", v:round2(sem.midGrade), cls:"highlight"},
-        {t:"Final Grade", v:round2(sem.finalGrade), cls:`highlight ${finalPass?'pass':'fail'}`},
-        {t:"Status", v:finalPass?"PASSING":"BELOW 75", cls:finalPass?"pass":"fail"},
+        {t:"Prelims", v:round2(sem.prelims), cls:"prelims-chip"},
+        {t:"Midterms", v:round2(sem.midterms), cls:"midterms-chip"},
+        {t:"Finals", v:round2(sem.finals), cls:"finals-chip"},
+        {t:"Midterm Grade", v:round2(sem.midGrade), cls:"midterm-grade-chip"},
+        {t:"Final Grade", v:round2(sem.finalGrade), cls:`final-grade-chip ${finalPass?'pass':'fail'}`},
+        {t:"Status", v:finalPass?"PASSING":"BELOW 75", cls:`status-chip ${finalPass?"pass":"fail"}`},
       ];
 
       chips.forEach(c=>{
@@ -1821,7 +1969,7 @@
     const metrics = computeLeaf(subj, leaf.id, term);
 
     const wrap = document.createElement('div');
-    wrap.className = 'sheet-block';
+    wrap.className = `sheet-block term-${term}`;
     wrap.dataset.leafId = leaf.id;
     wrap.dataset.leafWeight = num(leaf.weight);
 
@@ -1955,7 +2103,188 @@
     }
   }
 
+  function clearSetupDropIndicators(){
+    elSetupArea.querySelectorAll('.setup-node.drop-before, .setup-node.drop-after, .setup-node.sort-armed, .setup-node.drag-source').forEach(node=>{
+      node.classList.remove('drop-before', 'drop-after', 'sort-armed', 'drag-source');
+    });
+  }
+
+  function updateSetupGhostPosition(clientX, clientY){
+    if (!setupSort.active?.ghost) return;
+    setupSort.active.ghost.style.left = `${clientX + 14}px`;
+    setupSort.active.ghost.style.top = `${clientY + 14}px`;
+  }
+
+  function cancelSetupSortCandidate(){
+    if (setupSort.holdTimer){
+      clearTimeout(setupSort.holdTimer);
+      setupSort.holdTimer = null;
+    }
+    if (setupSort.candidate?.nodeEl){
+      setupSort.candidate.nodeEl.classList.remove('sort-armed');
+    }
+    setupSort.candidate = null;
+  }
+
+  function cleanupSetupSort(){
+    cancelSetupSortCandidate();
+    clearSetupDropIndicators();
+    if (setupSort.active?.ghost?.isConnected){
+      setupSort.active.ghost.remove();
+    }
+    setupSort.active = null;
+    document.body.style.userSelect = '';
+  }
+
+  function beginSetupSort(){
+    const candidate = setupSort.candidate;
+    if (!candidate) return;
+
+    const subj = activeSubject();
+    const sourceList = getSiblingList(subj, candidate.parentId);
+    if (!sourceList || sourceList.length < 2){
+      cleanupSetupSort();
+      return;
+    }
+
+    const rect = candidate.nodeEl.getBoundingClientRect();
+    const ghost = candidate.nodeEl.cloneNode(true);
+    ghost.style.position = 'fixed';
+    ghost.style.left = `${candidate.startX + 14}px`;
+    ghost.style.top = `${candidate.startY + 14}px`;
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.pointerEvents = 'none';
+    ghost.style.zIndex = '500';
+    ghost.style.opacity = '.95';
+    ghost.style.transform = 'rotate(1deg)';
+    ghost.style.boxShadow = '0 14px 32px rgba(15, 23, 42, .18)';
+    ghost.style.background = 'var(--surface)';
+    ghost.classList.remove('drop-before', 'drop-after', 'sort-armed', 'drag-source');
+    document.body.appendChild(ghost);
+
+    setupSort.active = {
+      nodeId: candidate.nodeId,
+      parentId: candidate.parentId,
+      sourceEl: candidate.nodeEl,
+      pointerId: candidate.pointerId,
+      ghost,
+      targetId: null,
+      position: null
+    };
+
+    candidate.nodeEl.classList.remove('sort-armed');
+    candidate.nodeEl.classList.add('drag-source');
+    setupSort.candidate = null;
+    setupSort.holdTimer = null;
+    document.body.style.userSelect = 'none';
+    updateSetupGhostPosition(candidate.startX, candidate.startY);
+  }
+
+  function updateSetupSortTarget(clientX, clientY){
+    if (!setupSort.active) return;
+
+    clearSetupDropIndicators();
+    setupSort.active.sourceEl.classList.add('drag-source');
+
+    const hovered = document.elementFromPoint(clientX, clientY)?.closest('.setup-node');
+    if (!hovered || hovered === setupSort.active.sourceEl){
+      setupSort.active.targetId = null;
+      setupSort.active.position = null;
+      return;
+    }
+
+    if ((hovered.dataset.parentId || '') !== (setupSort.active.parentId || '')){
+      setupSort.active.targetId = null;
+      setupSort.active.position = null;
+      return;
+    }
+
+    const rect = hovered.getBoundingClientRect();
+    const position = clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+    hovered.classList.add(position === 'before' ? 'drop-before' : 'drop-after');
+    setupSort.active.targetId = hovered.dataset.nodeId;
+    setupSort.active.position = position;
+  }
+
+  function finishSetupSort(){
+    const active = setupSort.active;
+    if (!active) return;
+
+    const subj = activeSubject();
+    const list = getSiblingList(subj, active.parentId);
+
+    if (list && active.targetId && active.position){
+      const fromIndex = list.findIndex(node=>node.id === active.nodeId);
+      const [moved] = fromIndex >= 0 ? list.splice(fromIndex, 1) : [null];
+      const targetIndex = list.findIndex(node=>node.id === active.targetId);
+
+      if (moved && targetIndex >= 0){
+        const insertIndex = active.position === 'before' ? targetIndex : targetIndex + 1;
+        list.splice(insertIndex, 0, moved);
+        ensureLeafGrid(subj);
+        saveState();
+        render();
+        cleanupSetupSort();
+        toast('Order updated.','success');
+        return;
+      }
+
+      if (moved){
+        list.splice(Math.max(fromIndex, 0), 0, moved);
+      }
+    }
+
+    cleanupSetupSort();
+  }
+
+  function handleSetupPointerDown(e){
+    const header = e.target.closest('.setup-node-header');
+    if (!header || !elSetupArea.contains(header)) return;
+    if (e.target.closest('button, input, select, label, a')) return;
+
+    const nodeEl = header.closest('.setup-node');
+    if (!nodeEl) return;
+
+    cleanupSetupSort();
+    nodeEl.classList.add('sort-armed');
+    setupSort.candidate = {
+      nodeEl,
+      nodeId: nodeEl.dataset.nodeId,
+      parentId: nodeEl.dataset.parentId || '',
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY
+    };
+    setupSort.holdTimer = setTimeout(beginSetupSort, SETUP_LONG_PRESS_MS);
+  }
+
+  function handleSetupPointerMove(e){
+    if (setupSort.candidate && !setupSort.active){
+      if (e.pointerId !== setupSort.candidate.pointerId) return;
+      const moved = Math.hypot(e.clientX - setupSort.candidate.startX, e.clientY - setupSort.candidate.startY);
+      if (moved > 8){
+        cancelSetupSortCandidate();
+      }
+      return;
+    }
+
+    if (!setupSort.active || e.pointerId !== setupSort.active.pointerId) return;
+    e.preventDefault();
+    updateSetupGhostPosition(e.clientX, e.clientY);
+    updateSetupSortTarget(e.clientX, e.clientY);
+  }
+
+  function handleSetupPointerEnd(e){
+    if (setupSort.candidate && (!setupSort.active || e.pointerId === setupSort.candidate.pointerId)){
+      cancelSetupSortCandidate();
+    }
+    if (setupSort.active && e.pointerId === setupSort.active.pointerId){
+      finishSetupSort();
+    }
+  }
+
   function renderSetup(subj){
+    cleanupSetupSort();
     elSetupArea.innerHTML = '';
     subj.categories = subj.categories || [];
     normalizeEmptyChildren(subj.categories);
@@ -1970,6 +2299,8 @@
 
     const wrap = document.createElement('div');
     wrap.className = `setup-node${parent ? ' child-node' : ''}`;
+    wrap.dataset.nodeId = node.id;
+    wrap.dataset.parentId = parent ? parent.id : '';
 
     const nodeHeader = document.createElement('div');
     nodeHeader.className = 'setup-node-header';
@@ -1981,6 +2312,10 @@
       <span class="pill">${parent ? 'child' : 'top'}</span>
       ${hasChildren ? `<span class="pill" style="font-size:10px;">parent</span>` : ''}
     `;
+
+    const sortHint = document.createElement('div');
+    sortHint.className = 'setup-sort-hint';
+    sortHint.textContent = 'Hold to sort';
 
     const body = document.createElement('div');
     body.className = 'setup-node-body';
@@ -2063,7 +2398,7 @@
     btnToggle.type = 'button';
     btnToggle.className = 'btn small setup-action-btn';
     btnToggle.innerHTML = hasChildren
-      ? `<svg class="setup-btn-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5v8.5M8 10c0 1.2-1 2.2-2.2 2.2S3.5 11.2 3.5 10c0-1 .8-1.8 1.8-1.8.7 0 1.2.2 1.7.7V1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10c0 1.4 1.1 2.5 2.5 2.5S13 11.4 13 10c0-1-.6-1.8-1.5-2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="setup-btn-label">Make leaf</span>`
+      ? `<svg class="setup-btn-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.2 2.8C9.6 2.4 6.8 3.1 5 4.9c-2 2-2.2 5.1-.5 6.8 1.7 1.7 4.8 1.5 6.8-.5 1.8-1.8 2.5-4.6 2.1-8.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M5 11.1c1.8-2 3.8-3.6 6.2-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="setup-btn-label">Make leaf</span>`
       : `<svg class="setup-btn-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="setup-btn-label">Add children</span>`;
     btnToggle.onclick = ()=>{
       if (hasChildren){
@@ -2126,6 +2461,7 @@
 
     wrap.appendChild(nodeHeader);
     nodeHeader.appendChild(left);
+    nodeHeader.appendChild(sortHint);
     wrap.appendChild(body);
 
     if (hasChildren){
@@ -2223,10 +2559,15 @@
   $('btnHelp').addEventListener('click', openHelp);
   $('btnCloseHelp').addEventListener('click', closeHelp);
   $('helpBackdrop').addEventListener('click', closeHelp);
+  elSetupArea.addEventListener('pointerdown', handleSetupPointerDown);
+  document.addEventListener('pointermove', handleSetupPointerMove, {passive:false});
+  document.addEventListener('pointerup', handleSetupPointerEnd);
+  document.addEventListener('pointercancel', handleSetupPointerEnd);
   document.addEventListener('keydown', (e)=>{
     if (e.key === 'Escape'){
       closeSidebar();
       closeHelp();
+      cleanupSetupSort();
     }
   });
 
