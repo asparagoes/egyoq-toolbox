@@ -1,5 +1,8 @@
-const TOOLS_JSON_PATH = "./data/tools.json";
-const DEFAULT_THUMB = "./assets/thumbs/default.png";
+const SCRIPT_URL = new URL(document.currentScript?.src || window.location.href, window.location.href);
+const TOOLS_JSON_PATH = new URL("../../data/tools.json", SCRIPT_URL).href;
+const FLUENT_MAPPING_PATH = new URL("../../data/fluent_emoji_map.json", SCRIPT_URL).href;
+const DEFAULT_THUMB = new URL("../../assets/thumbs/default.png", SCRIPT_URL).href;
+const FLUENT_CDN_BASE = "https://cdn.jsdelivr.net/npm/fluentui-emoji@1.3.0/icons/modern";
 
 const toolsGrid = document.getElementById("tools-grid");
 const toolsStatus = document.getElementById("tools-status");
@@ -9,6 +12,7 @@ const siteNav = document.getElementById("site-nav");
 const siteNavToggle = document.getElementById("site-nav-toggle");
 
 let allTools = [];
+let emojiLookup = new Map();
 const faviconCache = new Map();
 
 function normalizeText(value) {
@@ -23,6 +27,16 @@ function buildSearchBlob(tool) {
   ]
     .join(" ")
     .toLowerCase();
+}
+
+function resolveCardAssetUrl(value) {
+  if (!normalizeText(value)) return "";
+
+  try {
+    return new URL(value, window.location.href).href;
+  } catch {
+    return value;
+  }
 }
 
 function extractIconHrefFromHtml(html, pageUrl) {
@@ -41,40 +55,75 @@ function extractIconHrefFromHtml(html, pageUrl) {
   return new URL(href, pageUrl).href;
 }
 
-async function resolveToolFavicon(tool) {
-  const explicit =
-    normalizeText(tool.favicon)
-      ? { type: "image", value: tool.favicon }
-      : normalizeText(tool.emoji)
-        ? { type: "emoji", value: tool.emoji.trim() }
-        : null;
+function createEmojiLookup(mappingArray) {
+  const map = new Map();
 
-  if (explicit) return explicit;
+  for (const item of mappingArray) {
+    const emoji = String(item.source_emoji || "").trim();
+    const slug = String(item.suggested_fluent_slug || "").trim();
 
-  if (!tool.url || tool.url === "#") return null;
-
-  const pageUrl = new URL(tool.url, window.location.href).href;
-
-  if (faviconCache.has(pageUrl)) {
-    return faviconCache.get(pageUrl);
-  }
-
-  try {
-    const response = await fetch(pageUrl, { cache: "force-cache" });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch tool page (${response.status})`);
+    if (!emoji || !slug) continue;
+    if (!map.has(emoji)) {
+      map.set(emoji, slug);
     }
-
-    const html = await response.text();
-    const iconHref = extractIconHrefFromHtml(html, pageUrl);
-    const result = iconHref ? { type: "image", value: iconHref } : null;
-
-    faviconCache.set(pageUrl, result);
-    return result;
-  } catch {
-    faviconCache.set(pageUrl, null);
-    return null;
   }
+
+  return map;
+}
+
+function buildFluentIconUrl(slug) {
+  return `${FLUENT_CDN_BASE}/${slug}.svg`;
+}
+
+function resolveFluentCdnIcon(tool) {
+  const emoji = String(tool.emoji || "").trim();
+  if (!emoji || !emojiLookup.has(emoji)) return null;
+
+  const slug = emojiLookup.get(emoji);
+  return buildFluentIconUrl(slug);
+}
+
+async function resolveToolFavicon(tool) {
+  const fluentIcon = resolveFluentCdnIcon(tool);
+  if (fluentIcon) {
+    return { type: "image", value: fluentIcon };
+  }
+
+  if (normalizeText(tool.favicon)) {
+    return { type: "image", value: resolveCardAssetUrl(tool.favicon) };
+  }
+
+  if (tool.url && tool.url !== "#") {
+    const pageUrl = new URL(tool.url, window.location.href).href;
+
+    if (faviconCache.has(pageUrl)) {
+      const cached = faviconCache.get(pageUrl);
+      if (cached) return cached;
+    } else {
+      try {
+        const response = await fetch(pageUrl, { cache: "force-cache" });
+
+        if (response.ok) {
+          const html = await response.text();
+          const iconHref = extractIconHrefFromHtml(html, pageUrl);
+          const result = iconHref ? { type: "image", value: iconHref } : null;
+          faviconCache.set(pageUrl, result);
+
+          if (result) return result;
+        } else {
+          faviconCache.set(pageUrl, null);
+        }
+      } catch {
+        faviconCache.set(pageUrl, null);
+      }
+    }
+  }
+
+  if (normalizeText(tool.emoji)) {
+    return { type: "emoji", value: tool.emoji.trim() };
+  }
+
+  return null;
 }
 
 function mountToolFavicon(node, iconSpec) {
@@ -82,6 +131,7 @@ function mountToolFavicon(node, iconSpec) {
   if (!icon) return;
 
   icon.innerHTML = "";
+  icon.setAttribute("data-no-emoji-replace", "");
 
   if (!iconSpec) {
     icon.style.display = "none";
@@ -216,23 +266,38 @@ function filterTools(query) {
   renderTools(filtered);
 }
 
-async function loadTools() {
+async function loadToolsAndMapping() {
   try {
     toolsStatus.textContent = "Loading tools...";
-    const response = await fetch(TOOLS_JSON_PATH, { cache: "no-store" });
 
-    if (!response.ok) {
-      throw new Error(`Failed to load tools.json (${response.status})`);
+    const toolsResponse = await fetch(TOOLS_JSON_PATH, { cache: "no-store" });
+
+    if (!toolsResponse.ok) {
+      throw new Error(`Failed to load tools.json (${toolsResponse.status})`);
     }
 
-    const data = await response.json();
+    const toolsData = await toolsResponse.json();
 
-    allTools = Array.isArray(data)
-      ? data.map((tool) => ({
+    try {
+      const mappingResponse = await fetch(FLUENT_MAPPING_PATH, { cache: "no-store" });
+
+      if (!mappingResponse.ok) {
+        throw new Error(`Failed to load fluent mapping (${mappingResponse.status})`);
+      }
+
+      const mappingData = await mappingResponse.json();
+      emojiLookup = createEmojiLookup(Array.isArray(mappingData) ? mappingData : []);
+    } catch (error) {
+      console.warn("Fluent emoji mapping unavailable; falling back to tool favicon/emoji.", error);
+      emojiLookup = new Map();
+    }
+
+    allTools = Array.isArray(toolsData)
+      ? toolsData.map((tool) => ({
           title: tool.title || "Untitled Tool",
           description: tool.description || "",
           url: tool.url || "#",
-          thumbnail: tool.thumbnail || DEFAULT_THUMB,
+          thumbnail: resolveCardAssetUrl(tool.thumbnail || DEFAULT_THUMB),
           favicon: tool.favicon || "",
           emoji: tool.emoji || "",
           tags: Array.isArray(tool.tags) ? tool.tags : []
@@ -282,4 +347,4 @@ if (siteNav && siteNavToggle) {
   });
 }
 
-loadTools();
+loadToolsAndMapping();

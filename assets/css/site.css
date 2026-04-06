@@ -445,3 +445,10 @@ a:hover {
     transform: translate(-50%, -64%);
   }
 }
+.inline-fluent-emoji {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  object-fit: contain;
+  vertical-align: -0.18em;
+}

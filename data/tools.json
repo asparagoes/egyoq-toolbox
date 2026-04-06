@@ -4,6 +4,8 @@
     "description": "Track subject grades across different terms with weighted categories, transmutation, goals, and autosave.",
     "url": "./tool/grade-calculator/",
     "thumbnail": "./assets/thumbs/grade-calculator.png",
+    "favicon": "./tool/grade-calculator/favicon.svg",
+    "emoji": "📊",
     "tags": [
       "study",
       "school",
@@ -17,6 +19,8 @@
     "description": "No description provided.",
     "url": "./tool/mcq-quiz-loader/",
     "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "",
+    "emoji": "",
     "tags": []
   },
   {
@@ -24,6 +28,8 @@
     "description": "No description provided.",
     "url": "./tool/test-tool/",
     "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "",
+    "emoji": "",
     "tags": []
   }
 ]

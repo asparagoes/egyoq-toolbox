@@ -25,6 +25,10 @@ function ensureDir(dirPath) {
   }
 }
 
+function writeText(filePath, content) {
+  fs.writeFileSync(filePath, content, "utf8");
+}
+
 function readText(filePath) {
   try {
     return fs.readFileSync(filePath, "utf8");
@@ -47,11 +51,77 @@ function extractTitle(html) {
 
 function extractMeta(html, metaName) {
   const regex = new RegExp(
-    `<meta\\s+name=["']${metaName}["']\\s+content=["']([\\s\\S]*?)["']\\s*\\/?>`,
+    `<meta\\s+name=(["'])${metaName}\\1\\s+content=(["'])([\\s\\S]*?)\\2\\s*\\/?>`,
     "i"
   );
   const match = html.match(regex);
-  return match ? match[1].trim() : "";
+  return match ? match[3].trim() : "";
+}
+
+function extractIconHref(html) {
+  const linkTags = html.match(/<link\b[^>]*>/gi) || [];
+
+  for (const tag of linkTags) {
+    const relMatch = tag.match(/\brel=(["'])([\s\S]*?)\1/i);
+    if (!relMatch || !/\b(?:icon|apple-touch-icon)\b/i.test(relMatch[2])) continue;
+
+    const hrefMatch = tag.match(/\bhref=(["'])([\s\S]*?)\1/i);
+    if (hrefMatch) {
+      return hrefMatch[2].trim();
+    }
+  }
+
+  return "";
+}
+
+function normalizeToolAssetPath(href, slug) {
+  const value = String(href || "").trim();
+  if (!value) return "";
+
+  if (/^(?:[a-z]+:)?\/\//i.test(value) || /^(?:data|blob):/i.test(value)) {
+    return value;
+  }
+
+  if (value.startsWith("/")) {
+    return `.${value}`;
+  }
+
+  const normalized = value.replace(/\\/g, "/").replace(/^\.\//, "");
+  return `./tool/${slug}/${normalized}`;
+}
+
+function escapeXml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function buildEmojiFaviconSvg(emoji) {
+  const safeEmoji = escapeXml(emoji);
+
+  return [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">',
+    `  <text x="50%" y="52" font-size="52" text-anchor="middle">${safeEmoji}</text>`,
+    "</svg>",
+    ""
+  ].join("\n");
+}
+
+function ensureGeneratedEmojiFavicon(slug, emoji) {
+  const value = String(emoji || "").trim();
+  if (!value) return "";
+
+  const toolDir = path.join(TOOLS_DIR, slug);
+  const faviconPath = path.join(toolDir, "favicon.svg");
+  const faviconContent = buildEmojiFaviconSvg(value);
+
+  ensureDir(toolDir);
+  writeText(faviconPath, faviconContent);
+
+  return `./tool/${slug}/favicon.svg`;
 }
 
 function getThumbnail(slug) {
@@ -81,6 +151,13 @@ function buildToolEntry(slug) {
   const title = extractTitle(html) || titleFromSlug(slug);
   const description = extractMeta(html, "tool:description") || "No description provided.";
   const tagsRaw = extractMeta(html, "tool:tags");
+  const emoji = extractMeta(html, "tool:emoji");
+  const explicitFavicon = extractMeta(html, "tool:favicon");
+  const generatedEmojiFavicon = explicitFavicon ? "" : ensureGeneratedEmojiFavicon(slug, emoji);
+  const favicon = generatedEmojiFavicon || normalizeToolAssetPath(
+    explicitFavicon || extractIconHref(html),
+    slug
+  );
   const tags = tagsRaw
     ? tagsRaw.split(",").map(tag => tag.trim()).filter(Boolean)
     : [];
@@ -90,6 +167,8 @@ function buildToolEntry(slug) {
     description,
     url: `./tool/${slug}/`,
     thumbnail: getThumbnail(slug),
+    favicon,
+    emoji,
     tags
   };
 }
