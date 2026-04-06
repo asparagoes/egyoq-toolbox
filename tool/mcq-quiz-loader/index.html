@@ -223,6 +223,24 @@
       scrollbar-width: thin;
       scrollbar-color: var(--border-bright) transparent;
     }
+    .review-filter-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      flex-shrink: 0;
+    }
+    .review-filter-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+    .review-filter-wrap select {
+      min-width: 156px;
+    }
 
     .file-label {
       position: relative;
@@ -1083,6 +1101,15 @@
         Retry Wrong
       </button>
       <button class="btn btn-danger" id="resetBtn">Reset</button>
+      <div class="review-filter-wrap hidden" id="reviewFilterWrap">
+        <span class="review-filter-label">Show</span>
+        <select id="reviewFilter">
+          <option value="all">All questions</option>
+          <option value="correct">Correct only</option>
+          <option value="incorrect">Incorrect only</option>
+          <option value="unanswered">Missed / unanswered</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -1482,6 +1509,8 @@ const UI = {
   toast: document.getElementById('toast'),
   fileNameDisplay: document.getElementById('fileNameDisplay'),
   filePlaceholder: document.getElementById('filePlaceholder'),
+  reviewFilter: document.getElementById('reviewFilter'),
+  reviewFilterWrap: document.getElementById('reviewFilterWrap'),
   helpModal: document.getElementById('helpModal'),
   guideModal: document.getElementById('guideModal'),
 };
@@ -1631,6 +1660,36 @@ function updateTop(){
   });
 }
 
+function getReviewState(q){
+  const chosen=answers.get(q.id);
+  if(chosen===undefined) return 'unanswered';
+  return chosen===q.answer ? 'correct' : 'incorrect';
+}
+
+function getVisibleQuestions(){
+  if(!submitted) return pool;
+  const filter=UI.reviewFilter.value;
+  if(filter==='all') return pool;
+  return pool.filter(q=>getReviewState(q)===filter);
+}
+
+function updateReviewFilterUI(){
+  const shouldShow=submitted && pool.length>0;
+  UI.reviewFilterWrap.classList.toggle('hidden', !shouldShow);
+  if(!shouldShow){
+    UI.reviewFilter.value='all';
+  }
+}
+
+function getFilteredEmptyMessage(){
+  const labelMap = {
+    correct: 'No correct questions in this attempt.',
+    incorrect: 'No incorrect questions in this attempt.',
+    unanswered: 'No missed or unanswered questions in this attempt.'
+  };
+  return labelMap[UI.reviewFilter.value] || 'No questions match this filter.';
+}
+
 function renderQuestion(q, index, total, single){
   const card=document.createElement('div');
   card.className='qcard';
@@ -1696,7 +1755,7 @@ function renderQuestion(q, index, total, single){
     prev.className='btn btn-ghost';
     prev.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg> Prev`;
     prev.disabled=(cursor===0);
-    prev.onclick=()=>{ cursor=clamp(cursor-1,0,pool.length-1); render(); };
+    prev.onclick=()=>{ cursor=clamp(cursor-1,0,total-1); render(); };
 
     const progressTxt=document.createElement('span');
     progressTxt.className='q-progress-text';
@@ -1706,8 +1765,8 @@ function renderQuestion(q, index, total, single){
     const next=document.createElement('button');
     next.className='btn btn-ghost';
     next.innerHTML = `Next <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>`;
-    next.disabled=(cursor===pool.length-1);
-    next.onclick=()=>{ cursor=clamp(cursor+1,0,pool.length-1); render(); };
+    next.disabled=(cursor===total-1);
+    next.onclick=()=>{ cursor=clamp(cursor+1,0,total-1); render(); };
 
     nav.appendChild(prev);
     nav.appendChild(progressTxt);
@@ -1742,17 +1801,39 @@ function render(){
     return;
   }
 
+  const visiblePool=getVisibleQuestions();
   const display=UI.displayMode.value;
+  if(!visiblePool.length){
+    UI.quiz.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8"></circle><path d="M9.5 9.5h.01M14.5 9.5h.01M9 15c.9-.9 1.9-1.4 3-1.4 1.1 0 2.1.5 3 1.4"></path>
+          </svg>
+        </div>
+        <h3>Nothing to show</h3>
+        <p>${getFilteredEmptyMessage()}</p>
+      </div>`;
+    updateTop();
+    updateReviewFilterUI();
+    if(submitted){
+      showResults();
+    }
+    return;
+  }
+
   if(display==='one'){
-    UI.quiz.appendChild(renderQuestion(pool[cursor],cursor,pool.length,true));
+    cursor=clamp(cursor,0,visiblePool.length-1);
+    UI.quiz.appendChild(renderQuestion(visiblePool[cursor],cursor,visiblePool.length,true));
   } else {
-    pool.forEach((q,i)=>UI.quiz.appendChild(renderQuestion(q,i,pool.length,false)));
+    visiblePool.forEach((q,i)=>UI.quiz.appendChild(renderQuestion(q,i,visiblePool.length,false)));
   }
 
   UI.submitBtn.disabled=false;
   updateTop();
+  updateReviewFilterUI();
 
-  if(submitted && UI.showExp.checked){
+  if(submitted){
     applyFeedback();
     showResults();
   }
@@ -1842,6 +1923,7 @@ function showResults(){
 function buildPool(fromWrong=false){
   submitted=false;
   UI.results.style.display='none';
+  UI.reviewFilter.value='all';
   poolName=fromWrong?'Wrong':'Full';
   let arr=fromWrong?bank.filter(q=>wrongIDs.has(q.id)):bank.slice();
   if(UI.shuffleQ.checked) shuffleArray(arr);
@@ -1892,8 +1974,10 @@ function onSubmit(){
     }
   }
   submitted=true;
+  UI.reviewFilter.value='all';
   applyFeedback();
   showResults();
+  updateReviewFilterUI();
 }
 
 function onReset(){
@@ -1904,6 +1988,7 @@ function onReset(){
   UI.fileNameDisplay.style.display='none';
   UI.filePlaceholder.style.display='inline';
   UI.file.value='';
+  UI.reviewFilter.value='all';
   UI.quiz.innerHTML='';
   UI.results.style.display='none';
   render();
@@ -1946,8 +2031,10 @@ UI.submitBtn.addEventListener('click',onSubmit);
 UI.retryBtn.addEventListener('click',()=>buildPool(true));
 UI.resetBtn.addEventListener('click',onReset);
 UI.displayMode.addEventListener('change',render);
+UI.reviewFilter.addEventListener('change',render);
 UI.shuffleQ.addEventListener('change',()=>{ if(bank.length) buildPool(poolName==='Wrong'); });
 UI.shuffleC.addEventListener('change',()=>{ if(pool.length){ choiceMaps=new Map(); render(); } });
+UI.showExp.addEventListener('change',()=>{ if(pool.length) render(); });
 UI.limit.addEventListener('change',()=>{ if(bank.length) buildPool(poolName==='Wrong'); });
 document.getElementById('btnHelp').addEventListener('click',()=>openModal('helpModal'));
 document.getElementById('btnGuide').addEventListener('click',()=>openModal('guideModal'));
