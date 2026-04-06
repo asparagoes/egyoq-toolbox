@@ -1,7 +1,1971 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MCQ Quiz Loader</title>
+  <meta
+    name="description"
+    content="Load XLSX or CSV question banks for any subject and turn them into a self-graded MCQ quiz with explanations."
+  />
+  <meta
+    name="tool:description"
+    content="Load XLSX or CSV question banks for any subject and turn them into a self-graded MCQ quiz with explanations."
+  />
+  <meta name="tool:tags" content="study,quiz,mcq,question bank,csv,xlsx,self-test,reviewer" />
+  <meta name="tool:emoji" content="📝" />
+  <meta name="theme-color" content="#080d14" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080d14;
+      --surface: #0d1625;
+      --surface2: #111d2e;
+      --surface3: #122138;
+      --border: #1a2a40;
+      --border-bright: #2a3f5c;
+      --teal: #2dd4bf;
+      --teal-dim: #1a8c7e;
+      --teal-glow: rgba(45,212,191,0.12);
+      --amber: #fbbf24;
+      --amber-soft: rgba(251,191,36,0.08);
+      --red: #f87171;
+      --green: #34d399;
+      --text: #e2e8f0;
+      --text-2: #8fa8c4;
+      --text-3: #4f6b87;
+      --shadow: 0 20px 48px rgba(0,0,0,0.34);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    img { display: block; max-width: 100%; }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    a {
+      color: var(--amber);
+      text-decoration: underline;
+      text-underline-offset: 0.14em;
+    }
+
+    a:hover { color: #ffd76f; }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(45,212,191,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45,212,191,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    .header {
+      margin-bottom: 20px;
+      animation: fadeSlideDown 0.5s ease both;
+    }
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .header-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--teal);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.2rem;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #e2e8f0 30%, var(--teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: var(--text-2);
+      margin-top: 8px;
+      font-size: 14px;
+      max-width: 58ch;
+    }
+    .header-tools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.01);
+      animation: fadeSlideUp 0.4s ease both;
+    }
+    .panel + .panel { animation-delay: 0.05s; }
+    .sticky-panel {
+      position: sticky;
+      top: 14px;
+      z-index: 20;
+      background: linear-gradient(180deg, rgba(13,22,37,0.95), rgba(13,22,37,0.9));
+      backdrop-filter: blur(14px);
+      border-color: rgba(42,63,92,0.92);
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .stat-pill.active {
+      border-color: var(--teal-dim);
+      color: var(--teal);
+    }
+    .stat-pill .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ── Progress Bar ── */
+    .progress-wrap {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--teal-dim), var(--teal));
+      border-radius: 999px;
+      transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 0 8px var(--teal-glow);
+    }
+
+    /* ── File Upload Zone ── */
+    .upload-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .action-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-bright) transparent;
+    }
+
+    .file-label {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px dashed var(--border-bright);
+      border-radius: var(--radius-sm);
+      padding: 9px 16px;
+      font-size: 13px;
+      color: var(--text-2);
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .file-label:hover {
+      border-color: var(--teal-dim);
+      background: var(--teal-glow);
+      color: var(--teal);
+    }
+    .file-label input[type=file] {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+      cursor: pointer;
+      width: 100%;
+    }
+    .file-label svg { flex-shrink: 0; }
+    #fileNameDisplay {
+      font-size: 12px;
+      color: var(--teal);
+      font-weight: 500;
+      display: none;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      border: 0;
+      border-radius: var(--radius-sm);
+      padding: 9px 18px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      transition: all 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--teal);
+      color: #040d12;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #5ee8d8;
+      box-shadow: 0 0 16px rgba(45,212,191,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-2);
+      border: 1px solid var(--border-bright);
+    }
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--surface2);
+      border-color: var(--text-3);
+      color: var(--text);
+    }
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid rgba(248,113,113,0.3);
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: rgba(248,113,113,0.08);
+    }
+    .btn-soft {
+      background: var(--amber-soft);
+      color: var(--amber);
+      border: 1px solid rgba(251,191,36,0.26);
+    }
+    .btn-soft:hover:not(:disabled) {
+      background: rgba(251,191,36,0.15);
+      border-color: rgba(251,191,36,0.4);
+    }
+    .btn.small {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    .btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+
+    /* ── Settings Grid ── */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .setting-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .setting-item:hover { border-color: var(--border-bright); }
+    .setting-label {
+      font-size: 12px;
+      color: var(--text-2);
+      font-weight: 500;
+    }
+
+    select {
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+    }
+    select:focus,
+    input[type=number]:focus,
+    textarea:focus,
+    button:focus-visible {
+      border-color: var(--teal-dim);
+      outline: 2px solid rgba(45,212,191,0.3);
+      outline-offset: 2px;
+    }
+
+    input[type=number] {
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      width: 70px;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    /* Toggle switch */
+    .toggle {
+      position: relative;
+      width: 34px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: var(--border);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .toggle-track::before {
+      content: '';
+      position: absolute;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--text-3);
+      top: 3px; left: 3px;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .toggle input:checked + .toggle-track { background: var(--teal-dim); }
+    .toggle input:checked + .toggle-track::before {
+      transform: translateX(16px);
+      background: var(--teal);
+    }
+
+    /* ── Schema Note ── */
+    .schema-note {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: rgba(251,191,36,0.06);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.5;
+    }
+    .schema-note b { color: var(--amber); }
+    .schema-note code {
+      background: rgba(251,191,36,0.1);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: var(--amber);
+      font-size: 11px;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      animation: fadeSlideUp 0.4s ease both;
+    }
+    .empty-icon {
+      width: 64px; height: 64px;
+      margin: 0 auto 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-3);
+    }
+    .empty-state h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: var(--text-2);
+      margin-bottom: 8px;
+    }
+    .empty-state p { font-size: 13px; color: var(--text-3); }
+
+    /* ── Question Card ── */
+    .qcard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+      animation: fadeSlideUp 0.3s ease both;
+    }
+    .qcard:hover { border-color: var(--border-bright); }
+
+    .q-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .q-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      background: var(--surface2);
+    }
+    .q-tag.num {
+      background: var(--teal-glow);
+      border-color: var(--teal-dim);
+      color: var(--teal);
+    }
+    .diff-easy { color: var(--green) !important; border-color: rgba(52,211,153,0.3) !important; }
+    .diff-med { color: var(--amber) !important; border-color: rgba(251,191,36,0.3) !important; }
+    .diff-hard { color: var(--red) !important; border-color: rgba(248,113,113,0.3) !important; }
+
+    .q-stem {
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--text);
+      margin-bottom: 16px;
+      font-weight: 400;
+    }
+
+    /* ── Choices ── */
+    .choices { display: flex; flex-direction: column; gap: 8px; }
+    .choice-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      position: relative;
+      user-select: none;
+    }
+    .choice-label:hover {
+      border-color: var(--border-bright);
+      background: #131e30;
+      transform: translateX(2px);
+    }
+    .choice-label input[type=radio] { display: none; }
+
+    .choice-letter {
+      width: 24px; height: 24px;
+      border-radius: 8px;
+      background: var(--border);
+      border: 1px solid var(--border-bright);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-3);
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .choice-text {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--text-2);
+      padding-top: 3px;
+      transition: color 0.15s;
+    }
+
+    .choice-label.selected {
+      border-color: rgba(45,212,191,0.5);
+      background: rgba(45,212,191,0.07);
+    }
+    .choice-label.selected .choice-letter {
+      background: var(--teal-dim);
+      border-color: var(--teal);
+      color: var(--bg);
+    }
+    .choice-label.selected .choice-text { color: var(--text); }
+
+    .choice-label.correct {
+      border-color: rgba(52,211,153,0.6) !important;
+      background: rgba(52,211,153,0.09) !important;
+    }
+    .choice-label.correct .choice-letter {
+      background: rgba(52,211,153,0.25) !important;
+      border-color: var(--green) !important;
+      color: var(--green) !important;
+    }
+    .choice-label.wrong {
+      border-color: rgba(248,113,113,0.6) !important;
+      background: rgba(248,113,113,0.09) !important;
+    }
+    .choice-label.wrong .choice-letter {
+      background: rgba(248,113,113,0.2) !important;
+      border-color: var(--red) !important;
+      color: var(--red) !important;
+    }
+
+    /* ── Explanation ── */
+    .explanation {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--border-bright);
+      background: rgba(255,255,255,0.02);
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.6;
+      animation: fadeSlideUp 0.25s ease both;
+    }
+    .explanation.correct-exp { border-left-color: var(--green); }
+    .explanation.wrong-exp { border-left-color: var(--red); }
+    .explanation .exp-label {
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    /* ── Navigation ── */
+    .q-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .q-progress-text {
+      font-size: 12px;
+      color: var(--text-3);
+      flex: 1;
+      text-align: center;
+    }
+
+    /* ── Results ── */
+    .results-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-top: 16px;
+      display: none;
+      animation: fadeSlideUp 0.35s ease both;
+    }
+    .score-ring-wrap {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .score-big {
+      font-family: 'DM Serif Display', serif;
+      font-size: 3.2rem;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--text), var(--teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .score-detail {
+      font-size: 13px;
+      color: var(--text-2);
+      margin-top: 4px;
+    }
+    .score-msg {
+      font-size: 14px;
+      color: var(--text-2);
+      padding: 12px 16px;
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .wrong-section h4 {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 10px;
+    }
+    .wrong-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .wrong-list li {
+      font-size: 13px;
+      color: var(--text-2);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border-left: 2px solid var(--red);
+      background: rgba(248,113,113,0.05);
+      padding-left: 12px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border-bright);
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-size: 13px;
+      color: var(--text);
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 100;
+      white-space: nowrap;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.error { border-color: rgba(248,113,113,0.5); color: var(--red); }
+    .toast.success { border-color: rgba(52,211,153,0.5); color: var(--green); }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+    .modal.show { display: flex; }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(4,9,16,0.72);
+      backdrop-filter: blur(4px);
+    }
+    .modal-panel {
+      position: relative;
+      width: min(860px, 100%);
+      max-height: min(88dvh, 920px);
+      overflow: auto;
+      background: linear-gradient(180deg, #0d1625 0%, #0b1320 100%);
+      border: 1px solid var(--border-bright);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+    .modal-header {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      background: rgba(13,22,37,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.45rem;
+      line-height: 1.1;
+      color: var(--text);
+    }
+    .modal-subtitle {
+      margin-top: 6px;
+      color: var(--text-2);
+      font-size: 13px;
+    }
+    .modal-close {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .modal-body {
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+    }
+    .modal-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .modal-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .modal-card p,
+    .modal-card li {
+      color: var(--text-2);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .modal-card ul,
+    .modal-card ol {
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .help-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--teal-glow);
+      border: 1px solid rgba(45,212,191,0.26);
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .help-chip.warn {
+      background: var(--amber-soft);
+      border-color: rgba(251,191,36,0.24);
+      color: var(--amber);
+    }
+    .help-mark {
+      color: var(--text);
+      font-weight: 700;
+    }
+    .modal-note {
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(251,191,36,0.24);
+      background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04));
+      color: var(--text-2);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .schema-note b,
+    .modal-note strong {
+      color: var(--amber);
+    }
+    .sample-block,
+    .prompt-shell {
+      background: #09111d;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .sample-head,
+    .prompt-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .sample-title,
+    .prompt-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .sample-block pre {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      color: var(--text-2);
+      font-size: 12px;
+      line-height: 1.6;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .prompt-block {
+      width: 100%;
+      min-height: 280px;
+      max-height: 360px;
+      resize: vertical;
+      border: 0;
+      background: #09111d;
+      color: var(--text-2);
+      padding: 14px;
+      line-height: 1.6;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .footer {
+      margin-top: 32px;
+      padding: 10px 0 22px;
+      text-align: center;
+      color: var(--text-3);
+      font-size: 13px;
+    }
+    .footer a {
+      color: #9db1c8;
+    }
+    .footer-home {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--amber) !important;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    @media (max-width: 700px) {
+      .wrap {
+        padding: 26px 14px 70px;
+      }
+      .header h1 {
+        font-size: 1.95rem;
+      }
+      .sticky-panel {
+        top: 10px;
+      }
+      .action-bar {
+        flex-wrap: nowrap;
+      }
+      .action-bar .btn,
+      .action-bar .file-label {
+        flex: 0 0 auto;
+      }
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+      .score-ring-wrap {
+        gap: 14px;
+      }
+      .score-big {
+        font-size: 2.6rem;
+      }
+      .modal {
+        padding: 10px;
+      }
+      .modal-header,
+      .modal-body {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .prompt-block {
+        min-height: 240px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        font-size: 14px;
+      }
+      .header-top,
+      .header-tools {
+        width: 100%;
+      }
+      .header-tools {
+        justify-content: stretch;
+      }
+      .header-tools .btn {
+        flex: 1 1 calc(50% - 4px);
+      }
+      .panel,
+      .qcard,
+      .results-panel {
+        padding: 16px;
+      }
+      .choice-label {
+        padding: 11px 12px;
+      }
+      .toast {
+        width: calc(100% - 20px);
+        white-space: normal;
+        text-align: center;
+      }
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden { display: none !important; }
+  </style>
 </head>
-<body></body>
+<body>
+
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-eyebrow">Question Bank Loader</div>
+        <h1>MCQ Quiz Loader</h1>
+        <p>Upload an XLSX or CSV bank for <span class="help-mark">any subject</span> and turn it into a self-graded multiple-choice quiz with explanations, retry mode, and flexible review settings.</p>
+      </div>
+      <div class="header-tools">
+        <button class="btn btn-ghost small" id="btnHelp" type="button">Help</button>
+        <button class="btn btn-soft small" id="btnGuide" type="button">Generate Bank</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Control Panel -->
+  <div class="panel">
+    <!-- Status pills -->
+    <div class="status-bar">
+      <div class="stat-pill" id="bankTag"><div class="dot"></div>No bank loaded</div>
+      <div class="stat-pill" id="modeTag">All at once</div>
+      <div class="stat-pill" id="poolTag">Full pool</div>
+      <div class="stat-pill" id="countTag">0 questions</div>
+      <div class="stat-pill" id="ansTag">0 answered</div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-wrap">
+      <div class="progress-fill" id="pbar"></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-grid">
+      <div class="setting-item">
+        <span class="setting-label">Display mode</span>
+        <select id="displayMode">
+          <option value="all" selected>All at once</option>
+          <option value="one">One-by-one</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">Question limit</span>
+        <input id="limit" type="number" min="1" max="500" value="50" />
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">Shuffle questions</span>
+        <label class="toggle"><input id="shuffleQ" type="checkbox" checked /><div class="toggle-track"></div></label>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">Shuffle choices</span>
+        <label class="toggle"><input id="shuffleC" type="checkbox" checked /><div class="toggle-track"></div></label>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">Show explanations</span>
+        <label class="toggle"><input id="showExp" type="checkbox" checked /><div class="toggle-track"></div></label>
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">Require all answered</span>
+        <label class="toggle"><input id="requireAll" type="checkbox" /><div class="toggle-track"></div></label>
+      </div>
+    </div>
+
+    <!-- Schema note -->
+    <div class="schema-note" style="margin-top:12px;">
+      <b>Required columns:</b> <code>ID</code> <code>Topic</code> <code>Difficulty</code> <code>Stem</code> <code>A</code> <code>B</code> <code>C</code> <code>D</code> <code>E</code> <code>Answer</code> <code>Explanation</code> — If XLSX fails offline, save as CSV instead.
+    </div>
+  </div>
+
+  <div class="panel sticky-panel">
+    <div class="action-bar">
+      <label class="file-label">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span id="fileNameDisplay">No file chosen</span>
+        <span id="filePlaceholder">Choose .xlsx or .csv</span>
+        <input id="file" type="file" accept=".xlsx,.csv" />
+      </label>
+      <button class="btn btn-primary" id="loadBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        Load Bank
+      </button>
+      <button class="btn btn-ghost" id="submitBtn" disabled>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Submit
+      </button>
+      <button class="btn btn-ghost" id="retryBtn" disabled>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Retry Wrong
+      </button>
+      <button class="btn btn-danger" id="resetBtn">Reset</button>
+    </div>
+  </div>
+
+  <!-- Quiz Area -->
+  <div id="quiz"></div>
+
+  <!-- Results -->
+  <div class="results-panel" id="results">
+    <div class="score-ring-wrap">
+      <div>
+        <div class="score-big" id="scoreBig">—</div>
+        <div class="score-detail" id="scoreDetail"></div>
+      </div>
+    </div>
+    <div class="score-msg" id="scoreMsg"></div>
+    <div id="wrongBlock" class="hidden">
+      <div class="divider"></div>
+      <div class="wrong-section">
+        <h4>Missed / Unanswered</h4>
+        <ol class="wrong-list" id="wrongList"></ol>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div>Made with 🧡 by <a href="https://www.instagram.com/egyoq" target="_blank" rel="noopener noreferrer">egyoq</a>.</div>
+    <a class="footer-home" href="../../">_( :3 」∠ )_</a>
+  </footer>
+
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="helpModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close-modal="helpModal"></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="helpTitle">How to Use the Quiz Loader</div>
+        <div class="modal-subtitle">A quick guide for loading, taking, checking, and retrying your question bank.</div>
+      </div>
+      <button class="btn btn-ghost modal-close" id="btnCloseHelp" type="button" aria-label="Close help">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 3.5l9 9m0-9l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-note"><strong>Important:</strong> this tool only becomes reliable when your sheet follows the expected columns exactly. If a bank does not load properly, check the headers first before assuming the quiz logic is broken.</div>
+      <div class="modal-card">
+        <h3><span class="help-chip">Step 1</span> Load a valid bank file</h3>
+        <p>Use <span class="help-mark">Choose bank</span> to pick an <span class="help-mark">XLSX</span> or <span class="help-mark">CSV</span> file, then press <span class="help-mark">Load Bank</span>. The loader reads the first sheet and expects one row per question.</p>
+      </div>
+      <div class="modal-card">
+        <h3><span class="help-chip warn">Required</span> Match the expected columns</h3>
+        <p>The safest format is <span class="help-mark">ID, Topic, Difficulty, Stem, A, B, C, D, E, Answer, Explanation</span>. At least four choices are needed per question, while <span class="help-mark">Answer</span> should point to <span class="help-mark">A/B/C/D/E</span>.</p>
+      </div>
+      <div class="modal-card">
+        <h3><span class="help-chip">Default</span> Review all questions at once</h3>
+        <p>The loader now opens in <span class="help-mark">All at once</span> mode by default so you can scan a full set quickly. If you want a tighter drill session, switch to <span class="help-mark">One-by-one</span>.</p>
+      </div>
+      <div class="modal-card">
+        <h3><span class="help-chip">Submit</span> Get auto-checking and explanations</h3>
+        <p>Press <span class="help-mark">Submit</span> when ready. Correct answers are highlighted in green, wrong ones in red, and the explanation block appears if <span class="help-mark">Show explanations</span> is enabled.</p>
+      </div>
+      <div class="modal-card">
+        <h3><span class="help-chip">Retry</span> Focus on weak spots</h3>
+        <p>After submitting, use <span class="help-mark">Retry Wrong</span> to rebuild the pool using only the items you missed or skipped. This is useful for fast, focused review.</p>
+      </div>
+      <div class="modal-card">
+        <h3><span class="help-chip warn">Fallback</span> If XLSX fails, save as CSV</h3>
+        <p>Some browsers, devices, or offline situations can make spreadsheet parsing flaky. If that happens, export the sheet as <span class="help-mark">CSV</span> and load it again.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="guideModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close-modal="guideModal"></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="guideTitle">How to Build a Question Bank</div>
+        <div class="modal-subtitle">Use a spreadsheet-friendly format, then let the loader turn it into a self-test.</div>
+      </div>
+      <button class="btn btn-ghost modal-close" id="btnCloseGuide" type="button" aria-label="Close bank guide">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 3.5l9 9m0-9l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-note"><strong>Disclaimer:</strong> the prompts below assume the AI tool you are using can create files directly. If it cannot, ask it to output the bank as a <strong>table</strong> so you can paste it into Excel, Google Sheets, or another spreadsheet app before saving as XLSX or CSV.</div>
+      <div class="modal-card">
+        <h3><span class="help-chip">Format</span> Build one row per question</h3>
+        <p>Keep the sheet simple: one question per row, one answer per column, and one explanation per row. Avoid merged cells, decorative headers, and multi-row question layouts.</p>
+      </div>
+      <div class="sample-block">
+        <div class="sample-head"><div class="sample-title">Sample CSV Format</div></div>
+        <pre><code>ID,Topic,Difficulty,Stem,A,B,C,D,E,Answer,Explanation
+Q1,General Anatomy,Easy,Which structure encloses the nucleus?,Cell membrane,Cytoplasm,Nuclear envelope,Golgi apparatus,,C,The nuclear envelope directly surrounds the nucleus, while the cell membrane surrounds the whole cell.
+Q2,Biochemistry,Medium,Which molecule is the main immediate energy currency of the cell?,DNA,ATP,RNA,Glycogen,,B,ATP is the immediate usable energy currency, while glycogen is a storage form.</code></pre>
+      </div>
+      <div class="modal-card">
+        <h3><span class="help-chip warn">AI Tip</span> Give the model source files and strict formatting rules</h3>
+        <p>You will usually get better banks if you upload your source material, tell the AI to use <span class="help-mark">only those files</span>, and ask for the output in the exact spreadsheet columns needed by this loader.</p>
+      </div>
+      <div class="prompt-shell">
+        <div class="prompt-head">
+          <div class="prompt-title">Reusable Prompt Template 1</div>
+          <button class="btn btn-soft small copy-btn" type="button" data-copy-target="promptOne">Copy</button>
+        </div>
+        <textarea class="prompt-block" id="promptOne" readonly>## Reasoning-Focused / Depth-Over-Breadth Question Bank Generator
+
+ROLE:
+
+You are an exam-level assessment designer and reasoning-focused question writer.
+
+Your job is to generate high-quality, exam-style multiple-choice questions strictly from the uploaded source material.
+
+The learner is a beginner, so questions must be clear and fair, but the assessment standard should still be rigorous, high-yield, and reasoning-based.
+
+You must prioritize deep understanding over superficial recall.
+
+INPUTS:
+
+I will upload files. Use ONLY the uploaded files as sources.
+
+SOURCE PRIORITY (resolve conflicts):
+
+PRIMARY > REFERENCE > SUPPLEMENT
+
+PRIMARY: {PRIMARY_FILE_NAMES}
+REFERENCE: {REFERENCE_FILE_NAMES}
+SUPPLEMENT: {SUPPLEMENT_FILE_NAMES}
+
+NON-NEGOTIABLE RULES:
+
+- STRICT SOURCE USE: Do not use external knowledge.
+- If something is not stated or clearly supported by the sources, say: "Not found in sources."
+- If sources conflict, follow source priority and briefly note the conflict.
+- Every question must be answerable strictly from the uploaded files.
+- Do not invent facts, examples, explanations, or applications not supported by the sources.
+- Keep wording clear, precise, and exam-appropriate.
+- No trick wording, no double negatives, and no ambiguous stems.
+
+TASK:
+
+Create a reasoning-focused multiple-choice question bank based only on the uploaded sources.
+
+QUESTION DESIGN PRINCIPLES (must follow):
+
+Depth over breadth: Avoid simple recall. Prioritize reasoning-based questions using only material from the uploaded sources.
+
+1) Structural / Relational Reasoning
+- Test how concepts, components, steps, variables, or categories relate to one another
+- Include order, hierarchy, dependencies, contrasts, and cause-effect links if present in the sources
+- Ask about relative position, sequence, structure-function relationship, or conceptual organization if supported by the source
+
+2) Situational / Application Questions (IMPORTANT)
+- Use source-supported scenarios, examples, workflows, procedures, interpretations, or problem settings
+- Ask what outcome, result, conclusion, or change would be expected based on the source material
+- Use stems such as:
+  - "Which result is most likely..."
+  - "What would happen if..."
+  - "Which choice best explains..."
+  - "Which step most likely caused..."
+- Only use these if answerable strictly from the sources
+
+3) Process Logic
+- Ask about what happens next, which step leads to a result, what omission changes the outcome, or what sequence best explains a process
+- Prioritize causal reasoning and sequence consequences over definition recall
+
+4) Source-Supported Practical Interpretation
+- If the sources include diagrams, tables, procedures, calculations, classifications, experiments, workflows, or examples, create interpretation questions from them
+- Questions may involve identifying patterns, comparing alternatives, or selecting the best explanation based on source content
+- Do not introduce real-world applications unless directly supported by the uploaded files
+
+5) Quality Distractors
+- Wrong options must be plausible, relevant, and closely related to the tested concept
+- Distractors should reflect common confusions, partial truths, reversed logic, category mix-ups, or misapplied steps derived from the source material
+- Avoid obviously wrong distractors
+
+6) Clarity
+- No ambiguity
+- No trick wording
+- No double negatives
+- One clearly best answer supported by the sources
+
+QUESTION BANK OUTPUTS (give BOTH):
+
+1) XLSX-ready table output (as CSV in a code block) with columns EXACTLY:
+
+ID, Topic, Difficulty, Stem, A, B, C, D, E, Answer, Explanation
+
+Rules:
+- Answer must be A/B/C/D/E
+- Explanation must justify why the correct option is correct
+- Explanation must also briefly explain why at least one strong distractor is wrong
+- Every question must be answerable strictly from the uploaded sources
+
+2) A brief coverage map that shows #questions per major topic
+
+BANK SIZE:
+Create {N_QUESTIONS} questions (minimum: 50 unless sources are extremely basic)
+
+DIFFICULTY MIX:
+- 30% Medium
+- 70% Hard
+
+Difficulty definitions:
+- Medium = requires understanding and at least one reasoning step
+- Hard = requires integration, sequence logic, subtle distinction, interpretation, or multi-step reasoning supported by the sources
+
+STRICT QUALITY REQUIREMENTS:
+- No repeated stems with minor edits
+- No pure trivia unless unavoidable for foundational coverage
+- Questions must emphasize reasoning, interpretation, comparison, process logic, or source-based application
+- Maintain balanced coverage across major topics in the sources
+
+QUALITY CONTROL CHECKLIST (do silently before final output):
+- Every question is answerable strictly from the uploaded sources
+- Every question tests reasoning rather than bare recall
+- Distractors are plausible and not obviously wrong
+- No duplicated or near-duplicated questions
+- Coverage is balanced across source topics
+- Difficulty distribution matches the requested mix
+
+FINAL OUTPUT ORDER:
+1) Question bank CSV (XLSX-ready)
+2) Coverage map
+
+Now begin.</textarea>
+      </div>
+      <div class="prompt-shell">
+        <div class="prompt-head">
+          <div class="prompt-title">Reusable Prompt Template 2</div>
+          <button class="btn btn-soft small copy-btn" type="button" data-copy-target="promptTwo">Copy</button>
+        </div>
+        <textarea class="prompt-block" id="promptTwo" readonly>## Objective / Terminology-Based Question Bank Generator
+
+ROLE:
+
+You are an objective-question exam writer and terminology-precision specialist.
+
+Your job is to generate clear, accurate, non-situational multiple-choice questions strictly from the uploaded source material.
+
+The learner is a beginner, so the questions should be straightforward, fair, and easy to interpret, while still being exam-accurate and well-constructed.
+
+You must prioritize clarity, precision, and source fidelity over complexity.
+
+INPUTS:
+
+I will upload files. Use ONLY the uploaded files as sources.
+
+SOURCE PRIORITY (resolve conflicts):
+
+PRIMARY > REFERENCE > SUPPLEMENT
+
+PRIMARY: {PRIMARY_FILE_NAMES}
+REFERENCE: {REFERENCE_FILE_NAMES}
+SUPPLEMENT: {SUPPLEMENT_FILE_NAMES}
+
+NON-NEGOTIABLE RULES:
+
+- STRICT SOURCE USE: Do not use external knowledge.
+- If something is not stated in the sources, say: "Not found in sources."
+- If sources conflict, follow source priority and briefly note the conflict.
+- Use terminology consistently and as closely as possible to the wording in the sources.
+- Every question must be directly answerable from the uploaded files.
+- No ambiguity, no trick wording, and no double negatives.
+
+TASK:
+
+Create an objective, non-situational, terminology-based multiple-choice question bank using only the uploaded sources.
+
+QUESTION DESIGN PRINCIPLES (must follow):
+
+Generate ONLY objective, non-situational, non-hypothetical multiple-choice questions based strictly on the uploaded sources.
+
+Question types allowed:
+
+1) Terminology and Definitions
+- Ask for the correct term, definition, meaning, label, or naming distinction
+- Focus on precise wording used in the sources
+
+2) Identification
+- Ask which item matches a description, feature set, label, property, or stated function if explicitly given in the source
+- May include identifying categories, parts, elements, or stated roles
+
+3) Classification and Grouping
+- Ask which category, class, type, group, or division an item belongs to
+- Ask which option belongs or does not belong only if directly supported by the source
+
+4) Direct Comparison
+- Ask about explicit differences or similarities between two or more concepts only when clearly stated in the source
+- Keep comparisons factual and direct, not interpretive
+
+5) True / Best Statement Type
+- Use stems such as:
+  - "Which of the following is correct?"
+  - "Which statement best defines...?"
+  - "Which feature is associated with...?"
+  - "Which pairing is correct?"
+- Ensure one clearly correct answer
+
+DO NOT include:
+- Scenarios
+- Hypothetical changes
+- "What would happen if" questions
+- Multi-step reasoning
+- Workflow-error questions
+- Application-heavy questions
+- Inference-heavy questions beyond direct source statements
+
+QUALITY STANDARDS:
+- Each question should test one clear fact, distinction, term, or classification
+- Keep stems concise and direct
+- Distractors must be plausible and drawn from related source concepts
+- Wrong options should reflect realistic confusion, not random nonsense
+
+QUESTION BANK OUTPUTS (give BOTH):
+
+1) XLSX-ready table output (as CSV in a code block) with columns EXACTLY:
+
+ID, Topic, Difficulty, Stem, A, B, C, D, E, Answer, Explanation
+
+Rules:
+- Answer must be A/B/C/D/E
+- Difficulty must be Easy or Medium only
+- Explanation must briefly justify the correct answer
+- Explanation may briefly note why one distractor is incorrect if useful
+- Every question must be answerable strictly from the uploaded sources
+
+2) A brief coverage map that shows #questions per major topic
+
+BANK SIZE:
+Create {N_QUESTIONS} questions (minimum: 30 unless the source is extremely limited)
+
+DIFFICULTY MIX:
+- 60% Easy
+- 40% Medium
+
+Difficulty definitions:
+- Easy = direct recognition or recall from the source
+- Medium = requires distinguishing between closely related terms or categories explicitly discussed in the source
+
+STRICT QUALITY REQUIREMENTS:
+- No repeated or lightly reworded stems
+- No situational reasoning
+- No hypothetical logic
+- Maintain balanced topic coverage
+
+QUALITY CONTROL CHECKLIST (do silently before final output):
+- Every question is directly answerable from the uploaded sources
+- Every question is objective and non-situational
+- Distractors are plausible and relevant
+- No duplicated questions
+- Coverage is balanced across major topics
+- Difficulty mix matches the requested distribution
+
+FINAL OUTPUT ORDER:
+1) Question bank CSV (XLSX-ready)
+2) Coverage map
+
+Now begin.</textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LETTERS = ['A','B','C','D','E'];
+
+const UI = {
+  file: document.getElementById('file'),
+  loadBtn: document.getElementById('loadBtn'),
+  submitBtn: document.getElementById('submitBtn'),
+  retryBtn: document.getElementById('retryBtn'),
+  resetBtn: document.getElementById('resetBtn'),
+  displayMode: document.getElementById('displayMode'),
+  shuffleQ: document.getElementById('shuffleQ'),
+  shuffleC: document.getElementById('shuffleC'),
+  showExp: document.getElementById('showExp'),
+  requireAll: document.getElementById('requireAll'),
+  limit: document.getElementById('limit'),
+  bankTag: document.getElementById('bankTag'),
+  modeTag: document.getElementById('modeTag'),
+  poolTag: document.getElementById('poolTag'),
+  countTag: document.getElementById('countTag'),
+  ansTag: document.getElementById('ansTag'),
+  pbar: document.getElementById('pbar'),
+  quiz: document.getElementById('quiz'),
+  results: document.getElementById('results'),
+  scoreBig: document.getElementById('scoreBig'),
+  scoreDetail: document.getElementById('scoreDetail'),
+  scoreMsg: document.getElementById('scoreMsg'),
+  wrongBlock: document.getElementById('wrongBlock'),
+  wrongList: document.getElementById('wrongList'),
+  toast: document.getElementById('toast'),
+  fileNameDisplay: document.getElementById('fileNameDisplay'),
+  filePlaceholder: document.getElementById('filePlaceholder'),
+  helpModal: document.getElementById('helpModal'),
+  guideModal: document.getElementById('guideModal'),
+};
+
+let bank = [], pool = [], poolName = 'Full', cursor = 0;
+let submitted = false, wrongIDs = new Set();
+let answers = new Map(), choiceMaps = new Map();
+let toastTimer = null;
+
+// ── Toast ──
+function showToast(msg, type='') {
+  clearTimeout(toastTimer);
+  UI.toast.textContent = msg;
+  UI.toast.className = 'toast show' + (type ? ' ' + type : '');
+  toastTimer = setTimeout(() => { UI.toast.className = 'toast'; }, 3000);
+}
+
+// ── File label ──
+UI.file.addEventListener('change', () => {
+  if(UI.file.files[0]) {
+    UI.fileNameDisplay.textContent = UI.file.files[0].name;
+    UI.fileNameDisplay.style.display = 'inline';
+    UI.filePlaceholder.style.display = 'none';
+  } else {
+    UI.fileNameDisplay.style.display = 'none';
+    UI.filePlaceholder.style.display = 'inline';
+  }
+});
+
+function shuffleArray(arr) {
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+function clamp(n,lo,hi){ return Math.max(lo,Math.min(hi,n)); }
+
+function parseAnswer(val){
+  if(val===undefined||val===null) return null;
+  const s=String(val).trim();
+  if(!s) return null;
+  const letters={A:0,B:1,C:2,D:3,E:4};
+  const up=s.toUpperCase();
+  if(Object.prototype.hasOwnProperty.call(letters,up)) return letters[up];
+  const num=parseInt(s,10);
+  if(!Number.isNaN(num)&&num>=0&&num<=4) return num;
+  return null;
+}
+
+function normalizeRow(r,idx){
+  const id=(r.ID??r.Id??r.id??`q${idx+1}`).toString().trim();
+  const topic=(r.Topic??r.topic??'General').toString().trim()||'General';
+  const diff=(r.Difficulty??r.diff??'Medium').toString().trim()||'Medium';
+  const stem=(r.Stem??r.stem??'').toString().trim();
+  const A=(r.A??'').toString();
+  const B=(r.B??'').toString();
+  const C=(r.C??'').toString();
+  const D=(r.D??'').toString();
+  const E=(r.E??'').toString();
+  const choices=[A,B,C,D,E];
+  const ans=parseAnswer(r.Answer??r.answer??r.Correct??r.correct);
+  const explanation=(r.Explanation??r.explanation??'').toString();
+  if(!stem||choices.filter(c=>String(c).trim()!=='').length<4||ans===null) return null;
+  return {id,topic,diff,stem,choices,answer:ans,explanation};
+}
+
+function simpleCSVParse(text){
+  const rows=[];
+  let cur=[],field='',inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inQuotes){
+      if(ch==='"'&&text[i+1]==='"'){field+='"';i++;}
+      else if(ch==='"') inQuotes=false;
+      else field+=ch;
+    } else {
+      if(ch==='"') inQuotes=true;
+      else if(ch===','){ cur.push(field); field=''; }
+      else if(ch==='\n'){ cur.push(field); rows.push(cur); cur=[]; field=''; }
+      else if(ch==='\r'){}
+      else field+=ch;
+    }
+  }
+  if(field.length||cur.length){ cur.push(field); rows.push(cur); }
+  if(!rows.length) return [];
+  const header=rows[0].map(h=>h.trim());
+  return rows.slice(1).filter(r=>r.some(x=>String(x).trim()!==''))
+    .map(r=>{ const obj={}; header.forEach((h,i)=>obj[h]=(r[i]??'')); return obj; });
+}
+
+function ensureSheetJS(){
+  return new Promise((resolve,reject)=>{
+    if(window.XLSX) return resolve();
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload=()=>resolve();
+    s.onerror=()=>reject(new Error('Failed to load XLSX parser.'));
+    document.head.appendChild(s);
+  });
+}
+
+async function loadBankFromFile(file){
+  const name=file.name.toLowerCase();
+  if(name.endsWith('.csv')){
+    const text=await file.text();
+    const raw=simpleCSVParse(text);
+    return raw.map((r,i)=>normalizeRow(r,i)).filter(Boolean);
+  }
+  if(name.endsWith('.xlsx')){
+    await ensureSheetJS();
+    const data=await file.arrayBuffer();
+    const wb=window.XLSX.read(data,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const raw=window.XLSX.utils.sheet_to_json(ws,{defval:''});
+    return raw.map((r,i)=>normalizeRow(r,i)).filter(Boolean);
+  }
+  throw new Error('Unsupported file type. Use .xlsx or .csv');
+}
+
+function buildChoiceMap(q){
+  const idxs=q.choices.map((_,i)=>i);
+  if(UI.shuffleC.checked) shuffleArray(idxs);
+  return idxs;
+}
+
+function diffClass(diff){
+  const d=diff.toLowerCase();
+  if(d==='easy'||d==='low') return 'diff-easy';
+  if(d==='hard'||d==='high') return 'diff-hard';
+  return 'diff-med';
+}
+
+function updateTop(){
+  const display=UI.displayMode.value;
+  UI.modeTag.textContent = display==='one' ? 'One-by-one' : 'All at once';
+  UI.poolTag.textContent = `${poolName} pool`;
+  UI.countTag.textContent = `${pool.length} question${pool.length!==1?'s':''}`;
+  const answered=[...answers.keys()].filter(k=>pool.some(q=>q.id===k)).length;
+  UI.ansTag.textContent = `${answered} answered`;
+  const pct=pool.length ? Math.round(100*answered/pool.length) : 0;
+  UI.pbar.style.width=pct+'%';
+
+  // active state on pills when bank loaded
+  [UI.bankTag,UI.modeTag,UI.poolTag,UI.countTag,UI.ansTag].forEach(el=>{
+    el.classList.toggle('active', pool.length>0);
+  });
+}
+
+function renderQuestion(q, index, total, single){
+  const card=document.createElement('div');
+  card.className='qcard';
+  card.id=`card_${q.id}`;
+
+  // Meta
+  const meta=document.createElement('div');
+  meta.className='q-meta';
+  meta.innerHTML = `<span class="q-tag num">Q${index+1} / ${total}</span><span class="q-tag">${q.topic}</span><span class="q-tag ${diffClass(q.diff)}">${q.diff}</span>`;
+
+  // Stem
+  const stem=document.createElement('div');
+  stem.className='q-stem';
+  stem.textContent=q.stem;
+
+  // Choices
+  const choicesDiv=document.createElement('div');
+  choicesDiv.className='choices';
+  if(!choiceMaps.has(q.id)) choiceMaps.set(q.id,buildChoiceMap(q));
+  const map=choiceMaps.get(q.id);
+
+  map.forEach((origIdx,dispIdx)=>{
+    const txt=q.choices[origIdx];
+    const label=document.createElement('label');
+    label.className='choice-label';
+    label.htmlFor=`${q.id}_${dispIdx}`;
+    const checked=answers.get(q.id)===origIdx;
+    if(checked) label.classList.add('selected');
+    label.innerHTML = `
+      <input type="radio" name="${q.id}" id="${q.id}_${dispIdx}" value="${dispIdx}" ${checked?'checked':''}>
+      <div class="choice-letter">${LETTERS[dispIdx]}</div>
+      <div class="choice-text">${escHtml(String(txt))}</div>`;
+    choicesDiv.appendChild(label);
+  });
+
+  choicesDiv.addEventListener('change',()=>{
+    const sel=card.querySelector(`input[name="${q.id}"]:checked`);
+    if(!sel) return;
+    const dispIdx=parseInt(sel.value,10);
+    const origIdx=map[dispIdx];
+    answers.set(q.id,origIdx);
+    // Update selected styles
+    card.querySelectorAll('.choice-label').forEach(l=>l.classList.remove('selected'));
+    sel.closest('.choice-label').classList.add('selected');
+    updateTop();
+  });
+
+  // Explanation
+  const explain=document.createElement('div');
+  explain.className='explanation';
+  explain.id=`exp_${q.id}`;
+
+  card.appendChild(meta);
+  card.appendChild(stem);
+  card.appendChild(choicesDiv);
+
+  // Navigation (one-by-one mode)
+  if(single){
+    const nav=document.createElement('div');
+    nav.className='q-nav';
+
+    const prev=document.createElement('button');
+    prev.className='btn btn-ghost';
+    prev.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg> Prev`;
+    prev.disabled=(cursor===0);
+    prev.onclick=()=>{ cursor=clamp(cursor-1,0,pool.length-1); render(); };
+
+    const progressTxt=document.createElement('span');
+    progressTxt.className='q-progress-text';
+    const answered=[...answers.keys()].filter(k=>pool.some(q=>q.id===k)).length;
+    progressTxt.textContent=`${answered} of ${total} answered`;
+
+    const next=document.createElement('button');
+    next.className='btn btn-ghost';
+    next.innerHTML = `Next <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>`;
+    next.disabled=(cursor===pool.length-1);
+    next.onclick=()=>{ cursor=clamp(cursor+1,0,pool.length-1); render(); };
+
+    nav.appendChild(prev);
+    nav.appendChild(progressTxt);
+    nav.appendChild(next);
+    card.appendChild(nav);
+  }
+
+  card.appendChild(explain);
+  return card;
+}
+
+function escHtml(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function render(){
+  UI.quiz.innerHTML='';
+  UI.results.style.display='none';
+
+  if(!pool.length){
+    UI.quiz.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <h3>No question bank loaded</h3>
+        <p>Choose an XLSX or CSV file above and click <strong>Load Bank</strong> to begin.</p>
+      </div>`;
+    updateTop();
+    return;
+  }
+
+  const display=UI.displayMode.value;
+  if(display==='one'){
+    UI.quiz.appendChild(renderQuestion(pool[cursor],cursor,pool.length,true));
+  } else {
+    pool.forEach((q,i)=>UI.quiz.appendChild(renderQuestion(q,i,pool.length,false)));
+  }
+
+  UI.submitBtn.disabled=false;
+  updateTop();
+
+  if(submitted && UI.showExp.checked){
+    applyFeedback();
+    showResults();
+  }
+}
+
+function applyFeedback(){
+  wrongIDs=new Set();
+  pool.forEach(q=>{
+    const card=document.getElementById(`card_${q.id}`);
+    if(!card) return;
+    const labels=card.querySelectorAll('.choice-label');
+    labels.forEach(l=>l.classList.remove('correct','wrong'));
+
+    const map=choiceMaps.get(q.id);
+    const chosen=answers.get(q.id);
+    const correct=q.answer;
+    const exp=document.getElementById(`exp_${q.id}`);
+
+    if(chosen===undefined){
+      wrongIDs.add(q.id);
+      if(UI.showExp.checked){
+        exp.style.display='block';
+        exp.className='explanation wrong-exp';
+        exp.innerHTML=`<div class="exp-label" style="color:var(--amber)">Not answered</div>${escHtml(q.explanation)||'No explanation provided.'}`;
+      }
+      return;
+    }
+
+    const chosenDisp=map.indexOf(chosen);
+    const correctDisp=map.indexOf(correct);
+    const chosenLabel=card.querySelector(`label[for="${q.id}_${chosenDisp}"]`);
+    const correctLabel=card.querySelector(`label[for="${q.id}_${correctDisp}"]`);
+
+    if(chosen===correct){
+      if(chosenLabel) chosenLabel.classList.add('correct');
+      if(UI.showExp.checked){
+        exp.style.display='block';
+        exp.className='explanation correct-exp';
+        exp.innerHTML=`<div class="exp-label" style="color:var(--green)">Correct ✓</div>${escHtml(q.explanation)||'No explanation provided.'}`;
+      }
+    } else {
+      wrongIDs.add(q.id);
+      if(chosenLabel) chosenLabel.classList.add('wrong');
+      if(correctLabel) correctLabel.classList.add('correct');
+      if(UI.showExp.checked){
+        exp.style.display='block';
+        exp.className='explanation wrong-exp';
+        exp.innerHTML=`<div class="exp-label" style="color:var(--red)">Incorrect ✗</div><div style="margin-bottom:6px;font-size:12px;color:var(--text-3)">Correct answer: <b style="color:var(--text)">${escHtml(q.choices[correct])}</b></div>${escHtml(q.explanation)||'No explanation provided.'}`;
+      }
+    }
+  });
+}
+
+function showResults(){
+  const total=pool.length;
+  let correct=0;
+  pool.forEach(q=>{ if(answers.get(q.id)===q.answer) correct++; });
+  const pct=total ? Math.round(100*correct/total) : 0;
+
+  UI.scoreBig.textContent=`${pct}%`;
+  UI.scoreDetail.textContent=`${correct} correct out of ${total}`;
+  UI.scoreMsg.textContent=pct>=90
+    ? 'Excellent work. Consider increasing the limit or drilling wrong-only.'
+    : pct>=75
+    ? 'Good progress. Hit Retry Wrong to master weak spots.'
+    : 'Keep going. Review explanations and retry the ones you missed.';
+
+  UI.wrongList.innerHTML='';
+  if(wrongIDs.size){
+    UI.wrongBlock.classList.remove('hidden');
+    [...wrongIDs].forEach(id=>{
+      const q=pool.find(x=>x.id===id);
+      const li=document.createElement('li');
+      li.textContent=q?q.stem:id;
+      UI.wrongList.appendChild(li);
+    });
+    UI.retryBtn.disabled=false;
+  } else {
+    UI.wrongBlock.classList.add('hidden');
+    UI.retryBtn.disabled=true;
+  }
+
+  UI.results.style.display='block';
+  UI.results.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function buildPool(fromWrong=false){
+  submitted=false;
+  UI.results.style.display='none';
+  poolName=fromWrong?'Wrong':'Full';
+  let arr=fromWrong?bank.filter(q=>wrongIDs.has(q.id)):bank.slice();
+  if(UI.shuffleQ.checked) shuffleArray(arr);
+  let lim=parseInt(UI.limit.value,10);
+  if(Number.isNaN(lim)||lim<1) lim=50;
+  lim=Math.max(1,Math.min(500,lim));
+  UI.limit.value=lim;
+  pool=arr.slice(0,lim);
+  cursor=clamp(cursor,0,Math.max(0,pool.length-1));
+  choiceMaps=new Map();
+  const keep=new Map();
+  for(const [id,val] of answers.entries()) if(pool.some(q=>q.id===id)) keep.set(id,val);
+  answers=keep;
+  render();
+}
+
+async function onLoad(){
+  const f=UI.file.files[0];
+  if(!f){ showToast('Choose a .xlsx or .csv file first.','error'); return; }
+  UI.loadBtn.disabled=true;
+  UI.loadBtn.textContent='Loading…';
+  try{
+    const loaded=await loadBankFromFile(f);
+    if(!loaded.length){
+      showToast('No valid questions found — check column names.','error');
+      return;
+    }
+    bank=loaded;
+    const pill=UI.bankTag;
+    pill.innerHTML=`<div class="dot"></div>${escHtml(f.name)} (${loaded.length})`;
+    buildPool(false);
+    showToast(`Loaded ${loaded.length} questions successfully.`,'success');
+  }catch(e){
+    showToast(e.message,'error');
+  } finally {
+    UI.loadBtn.disabled=false;
+    UI.loadBtn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg> Load Bank`;
+  }
+}
+
+function onSubmit(){
+  if(!pool.length) return;
+  if(UI.requireAll.checked){
+    const unanswered=pool.filter(q=>answers.get(q.id)===undefined);
+    if(unanswered.length){
+      showToast(`${unanswered.length} question(s) still unanswered.`,'error');
+      return;
+    }
+  }
+  submitted=true;
+  applyFeedback();
+  showResults();
+}
+
+function onReset(){
+  bank=[];pool=[];poolName='Full';cursor=0;submitted=false;
+  wrongIDs=new Set();answers=new Map();choiceMaps=new Map();
+  UI.bankTag.innerHTML=`<div class="dot"></div>No bank loaded`;
+  UI.submitBtn.disabled=true;UI.retryBtn.disabled=true;
+  UI.fileNameDisplay.style.display='none';
+  UI.filePlaceholder.style.display='inline';
+  UI.file.value='';
+  UI.quiz.innerHTML='';
+  UI.results.style.display='none';
+  render();
+  showToast('Quiz reset.');
+}
+
+function openModal(id){
+  const modal=document.getElementById(id);
+  if(!modal) return;
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(id){
+  const modal=document.getElementById(id);
+  if(!modal) return;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden','true');
+  if(!document.querySelector('.modal.show')){
+    document.body.style.overflow='';
+  }
+}
+
+async function copyPrompt(targetId){
+  const el=document.getElementById(targetId);
+  if(!el) return;
+  try{
+    await navigator.clipboard.writeText(el.value);
+    showToast('Prompt copied.','success');
+  }catch{
+    el.select();
+    document.execCommand('copy');
+    showToast('Prompt copied.','success');
+  }
+}
+
+UI.loadBtn.addEventListener('click',onLoad);
+UI.submitBtn.addEventListener('click',onSubmit);
+UI.retryBtn.addEventListener('click',()=>buildPool(true));
+UI.resetBtn.addEventListener('click',onReset);
+UI.displayMode.addEventListener('change',render);
+UI.shuffleQ.addEventListener('change',()=>{ if(bank.length) buildPool(poolName==='Wrong'); });
+UI.shuffleC.addEventListener('change',()=>{ if(pool.length){ choiceMaps=new Map(); render(); } });
+UI.limit.addEventListener('change',()=>{ if(bank.length) buildPool(poolName==='Wrong'); });
+document.getElementById('btnHelp').addEventListener('click',()=>openModal('helpModal'));
+document.getElementById('btnGuide').addEventListener('click',()=>openModal('guideModal'));
+document.getElementById('btnCloseHelp').addEventListener('click',()=>closeModal('helpModal'));
+document.getElementById('btnCloseGuide').addEventListener('click',()=>closeModal('guideModal'));
+document.querySelectorAll('[data-close-modal]').forEach(node=>{
+  node.addEventListener('click',()=>closeModal(node.getAttribute('data-close-modal')));
+});
+document.querySelectorAll('.copy-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>copyPrompt(btn.getAttribute('data-copy-target')));
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  closeModal('helpModal');
+  closeModal('guideModal');
+});
+render();
+</script>
+<script type="module" src="../../assets/js/emoji-replacer.js"></script>
+</body>
 </html>
