@@ -18,7 +18,7 @@
     "title": "MCQ Quiz Loader",
     "description": "Load XLSX or CSV question banks for any subject and turn them into a self-graded MCQ quiz with explanations.",
     "url": "./tool/mcq-quiz-loader/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/mcq-quiz-loader.png",
     "favicon": "./tool/mcq-quiz-loader/favicon.svg",
     "emoji": "📝",
     "tags": [
