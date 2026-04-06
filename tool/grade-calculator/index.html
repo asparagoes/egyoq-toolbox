@@ -220,17 +220,43 @@
       padding: 10px 12px;
       border-radius: 10px;
       cursor: pointer;
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 10px;
       transition: all .12s ease;
       border: 1px solid transparent;
+      position: relative;
     }
     .subject-item:hover { background: var(--surface3); }
     .subject-item.active {
       background: var(--accent-soft);
       border-color: var(--accent-border);
+    }
+    .subject-item.drop-before::before,
+    .subject-item.drop-after::after {
+      content: '';
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      border-top: 3px dashed var(--accent);
+      pointer-events: none;
+    }
+    .subject-item.drop-before::before { top: -1px; }
+    .subject-item.drop-after::after { bottom: -1px; }
+    .subject-item.drag-source {
+      opacity: .4;
+      transform: scale(.99);
+    }
+    .subject-item-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .subject-item-copy {
+      min-width: 0;
     }
     .subject-item .s-name {
       font-weight: 700;
@@ -256,6 +282,29 @@
     }
     .subject-grade-badge.pass { background: var(--green-soft); color: var(--green); }
     .subject-grade-badge.fail { background: var(--red-soft); color: var(--red); }
+    .subject-drag-handle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface3);
+      color: var(--muted);
+      cursor: grab;
+      flex-shrink: 0;
+      touch-action: none;
+    }
+    .subject-drag-handle:active { cursor: grabbing; }
+    .subject-drag-handle:hover {
+      border-color: var(--border2);
+      color: var(--text2);
+    }
+    .subject-drag-icon {
+      width: 12px;
+      height: 12px;
+    }
 
     .sidebar-divider { height: 1px; background: var(--border); margin: 8px 0; }
 
@@ -473,12 +522,12 @@
       padding: 10px 14px;
       background: var(--surface2);
       border-bottom: 1px solid var(--border);
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: flex-start;
-      justify-content: space-between;
       gap: 10px;
-      flex-wrap: wrap;
     }
+    .sheet-title > :first-child { min-width: 0; }
     .sheet-block.term-prelims .sheet-title {
       background: linear-gradient(135deg, var(--prelims-soft) 0%, #faf7ff 100%);
     }
@@ -519,7 +568,14 @@
     .sheet-block.term-midterms table.score-table thead th { color: #5f84b9; }
     .sheet-block.term-finals table.score-table thead th { color: #b36e90; }
 
-    .sheet-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .sheet-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+      justify-self: end;
+      align-self: start;
+      white-space: nowrap;
+    }
 
     .sheet-scroll {
       overflow-x: auto;
@@ -881,6 +937,7 @@
       padding: 9px 14px;
       border-right: 1px solid var(--border);
       font-size: 13px;
+      min-width: 0;
     }
     .sem-cell:last-child { border-right: none; }
     .sem-cell .sem-val { font-family: var(--mono); font-weight: 700; font-size: 15px; }
@@ -888,6 +945,7 @@
     .sem-row.highlight { background: var(--accent-soft); }
     .sem-row.highlight .sem-cell { color: var(--accent); }
     .sem-border-top { border-top: 2px solid var(--accent-border); }
+    .sem-row.highlight .sem-cell:first-child .sem-val { font-size: 20px !important; }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -1016,18 +1074,118 @@
       gap: 12px;
     }
     .help-card {
-      background: var(--surface2);
+      background: linear-gradient(135deg, var(--surface2) 0%, #fbfcff 100%);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 14px;
+      box-shadow: var(--shadow-sm);
     }
     .help-card h3 {
       font-size: 14px;
       margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .help-card p {
       color: var(--text2);
       font-size: 13px;
+      line-height: 1.6;
+    }
+    .help-intro {
+      margin-bottom: 14px;
+      padding: 14px 15px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent-soft) 0%, #f7faff 100%);
+      border: 1px solid var(--accent-border);
+      box-shadow: var(--shadow-sm);
+    }
+    .help-intro-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 6px;
+      letter-spacing: .02em;
+    }
+    .help-intro p {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+    .help-emphasis {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .help-emphasis.accent {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+    .help-emphasis.warn {
+      background: #fff7d8;
+      border-color: #f1cf63;
+      color: #8a6500;
+    }
+    .help-emphasis.term {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text2);
+    }
+    .help-emphasis.term.prelims {
+      background: var(--prelims-soft);
+      border-color: #d8c7ff;
+      color: var(--prelims);
+    }
+    .help-emphasis.term.midterms {
+      background: var(--midterms-soft);
+      border-color: #bfdbfe;
+      color: var(--midterms);
+    }
+    .help-emphasis.term.finals {
+      background: var(--finals-soft);
+      border-color: #fbcfe8;
+      color: var(--finals);
+    }
+    .help-mark {
+      color: var(--accent);
+      font-weight: 800;
+      background: var(--accent-soft);
+      padding: 1px 5px;
+      border-radius: 6px;
+    }
+    .help-mark.warn {
+      color: #8a6500;
+      background: #fff7d8;
+    }
+    .help-mark.prelims {
+      color: var(--prelims);
+      background: var(--prelims-soft);
+    }
+    .help-mark.midterms {
+      color: var(--midterms);
+      background: var(--midterms-soft);
+    }
+    .help-mark.finals {
+      color: var(--finals);
+      background: var(--finals-soft);
+    }
+    .modal-close {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 999px;
+      flex-shrink: 0;
     }
 
     @media (max-width: 1080px) {
@@ -1103,9 +1261,20 @@
       .summary-strip .summary-chip:nth-child(6) {
         grid-column: 1 / -1;
       }
-      .sem-row {
-        grid-template-columns: 1fr 1fr;
+      .sem-header {
+        padding: 9px 12px;
       }
+      .sem-cell {
+        padding: 8px 10px;
+      }
+      .sem-cell .sem-val {
+        font-size: 14px;
+      }
+      .sem-cell .sem-lbl {
+        font-size: 9px;
+        letter-spacing: .04em;
+      }
+      .sem-row.highlight .sem-cell:first-child .sem-val { font-size: 18px !important; }
       .setup-node-header,
       .setup-node-body {
         padding-left: 12px;
@@ -1132,9 +1301,13 @@
       }
       .sheet-title {
         padding: 9px 10px;
+        gap: 8px;
       }
       table.score-table {
         min-width: 620px;
+      }
+      .sheet-actions {
+        justify-self: end;
       }
       .subject-card-actions {
         justify-content: stretch;
@@ -1162,16 +1335,16 @@
       .setup-action-btn .setup-btn-label {
         display: none;
       }
-      .sem-row {
-        grid-template-columns: 1fr;
-      }
       .sem-cell {
-        border-right: none;
-        border-bottom: 1px solid var(--border);
+        padding: 7px 8px;
       }
-      .sem-row .sem-cell:last-child {
-        border-bottom: none;
+      .sem-header {
+        padding: 8px 10px;
+        font-size: 12px;
       }
+      .sem-cell .sem-val { font-size: 13px; }
+      .sem-cell .sem-lbl { font-size: 8px; letter-spacing: .03em; }
+      .sem-row.highlight .sem-cell:first-child .sem-val { font-size: 16px !important; }
       .modal-body,
       .modal-header {
         padding-left: 14px;
@@ -1237,37 +1410,43 @@
         <div id="helpTitle" style="font-weight:800;font-size:16px;">How to Use</div>
         <div class="text-muted text-sm" style="margin-top:2px;">Should there be any inquiries, please don't hesitate to contact the <a href="mailto:aselverm_abucay@spcedu.davao.ph" style="color:#b85c18; text-decoration: underline;">developer</a>.</div>
       </div>
-      <button class="btn small ghost" id="btnCloseHelp">Close</button>
+      <button class="btn ghost modal-close" id="btnCloseHelp" aria-label="Close help">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 3.5l9 9m0-9l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
     </div>
     <div class="modal-body">
+      <div class="help-intro">
+        <div class="help-intro-title">Quick guide before you start</div>
+        <p>This tool works best when you first set up your <span class="help-mark">categories and weights</span>, then enter your <span class="help-mark warn">Max</span> and <span class="help-mark">Score</span> values carefully. The calculator is fast, but your results still depend on the numbers you enter.</p>
+      </div>
       <div class="help-list">
         <div class="help-card">
-          <h3>1. Add your subject</h3>
-          <p>Each subject is like one class in school. You can make many subjects and switch between them in the left panel.</p>
+          <h3><span class="help-emphasis accent">Step 1</span> Add your subject</h3>
+          <p>Each subject is like one class in school. You can make many subjects and switch between them in the left panel using the subject list.</p>
         </div>
         <div class="help-card">
-          <h3>2. Set your categories</h3>
-          <p>Categories are the parts of your grade, like quizzes, homework, participation, and exams. Their percentages must add up correctly so the final grade is fair.</p>
+          <h3><span class="help-emphasis warn">Important</span> Set your categories</h3>
+          <p>Categories are the parts of your grade, like quizzes, homework, participation, and exams. Their percentages must add up correctly so the final grade is fair. If the weights are wrong, the summary will not be reliable.</p>
         </div>
         <div class="help-card">
-          <h3>3. Enter scores</h3>
-          <p>For every item, put the highest possible score in <b>Max</b> and your actual score in <b>Score</b>.</p>
+          <h3><span class="help-emphasis accent">Step 2</span> Enter scores</h3>
+          <p>For every item, put the highest possible score in <span class="help-mark warn">Max</span> and your actual score in <span class="help-mark">Score</span>. The score sheets update live as you type.</p>
         </div>
         <div class="help-card">
-          <h3>4. Understand transmutation</h3>
-          <p>This tool can raise raw percentages using a base grade. For example, even if raw score starts low, transmutation can convert it into the grading system your school uses.</p>
+          <h3><span class="help-emphasis accent">Base Grade</span> Understand transmutation</h3>
+          <p>This tool can raise raw percentages using a base grade. Even if the raw score starts low, transmutation can convert it into the grading system your school uses. The highlighted <span class="help-mark">Score (B40)</span> values show that adjusted result.</p>
         </div>
         <div class="help-card">
-          <h3>5. See your term grades</h3>
-          <p>The tool computes your Prelims, Midterms, and Finals grades. It also combines them into your Midterm Grade and Final Grade.</p>
+          <h3><span class="help-emphasis term prelims">Prelims</span><span class="help-emphasis term midterms">Midterms</span><span class="help-emphasis term finals">Finals</span> See your term grades</h3>
+          <p>The tool computes your <span class="help-mark prelims">Prelims</span>, <span class="help-mark midterms">Midterms</span>, and <span class="help-mark finals">Finals</span> raw grades. It also combines them into your <span class="help-mark midterms">Midterm Grade</span> and <span class="help-mark">Final Grade</span> using the base grade/transmutation settings.</p>
         </div>
         <div class="help-card">
-          <h3>6. Use Goal mode</h3>
-          <p>If you want a target final grade, the tool can estimate what Finals grade you need to reach it.</p>
+          <h3><span class="help-emphasis accent">Goal Mode</span> Set a target</h3>
+          <p>If you want a target final subject grade, the tool can estimate what <span class="help-mark finals">Finals</span> raw grade you need to reach it.</p>
         </div>
         <div class="help-card">
-          <h3>7. Edit setup faster</h3>
-          <p>In Setup, click the category name or the percent badge to change them quickly.</p>
+          <h3><span class="help-emphasis accent">Tips</span> Edit setup faster</h3>
+          <p>In Setup, click the category name or weight to edit them quickly. You can also use the drag handles to reorder categories and subjects when needed.</p>
         </div>
       </div>
     </div>
@@ -1470,6 +1649,10 @@
     candidate: null,
     active: null
   };
+  const subjectSort = {
+    active: null,
+    justSorted: false
+  };
 
   function toast(msg, type='') {
     const t = document.createElement('div');
@@ -1551,6 +1734,128 @@
     if (!parentId) return subject.categories;
     const parentNode = findNodeById(subject.categories, parentId);
     return parentNode && Array.isArray(parentNode.children) ? parentNode.children : null;
+  }
+
+  function clearSubjectDropIndicators(){
+    elSubjectList.querySelectorAll('.subject-item.drop-before, .subject-item.drop-after, .subject-item.drag-source').forEach(item=>{
+      item.classList.remove('drop-before', 'drop-after', 'drag-source');
+    });
+  }
+
+  function updateSubjectGhostPosition(clientX, clientY){
+    if (!subjectSort.active?.ghost) return;
+    subjectSort.active.ghost.style.left = `${clientX + 12}px`;
+    subjectSort.active.ghost.style.top = `${clientY + 12}px`;
+  }
+
+  function cleanupSubjectSort(){
+    clearSubjectDropIndicators();
+    if (subjectSort.active?.ghost?.isConnected){
+      subjectSort.active.ghost.remove();
+    }
+    subjectSort.active = null;
+    document.body.style.userSelect = '';
+  }
+
+  function updateSubjectSortTarget(clientX, clientY){
+    if (!subjectSort.active) return;
+
+    clearSubjectDropIndicators();
+    subjectSort.active.sourceEl.classList.add('drag-source');
+
+    const hovered = document.elementFromPoint(clientX, clientY)?.closest('.subject-item');
+    if (!hovered || hovered === subjectSort.active.sourceEl){
+      subjectSort.active.targetId = null;
+      subjectSort.active.position = null;
+      return;
+    }
+
+    const rect = hovered.getBoundingClientRect();
+    const position = clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+    hovered.classList.add(position === 'before' ? 'drop-before' : 'drop-after');
+    subjectSort.active.targetId = hovered.dataset.sid;
+    subjectSort.active.position = position;
+  }
+
+  function finishSubjectSort(){
+    const active = subjectSort.active;
+    if (!active) return;
+
+    if (active.targetId && active.position){
+      const list = state.subjects;
+      const fromIndex = list.findIndex(s=>s.id === active.subjectId);
+      const [moved] = fromIndex >= 0 ? list.splice(fromIndex, 1) : [null];
+      const targetIndex = list.findIndex(s=>s.id === active.targetId);
+
+      if (moved && targetIndex >= 0){
+        const insertIndex = active.position === 'before' ? targetIndex : targetIndex + 1;
+        list.splice(insertIndex, 0, moved);
+        saveState();
+        subjectSort.justSorted = true;
+        render();
+        cleanupSubjectSort();
+        setTimeout(()=>{ subjectSort.justSorted = false; }, 180);
+        toast('Subject order updated.','success');
+        return;
+      }
+
+      if (moved){
+        list.splice(Math.max(fromIndex, 0), 0, moved);
+      }
+    }
+
+    cleanupSubjectSort();
+  }
+
+  function handleSubjectPointerDown(e){
+    const handle = e.target.closest('.subject-drag-handle');
+    if (!handle || !elSubjectList.contains(handle)) return;
+
+    const item = handle.closest('.subject-item');
+    if (!item) return;
+
+    e.preventDefault();
+    cleanupSubjectSort();
+
+    const rect = item.getBoundingClientRect();
+    const ghost = item.cloneNode(true);
+    ghost.style.position = 'fixed';
+    ghost.style.left = `${e.clientX + 12}px`;
+    ghost.style.top = `${e.clientY + 12}px`;
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.pointerEvents = 'none';
+    ghost.style.zIndex = '500';
+    ghost.style.opacity = '.96';
+    ghost.style.transform = 'rotate(1deg)';
+    ghost.style.boxShadow = '0 14px 32px rgba(15, 23, 42, .18)';
+    ghost.style.background = 'var(--surface)';
+    ghost.classList.remove('drop-before', 'drop-after', 'drag-source', 'active');
+    document.body.appendChild(ghost);
+
+    subjectSort.active = {
+      pointerId: e.pointerId,
+      subjectId: item.dataset.sid,
+      sourceEl: item,
+      ghost,
+      targetId: null,
+      position: null
+    };
+
+    item.classList.add('drag-source');
+    document.body.style.userSelect = 'none';
+    updateSubjectGhostPosition(e.clientX, e.clientY);
+  }
+
+  function handleSubjectPointerMove(e){
+    if (!subjectSort.active || e.pointerId !== subjectSort.active.pointerId) return;
+    e.preventDefault();
+    updateSubjectGhostPosition(e.clientX, e.clientY);
+    updateSubjectSortTarget(e.clientX, e.clientY);
+  }
+
+  function handleSubjectPointerEnd(e){
+    if (!subjectSort.active || e.pointerId !== subjectSort.active.pointerId) return;
+    finishSubjectSort();
   }
 
   let state = loadState();
@@ -1818,6 +2123,7 @@
   }
 
   function render(){
+    cleanupSubjectSort();
     const subj = activeSubject();
     ensureLeafGrid(subj);
 
@@ -1833,13 +2139,33 @@
       const div = document.createElement("div");
       div.className = "subject-item" + (s.id === subj.id ? " active" : "");
       div.dataset.sid = s.id;
-      div.innerHTML = `<div style="min-width:0;"><div class="s-name">${escapeHtml(s.name||"(unnamed)")}</div><div class="s-sub">Base ${num(s.base)} · ${(s.categories||[]).length} categories</div></div>${gradeHTML}`;
-      div.onclick = ()=>{
+      div.innerHTML = `
+        <div class="subject-item-main">
+          <div class="subject-item-copy">
+            <div class="s-name">${escapeHtml(s.name||"(unnamed)")}</div>
+            <div class="s-sub">Base ${num(s.base)} · ${(s.categories||[]).length} categories</div>
+          </div>
+          ${gradeHTML}
+        </div>
+        <button type="button" class="subject-drag-handle" aria-label="Reorder subject">
+          <svg class="subject-drag-icon" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <circle cx="3" cy="2.5" r="1.1"></circle>
+            <circle cx="3" cy="6" r="1.1"></circle>
+            <circle cx="3" cy="9.5" r="1.1"></circle>
+            <circle cx="9" cy="2.5" r="1.1"></circle>
+            <circle cx="9" cy="6" r="1.1"></circle>
+            <circle cx="9" cy="9.5" r="1.1"></circle>
+          </svg>
+        </button>
+      `;
+      div.addEventListener('click', (e)=>{
+        if (e.target.closest('.subject-drag-handle')) return;
+        if (subjectSort.justSorted) return;
         state.activeSubjectId = s.id;
         saveState();
         render();
         closeSidebar();
-      };
+      });
       elSubjectList.appendChild(div);
     });
 
@@ -2564,6 +2890,10 @@
   $('btnHelp').addEventListener('click', openHelp);
   $('btnCloseHelp').addEventListener('click', closeHelp);
   $('helpBackdrop').addEventListener('click', closeHelp);
+  elSubjectList.addEventListener('pointerdown', handleSubjectPointerDown);
+  document.addEventListener('pointermove', handleSubjectPointerMove, {passive:false});
+  document.addEventListener('pointerup', handleSubjectPointerEnd);
+  document.addEventListener('pointercancel', handleSubjectPointerEnd);
   elSetupArea.addEventListener('pointerdown', handleSetupPointerDown);
   document.addEventListener('pointermove', handleSetupPointerMove, {passive:false});
   document.addEventListener('pointerup', handleSetupPointerEnd);
