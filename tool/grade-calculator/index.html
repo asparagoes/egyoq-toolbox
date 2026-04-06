@@ -7,6 +7,7 @@
   <meta name="tool:description" content="Track subject grades across different terms with weighted categories, transmutation, goals, and autosave." />
   <meta name="tool:tags" content="study,school,grades,calculator,academic" />
   <meta name="theme-color" content="#4f7ef8" />
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text y=".9em" font-size="52">📊</text></svg>' />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -665,12 +666,12 @@
     .setup-edit-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 8px;
+      flex-wrap: nowrap;
       min-width: 0;
     }
     .setup-inline-name {
-      flex: 1 1 240px;
+      flex: 1 1 auto;
       min-width: 0;
     }
     .setup-name-input {
@@ -679,11 +680,15 @@
       outline: none;
       background: transparent;
       color: var(--text);
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 800;
-      padding: 3px 4px;
+      line-height: 1.25;
+      padding: 2px 4px;
       border-radius: 6px;
       transition: background .12s ease, box-shadow .12s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .setup-name-input:hover { background: var(--surface3); }
     .setup-name-input:focus {
@@ -694,26 +699,27 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 3px 6px;
+      flex: 0 0 auto;
+      padding: 2px 6px;
       border-radius: 8px;
       background: var(--surface2);
       border: 1px solid var(--border);
     }
     .setup-weight-input {
-      width: 72px;
+      width: 44px;
       border: none;
       outline: none;
       background: transparent;
       color: var(--accent);
       font-family: var(--mono);
-      font-size: 16px;
+      font-size: 13px;
       font-weight: 700;
       text-align: right;
       padding: 0;
     }
     .setup-weight-input:focus { color: var(--accent-strong); }
     .setup-inline-suffix {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--muted);
     }
@@ -721,8 +727,25 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       margin-top: 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .setup-action-row::-webkit-scrollbar {
+      display: none;
+    }
+    .setup-action-btn {
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+    .setup-btn-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+    .setup-btn-label {
+      white-space: nowrap;
     }
 
     .semester-summary {
@@ -1004,20 +1027,24 @@
         flex: 1 1 calc(50% - 4px);
         justify-content: center;
       }
-      .setup-inline-name,
-      .setup-weight-field,
-      .setup-action-row .btn {
-        width: 100%;
-      }
       .setup-weight-field {
-        justify-content: flex-start;
+        padding-left: 5px;
+        padding-right: 5px;
       }
       .setup-weight-input {
-        width: 100%;
-        text-align: left;
+        width: 38px;
+        text-align: right;
       }
-      .setup-action-row .btn {
-        justify-content: center;
+      .setup-action-row {
+        gap: 6px;
+        justify-content: flex-start;
+      }
+      .setup-action-btn {
+        padding: 6px 8px;
+        min-width: 40px;
+      }
+      .setup-action-btn .setup-btn-label {
+        display: none;
       }
       .sem-row {
         grid-template-columns: 1fr;
@@ -1062,7 +1089,7 @@
   <div class="header-actions">
     <button class="btn small ghost" id="btnHelp">
       <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.5"/><path d="M6.8 6.2a1.5 1.5 0 112.4 1.2c-.8.5-1.2.9-1.2 1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".8" fill="currentColor"/></svg>
-      Help / About
+      Help
     </button>
 
     <button class="btn small ghost" id="btnExport" data-tip="Save all subjects and scores to a JSON file">
@@ -1970,6 +1997,7 @@
     nameInput.placeholder = parent ? 'Sub category name' : 'Category name';
     nameInput.autocomplete = 'off';
     nameInput.spellcheck = false;
+    nameInput.maxLength = 26;
     nameInput.value = node.name || '';
     nameInput.oninput = ()=>{
       node.name = nameInput.value;
@@ -2033,8 +2061,10 @@
 
     const btnToggle = document.createElement('button');
     btnToggle.type = 'button';
-    btnToggle.className = 'btn small';
-    btnToggle.textContent = hasChildren ? '→ Make leaf' : '+ Add children';
+    btnToggle.className = 'btn small setup-action-btn';
+    btnToggle.innerHTML = hasChildren
+      ? `<svg class="setup-btn-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5v8.5M8 10c0 1.2-1 2.2-2.2 2.2S3.5 11.2 3.5 10c0-1 .8-1.8 1.8-1.8.7 0 1.2.2 1.7.7V1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10c0 1.4 1.1 2.5 2.5 2.5S13 11.4 13 10c0-1-.6-1.8-1.5-2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="setup-btn-label">Make leaf</span>`
+      : `<svg class="setup-btn-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="setup-btn-label">Add children</span>`;
     btnToggle.onclick = ()=>{
       if (hasChildren){
         node.children = null;
@@ -2052,8 +2082,8 @@
 
     const btnAddChild = document.createElement('button');
     btnAddChild.type = 'button';
-    btnAddChild.className = 'btn small primary';
-    btnAddChild.textContent = '+ Child';
+    btnAddChild.className = 'btn small primary setup-action-btn';
+    btnAddChild.innerHTML = `<svg class="setup-btn-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="setup-btn-label">Child</span>`;
     btnAddChild.style.display = hasChildren ? '' : 'none';
     btnAddChild.onclick = ()=>{
       node.children.push({
@@ -2069,8 +2099,8 @@
 
     const btnDel = document.createElement('button');
     btnDel.type = 'button';
-    btnDel.className = 'btn small danger';
-    btnDel.textContent = 'Delete';
+    btnDel.className = 'btn small danger setup-action-btn';
+    btnDel.innerHTML = `<svg class="setup-btn-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 4h10M6 4V2h4v2M5 4l.5 9h5l.5-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="setup-btn-label">Delete</span>`;
     btnDel.onclick = ()=>{
       if (!parent){
         if (subj.categories.length <= 2){
