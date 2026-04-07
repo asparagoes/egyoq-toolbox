@@ -256,6 +256,39 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .row-split{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
 .deck-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.deck-summary{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:8px
+}
+.deck-rule{
+  padding:4px 9px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:11px;
+  font-weight:700;color:var(--text2)
+}
+.deck-config{
+  display:grid;gap:10px;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:16px;background:color-mix(in srgb, var(--panel) 65%, var(--bg3))
+}
+.deck-config.hidden{display:none}
+.deck-config-actions{display:flex;justify-content:flex-end}
+.scheduler-note{
+  margin-top:12px;padding:12px 13px;border-radius:16px;border:1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background:linear-gradient(135deg,color-mix(in srgb, var(--accent) 10%, var(--panel2)), color-mix(in srgb, var(--cyan) 5%, var(--panel)));
+  color:var(--text2);line-height:1.65
+}
+.scheduler-note strong{color:var(--text)}
+.scheduler-steps{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:8px
+}
+.step-chip{
+  padding:4px 9px;border-radius:999px;border:1px solid color-mix(in srgb, var(--accent) 35%, var(--border));background:var(--surface);
+  color:var(--accent2);font-size:11px;font-weight:800
+}
+.algo-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px
+}
+.algo-card{
+  border:1px solid var(--border);border-radius:14px;padding:10px;background:var(--bg3)
+}
+.algo-card strong{display:block;font-size:12px;margin-bottom:4px}
+.algo-card span{font-size:11px;color:var(--text3);line-height:1.55}
 .big-val{font-size:32px;font-weight:800;line-height:1}
 .session-chip{
   display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);
@@ -355,6 +388,7 @@ body.swap-panels .right-col{order:1}
   .dd-panel{left:0;right:auto;width:min(360px,calc(100vw - 24px))}
   .manage-row{grid-template-columns:auto 1fr}
   .manage-row > .mini-btn{grid-column:1 / -1;justify-self:start}
+  .algo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:560px){
   .topbar{gap:8px}
@@ -540,8 +574,12 @@ body.swap-panels .right-col{order:1}
           <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
-          <div id="modeValue" class="big-val" style="font-size:24px">Regular</div>
-          <div id="modeSub" class="hint" style="margin-top:6px">No deadline set.</div>
+          <div id="modeValue" class="big-val" style="font-size:24px">Deck Rules</div>
+          <div id="modeSub" class="hint" style="margin-top:6px">These are the defaults for newly imported decks. Edit any deck in Deck Manager to give it its own deadline and learning steps.</div>
+          <div class="grid2" style="margin-top:10px">
+            <div class="field"><label for="optLearningSteps">Default learning steps</label><input id="optLearningSteps" type="text" placeholder="1m 10m 1d"></div>
+            <div class="field"><label for="optRelearningSteps">Default relearning steps</label><input id="optRelearningSteps" type="text" placeholder="10m"></div>
+          </div>
           <div class="field" style="margin-top:10px"><label for="optTimezone">Timezone</label>
             <select id="optTimezone">
               <option value="Asia/Manila">Asia/Manila (default)</option>
@@ -553,14 +591,29 @@ body.swap-panels .right-col{order:1}
               <option value="Australia/Sydney">Australia/Sydney</option>
             </select>
           </div>
-          <label class="ck-line"><input type="checkbox" id="optDeadline"><span>Use target deadline</span></label>
+          <label class="ck-line"><input type="checkbox" id="optDeadline"><span>Default imported decks to a target deadline</span></label>
           <div class="grid2">
-            <div class="field"><label for="optDeadlineDate">Deadline date</label><input id="optDeadlineDate" type="date"></div>
-            <div class="field"><label for="optDeadlineTime">Deadline time</label><input id="optDeadlineTime" type="time"></div>
-            <div class="field"><label for="optStudyStart">Study window start</label><input id="optStudyStart" type="time"></div>
-            <div class="field"><label for="optStudyEnd">Study window end</label><input id="optStudyEnd" type="time"></div>
+            <div class="field"><label for="optDeadlineDate">Default deadline date</label><input id="optDeadlineDate" type="date"></div>
+            <div class="field"><label for="optDeadlineTime">Default deadline time</label><input id="optDeadlineTime" type="time"></div>
+            <div class="field"><label for="optStudyStart">Default study window start</label><input id="optStudyStart" type="time"></div>
+            <div class="field"><label for="optStudyEnd">Default study window end</label><input id="optStudyEnd" type="time"></div>
           </div>
-          <div class="hint" style="margin-top:8px">Study window end is capped to the deadline time.</div>
+          <div class="scheduler-note">
+            <strong>Learning path:</strong> New cards stay in <strong>learning</strong> until they finish the steps above, then they <strong>graduate into review cards</strong>. If a review card gets an <strong>Again</strong>, it drops into <strong>relearning</strong> and follows the relearning steps before returning to review.
+            <div class="scheduler-steps">
+              <span class="step-chip">Again: back to step 1</span>
+              <span class="step-chip">Hard: repeat / midpoint delay</span>
+              <span class="step-chip">Good: next step</span>
+              <span class="step-chip">Easy: graduate now</span>
+            </div>
+          </div>
+          <div class="algo-grid">
+            <div class="algo-card"><strong>Learning</strong><span>Uses your learning steps exactly like Anki-style learning repetitions.</span></div>
+            <div class="algo-card"><strong>Graduation</strong><span>Finishing the last learning step converts the card into a normal review card.</span></div>
+            <div class="algo-card"><strong>Relearning</strong><span>Again on a review card sends it through relearning steps before it re-enters review.</span></div>
+            <div class="algo-card"><strong>FSRS review</strong><span>Once graduated, FSRS adjusts stability and difficulty to schedule the next review.</span></div>
+          </div>
+          <div class="hint" style="margin-top:8px">Study window end is capped to the deadline time. Per-deck overrides live in Deck Manager.</div>
         </div>
       </section>
 
@@ -607,6 +660,11 @@ body.swap-panels .right-col{order:1}
           <p>Study one card at a time. Reveal the answer, compare it honestly, then rate it with <strong>Again / Hard / Good / Easy</strong>. Those ratings shape when the card returns.</p>
         </section>
         <section class="help-card">
+          <div class="help-kicker">Learning Steps</div>
+          <h3>New cards learn before they review</h3>
+          <p><strong>New cards</strong> follow your learning steps, <strong>Good</strong> moves them forward, <strong>Again</strong> sends them back to step one, and finishing the last step makes them a <strong>review card</strong>. Review cards that lapse go into <strong>relearning</strong>.</p>
+        </section>
+        <section class="help-card">
           <div class="help-kicker">Typing</div>
           <h3>Use typing only when you need it</h3>
           <p>Typing mode is great for recall-heavy subjects. You can keep manual grading, or switch on <strong>Auto-rate typing</strong> if you want FlashFlow to estimate the result from answer closeness.</p>
@@ -617,7 +675,7 @@ body.swap-panels .right-col{order:1}
           <p>Use the <strong>four-dot handles</strong> to sort the side panels. You can also <strong>swap the left and right columns</strong>, collapse panels manually, or let collapsed panels open on hover for quick peeks.</p>
         </section>
       </div>
-      <div class="help-note"><strong>Useful shortcuts:</strong> <code>Enter</code> reveals while typing, <code>Space</code> reveals the answer, and <code>1 / 2 / 3 / 4</code> rates the current card after reveal. If you use a deadline, the study plan compresses toward that target automatically.</div>
+      <div class="help-note"><strong>Useful shortcuts:</strong> <code>Enter</code> reveals while typing, <code>Space</code> reveals the answer, and <code>1 / 2 / 3 / 4</code> rates the current card after reveal. If you use a deadline, the study plan compresses toward that target automatically, and each deck can keep its own deadline plus learning-step setup.</div>
     </div>
   </div>
   <div class="modal-foot"><button id="btnCloseHelp" class="btn">Close</button></div>
@@ -673,6 +731,7 @@ const ui = {
   btnManageCards:$("btnManageCards"), btnHelp:$("btnHelp"), helpDialog:$("helpDialog"), btnCloseHelp:$("btnCloseHelp"),
   btnReset:$("btnReset"), statsText:$("statsText"), btnThemeQuick:$("btnThemeQuick"),
   optTheme:$("optTheme"), optCardOnly:$("optCardOnly"), optHideLabels:$("optHideLabels"), optSwapPanels:$("optSwapPanels"), optHoverPanels:$("optHoverPanels"),
+  optLearningSteps:$("optLearningSteps"), optRelearningSteps:$("optRelearningSteps"),
   optReverse:$("optReverse"), optAutoRate:$("optAutoRate"), optRandomize:$("optRandomize"),
   optDelay:$("optDelay"), optQuestionLimit:$("optQuestionLimit"), optVoice:$("optVoice"), optTts:$("optTts"),
   btnShowPanels:$("btnShowPanels"),
@@ -716,6 +775,8 @@ const settings = {
   reverseImport:false,
   autoAdvanceDelaySec:5,
   perQuestionLimitSec:0,
+  defaultLearningSteps:"1m 10m 1d",
+  defaultRelearningSteps:"10m",
   deadlineEnabled:false,
   deadlineDateISO:"",
   deadlineTime:"09:00",
@@ -738,10 +799,53 @@ let autoAdvanceTimer = null;
 let activeSession = null;
 let lastPlan = [];
 let lastDeckSignature = "";
+const DEFAULT_DECK_RULES = {
+  learningSteps:"1m 10m 1d",
+  relearningSteps:"10m",
+  deadlineEnabled:false,
+  deadlineDateISO:"",
+  deadlineTime:"09:00",
+  studyStartTime:"08:00",
+  studyEndTime:"22:00"
+};
 
 function escapeHtml(s){return String(s ?? "").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
 function uid(){return (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);}
 function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+function splitStepList(raw){
+  const tokens = String(raw || "").trim().split(/\s+/).filter(Boolean);
+  return tokens.filter(token=>/^\d+(?:\.\d+)?[smhd]$/i.test(token));
+}
+function normalizeStepString(raw, fallback){
+  const tokens = splitStepList(raw);
+  return tokens.length ? tokens.join(" ") : fallback;
+}
+function normalizeDeckRules(data={}){
+  return {
+    learningSteps: normalizeStepString(data.learningSteps, DEFAULT_DECK_RULES.learningSteps),
+    relearningSteps: normalizeStepString(data.relearningSteps, DEFAULT_DECK_RULES.relearningSteps),
+    deadlineEnabled: !!data.deadlineEnabled,
+    deadlineDateISO: String(data.deadlineDateISO || ""),
+    deadlineTime: String(data.deadlineTime || DEFAULT_DECK_RULES.deadlineTime),
+    studyStartTime: String(data.studyStartTime || DEFAULT_DECK_RULES.studyStartTime),
+    studyEndTime: String(data.studyEndTime || DEFAULT_DECK_RULES.studyEndTime)
+  };
+}
+function deckRulesFromSettings(){
+  return normalizeDeckRules({
+    learningSteps: settings.defaultLearningSteps,
+    relearningSteps: settings.defaultRelearningSteps,
+    deadlineEnabled: settings.deadlineEnabled,
+    deadlineDateISO: settings.deadlineDateISO,
+    deadlineTime: settings.deadlineTime,
+    studyStartTime: settings.studyStartTime,
+    studyEndTime: settings.studyEndTime
+  });
+}
+function decorateDeck(deck){
+  const rules = normalizeDeckRules(deck || {});
+  return {...(deck || {}), ...rules};
+}
 function norm(s){
   return String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
@@ -767,6 +871,8 @@ function loadSettings(){
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
     Object.assign(settings,saved);
   }catch{}
+  settings.defaultLearningSteps = normalizeStepString(settings.defaultLearningSteps, DEFAULT_DECK_RULES.learningSteps);
+  settings.defaultRelearningSteps = normalizeStepString(settings.defaultRelearningSteps, DEFAULT_DECK_RULES.relearningSteps);
   if(!settings.panelOrder) settings.panelOrder = {left:["studyPlan","decks"],right:["reviewBehavior","mode","goal","session"]};
   if(!settings.collapsed) settings.collapsed = {};
 }
@@ -789,6 +895,8 @@ function syncUI(){
   ui.optReverse.checked = settings.reverseImport;
   ui.optAutoRate.checked = settings.autoRateTyping;
   ui.optRandomize.checked = settings.randomizeCards;
+  ui.optLearningSteps.value = settings.defaultLearningSteps;
+  ui.optRelearningSteps.value = settings.defaultRelearningSteps;
   ui.optDelay.value = settings.autoAdvanceDelaySec;
   ui.optQuestionLimit.value = settings.perQuestionLimitSec;
   ui.optVoice.checked = settings.voiceEnabled;
@@ -941,6 +1049,8 @@ function bindSettings(){
     [ui.optHideLabels,"change",()=>settings.hideLabels = ui.optHideLabels.checked],
     [ui.optSwapPanels,"change",()=>settings.swapPanels = ui.optSwapPanels.checked],
     [ui.optHoverPanels,"change",()=>settings.hoverExpandPanels = ui.optHoverPanels.checked],
+    [ui.optLearningSteps,"change",()=>settings.defaultLearningSteps = normalizeStepString(ui.optLearningSteps.value, DEFAULT_DECK_RULES.learningSteps)],
+    [ui.optRelearningSteps,"change",()=>settings.defaultRelearningSteps = normalizeStepString(ui.optRelearningSteps.value, DEFAULT_DECK_RULES.relearningSteps)],
     [ui.optReverse,"change",()=>settings.reverseImport = ui.optReverse.checked],
     [ui.optAutoRate,"change",()=>settings.autoRateTyping = ui.optAutoRate.checked],
     [ui.optRandomize,"change",()=>settings.randomizeCards = ui.optRandomize.checked],
@@ -999,20 +1109,29 @@ function capStudyWindowEnd(){
   if(current > max) settings.studyEndTime = settings.deadlineTime;
 }
 
-function deadlineMs(){
-  if(!settings.deadlineEnabled || !settings.deadlineDateISO) return null;
-  const ms = new Date(`${settings.deadlineDateISO}T${settings.deadlineTime || "09:00"}`).getTime();
+function capDeckStudyWindowEnd(rules){
+  const next = normalizeDeckRules(rules);
+  if(!next.deadlineEnabled || !next.deadlineDateISO) return next;
+  const max = timeToMinutes(next.deadlineTime);
+  const current = timeToMinutes(next.studyEndTime);
+  if(current > max) next.studyEndTime = next.deadlineTime;
+  return next;
+}
+function deadlineMs(source=settings){
+  if(!source.deadlineEnabled || !source.deadlineDateISO) return null;
+  const ms = new Date(`${source.deadlineDateISO}T${source.deadlineTime || "09:00"}`).getTime();
   return Number.isFinite(ms) ? ms : null;
 }
-function capDueToDeadline(ms){
-  const dl = deadlineMs();
+function capDueToDeadline(ms, source=settings){
+  const dl = deadlineMs(source);
   return dl ? Math.min(ms, dl - 3600000) : ms;
 }
 
-function makeScheduler(){
+function makeScheduler(ruleSource=settings){
+  const rules = ruleSource.learningSteps ? normalizeDeckRules(ruleSource) : deckRulesFromSettings();
   let request_retention = 0.90;
   let maximum_interval = 36500;
-  const dl = deadlineMs();
+  const dl = deadlineMs(rules);
   if(dl){
     const days = Math.max(1, Math.ceil((dl - Date.now()) / DAY_MS));
     maximum_interval = Math.max(1, Math.floor(days / 2));
@@ -1023,14 +1142,51 @@ function makeScheduler(){
   return fsrs(generatorParameters({
     request_retention, maximum_interval,
     enable_fuzz:true, enable_short_term:true,
-    learning_steps:["1m","10m"], relearning_steps:["10m"]
+    learning_steps:splitStepList(rules.learningSteps),
+    relearning_steps:splitStepList(rules.relearningSteps)
   }));
 }
 
 function stateOf(card){ return card?.fsrs_card?.state; }
 function isNew(card){ return stateOf(card) === State.New; }
+function stateLabel(card){
+  const state = stateOf(card);
+  if(state === State.New) return "New";
+  if(state === State.Learning) return "Learning";
+  if(state === State.Review) return "Review";
+  if(state === State.Relearning) return "Relearning";
+  return "";
+}
 
-async function getDecks(){ return db.decks.orderBy("created_ms").toArray(); }
+async function getDecks(){
+  const decks = await db.decks.orderBy("created_ms").toArray();
+  const updates = [];
+  const normalized = decks.map(deck=>{
+    const merged = decorateDeck(deck);
+    if(
+      deck.learningSteps !== merged.learningSteps ||
+      deck.relearningSteps !== merged.relearningSteps ||
+      deck.deadlineEnabled !== merged.deadlineEnabled ||
+      deck.deadlineDateISO !== merged.deadlineDateISO ||
+      deck.deadlineTime !== merged.deadlineTime ||
+      deck.studyStartTime !== merged.studyStartTime ||
+      deck.studyEndTime !== merged.studyEndTime
+    ){
+      updates.push(db.decks.update(deck.id, {
+        learningSteps: merged.learningSteps,
+        relearningSteps: merged.relearningSteps,
+        deadlineEnabled: merged.deadlineEnabled,
+        deadlineDateISO: merged.deadlineDateISO,
+        deadlineTime: merged.deadlineTime,
+        studyStartTime: merged.studyStartTime,
+        studyEndTime: merged.studyEndTime
+      }));
+    }
+    return merged;
+  });
+  if(updates.length) await Promise.all(updates);
+  return normalized;
+}
 async function getActiveDeckIds(){ return (await getDecks()).filter(d=>d.active !== false).map(d=>d.id); }
 function deckSignature(ids){ return [...ids].sort().join(","); }
 
@@ -1047,7 +1203,8 @@ async function createDeck(file){
   let name = base || "Deck";
   let i = 2;
   while(names.has(name)) name = `${base} (${i++})`;
-  const deck = { id: uid(), name, active:true, created_ms:Date.now() };
+  const defaults = deckRulesFromSettings();
+  const deck = { id: uid(), name, active:true, created_ms:Date.now(), ...defaults };
   await db.decks.add(deck);
   return deck;
 }
@@ -1230,6 +1387,8 @@ function renderMeta(card){
   }
   ui.metaRow.classList.remove("hidden");
   const items = [];
+  const phase = stateLabel(card);
+  if(phase) items.push(["", phase]);
   if(card.meta?.id) items.push(["", card.meta.id]);
   if(card.meta?.topic) items.push(["topic", card.meta.topic]);
   if(card.meta?.difficulty) items.push(["diff", card.meta.difficulty]);
@@ -1468,11 +1627,12 @@ function scheduleAutoAdvance(gradeInt, meta, wrong){
 async function gradeCard(gradeInt, meta={}){
   if(!currentCard) return;
   clearAutoAdvance();
-  const scheduler = makeScheduler();
+  const deck = decorateDeck(await db.decks.get(currentCard.deck_id));
+  const scheduler = makeScheduler(deck);
   const rating = gradeInt === 1 ? Rating.Again : gradeInt === 2 ? Rating.Hard : gradeInt === 3 ? Rating.Good : Rating.Easy;
   const result = scheduler.next(currentCard.fsrs_card, new Date(), rating);
   let dueMs = result.card.due instanceof Date ? result.card.due.getTime() : Date.parse(result.card.due);
-  dueMs = capDueToDeadline(dueMs);
+  dueMs = capDueToDeadline(dueMs, deck);
 
   await db.transaction("rw", db.cards, db.reviews, async ()=>{
     await db.cards.update(currentCard.id, {fsrs_card:result.card, due_ms:dueMs});
@@ -1537,33 +1697,46 @@ async function refreshProgress(){
 }
 
 async function computePlan(){
+  const decks = (await getDecks()).filter(deck=>deck.active !== false);
   const cards = await getActiveCards();
   if(!cards.length) return [];
   const now = Date.now();
-  const dl = deadlineMs();
-  const horizon = dl || (now + DAY_MS * 4);
   const sessions = [];
-  const startDay = new Date(now); startDay.setHours(0,0,0,0);
-  const endDay = new Date(horizon); endDay.setHours(0,0,0,0);
-  const startMin = timeToMinutes(settings.studyStartTime);
-  let endMin = Math.max(startMin + 60, timeToMinutes(settings.studyEndTime));
-  if(dl) endMin = Math.min(endMin, timeToMinutes(settings.deadlineTime));
-  for(let day = startDay.getTime(); day <= endDay.getTime(); day += DAY_MS){
-    const dayEnd = day + DAY_MS - 1;
-    const load = cards.filter(c => c.due_ms <= dayEnd || isNew(c));
-    if(!load.length) continue;
-    const count = dl ? clamp(Math.ceil(load.length / 18), 1, 4) : clamp(Math.ceil(Math.min(load.length, 40) / 20), 1, 2);
-    const expectedPer = clamp(Math.ceil(load.length / count), 10, 35);
-    const span = endMin - startMin;
-    for(let i=0;i<count;i++){
-      const minute = Math.round(startMin + (span * (i + 1) / (count + 1)));
-      const at = day + minute * 60000;
-      if(at < now - 3600000) continue;
-      if(dl && at > dl) continue;
-      sessions.push({session_key:`rec-${lastDeckSignature}-${at}`, time_ms:at, source:"recommended", expected_cards:expectedPer});
+  for(const deck of decks){
+    const deckCards = cards.filter(card=>card.deck_id === deck.id);
+    if(!deckCards.length) continue;
+    const rules = capDeckStudyWindowEnd(deck);
+    const dl = deadlineMs(rules);
+    const horizon = dl || (now + DAY_MS * 4);
+    const startDay = new Date(now); startDay.setHours(0,0,0,0);
+    const endDay = new Date(horizon); endDay.setHours(0,0,0,0);
+    const startMin = timeToMinutes(rules.studyStartTime);
+    let endMin = Math.max(startMin + 60, timeToMinutes(rules.studyEndTime));
+    if(dl) endMin = Math.min(endMin, timeToMinutes(rules.deadlineTime));
+    for(let day = startDay.getTime(); day <= endDay.getTime(); day += DAY_MS){
+      const dayEnd = day + DAY_MS - 1;
+      const load = deckCards.filter(c => c.due_ms <= dayEnd || isNew(c));
+      if(!load.length) continue;
+      const count = dl ? clamp(Math.ceil(load.length / 18), 1, 4) : clamp(Math.ceil(Math.min(load.length, 40) / 20), 1, 2);
+      const expectedPer = clamp(Math.ceil(load.length / count), 10, 35);
+      const span = endMin - startMin;
+      for(let i=0;i<count;i++){
+        const minute = Math.round(startMin + (span * (i + 1) / (count + 1)));
+        const at = day + minute * 60000;
+        if(at < now - 3600000) continue;
+        if(dl && at > dl) continue;
+        sessions.push({
+          session_key:`rec-${deck.id}-${at}`,
+          time_ms:at,
+          source:"recommended",
+          expected_cards:expectedPer,
+          deck_id:deck.id,
+          deck_name:deck.name
+        });
+      }
     }
   }
-  return sessions.slice(0, 12);
+  return sessions.sort((a,b)=>a.time_ms - b.time_ms).slice(0, 12);
 }
 
 function pickSession(){
@@ -1574,11 +1747,16 @@ function pickSession(){
 }
 
 async function refreshPlan(){
+  const activeDecks = (await getDecks()).filter(deck=>deck.active !== false);
   const cards = await getActiveCards();
   lastPlan = await computePlan();
-  const dl = deadlineMs();
-  ui.modeValue.textContent = dl ? "Deadline" : "Regular";
-  ui.modeSub.textContent = dl ? `Target: ${fmtDateTime(dl)}` : "No deadline. Using normal spaced repetition.";
+  const deadlineDecks = activeDecks.filter(deck=>deck.deadlineEnabled && deck.deadlineDateISO);
+  ui.modeValue.textContent = activeDecks.length ? `${deadlineDecks.length}/${activeDecks.length}` : "Defaults";
+  ui.modeSub.textContent = activeDecks.length
+    ? (deadlineDecks.length
+      ? `${deadlineDecks.length} active deck(s) are pacing toward their own deadlines.`
+      : "No active deck deadlines right now. New decks still use the defaults above.")
+    : "These values become the defaults for newly imported decks.";
 
   if(!cards.length){
     ui.planSummary.textContent = "Import a deck to see recommended study sessions.";
@@ -1588,9 +1766,9 @@ async function refreshPlan(){
     return;
   }
 
-  ui.planSummary.innerHTML = dl
-    ? `<strong>Planner active.</strong> Suggested sessions lead up to ${fmtDateTime(dl)}.`
-    : `<strong>Regular schedule.</strong> Sessions below are suggested return times.`;
+  ui.planSummary.innerHTML = deadlineDecks.length
+    ? `<strong>Per-deck planning active.</strong> Suggested sessions now blend deck-specific deadlines and study windows.`
+    : `<strong>Regular schedule.</strong> Sessions below are suggested return times across your active decks.`;
 
   const logs = (await db.sessions.toArray()).filter(x=>x.deck_scope === lastDeckSignature);
   const today = dayKey(Date.now());
@@ -1612,12 +1790,32 @@ async function refreshPlan(){
     row.innerHTML = `
       <div>
         <div class="session-main">${fmtShort(item.time_ms)}</div>
-        <div class="session-sub">${fmtTime(item.time_ms)}</div>
+        <div class="session-sub">${fmtTime(item.time_ms)} · ${escapeHtml(item.deck_name || "Deck")}</div>
       </div>
       <div class="session-sub">~${item.expected_cards} cards</div>
       <div class="badge">${log ? `Done · ${log.cards_reviewed || 1}` : item.time_ms < Date.now() ? "Missed" : "Planned"}</div>`;
     ui.sessionList.appendChild(row);
   }
+}
+
+function deckDeadlineSummary(deck){
+  return deck.deadlineEnabled && deck.deadlineDateISO
+    ? `Deadline ${deck.deadlineDateISO} ${deck.deadlineTime}`
+    : "No deadline";
+}
+
+async function saveDeckRules(deck, fields){
+  const nextRules = capDeckStudyWindowEnd(normalizeDeckRules({
+    learningSteps: fields.learningSteps.value,
+    relearningSteps: fields.relearningSteps.value,
+    deadlineEnabled: fields.deadlineEnabled.checked,
+    deadlineDateISO: fields.deadlineDateISO.value,
+    deadlineTime: fields.deadlineTime.value,
+    studyStartTime: fields.studyStartTime.value,
+    studyEndTime: fields.studyEndTime.value
+  }));
+  await db.decks.update(deck.id, nextRules);
+  toast(`Updated rules for "${deck.name}"`);
 }
 
 async function refreshDecksUI(){
@@ -1631,8 +1829,27 @@ async function refreshDecksUI(){
     row.innerHTML = `
       <div class="deck-name">${escapeHtml(deck.name)}</div>
       <div class="deck-meta">${count} cards · ${deck.active !== false ? "Active" : "Inactive"}</div>
-      <div class="deck-actions"></div>`;
+      <div class="deck-summary">
+        <span class="deck-rule">Learn: ${escapeHtml(deck.learningSteps)}</span>
+        <span class="deck-rule">Relearn: ${escapeHtml(deck.relearningSteps)}</span>
+        <span class="deck-rule">${escapeHtml(deckDeadlineSummary(deck))}</span>
+      </div>
+      <div class="deck-actions"></div>
+      <div class="deck-config hidden">
+        <div class="grid2">
+          <div class="field"><label>Learning steps</label><input data-role="learning-steps" type="text" value="${escapeHtml(deck.learningSteps)}"></div>
+          <div class="field"><label>Relearning steps</label><input data-role="relearning-steps" type="text" value="${escapeHtml(deck.relearningSteps)}"></div>
+          <div class="field"><label>Deadline date</label><input data-role="deadline-date" type="date" value="${escapeHtml(deck.deadlineDateISO || "")}"></div>
+          <div class="field"><label>Deadline time</label><input data-role="deadline-time" type="time" value="${escapeHtml(deck.deadlineTime)}"></div>
+          <div class="field"><label>Study window start</label><input data-role="study-start" type="time" value="${escapeHtml(deck.studyStartTime)}"></div>
+          <div class="field"><label>Study window end</label><input data-role="study-end" type="time" value="${escapeHtml(deck.studyEndTime)}"></div>
+        </div>
+        <label class="ck-line" style="margin:0"><input data-role="deadline-enabled" type="checkbox" ${deck.deadlineEnabled ? "checked" : ""}><span>Use a target deadline for this deck</span></label>
+        <div class="hint">These rules apply only to this deck. Learning steps control how new cards graduate into review, and relearning steps handle lapsed review cards.</div>
+        <div class="deck-config-actions"><button class="mini-btn" data-role="save-rules">Save deck rules</button></div>
+      </div>`;
     const actions = row.querySelector(".deck-actions");
+    const config = row.querySelector(".deck-config");
 
     const toggle = document.createElement("label");
     toggle.className = "ck-line";
@@ -1656,6 +1873,11 @@ async function refreshDecksUI(){
     rename.onclick = async ()=>{ if(await renameDeck(deck)){ await refreshEverything(); await nextCard(); } };
     actions.appendChild(rename);
 
+    const rulesBtn = document.createElement("button");
+    rulesBtn.className = "mini-btn"; rulesBtn.textContent = "Deck rules";
+    rulesBtn.onclick = ()=> config.classList.toggle("hidden");
+    actions.appendChild(rulesBtn);
+
     const exportBtn = document.createElement("button");
     exportBtn.className = "mini-btn"; exportBtn.textContent = "Export";
     exportBtn.onclick = async ()=> exportCardsCsv((await db.cards.where("deck_id").equals(deck.id).toArray()), `${deck.name}.csv`);
@@ -1665,6 +1887,22 @@ async function refreshDecksUI(){
     del.className = "mini-btn danger"; del.textContent = "Delete";
     del.onclick = async ()=>{ if(await deleteDeck(deck)){ activeSession = null; await refreshEverything(); await nextCard(); } };
     actions.appendChild(del);
+
+    row.querySelector('[data-role="save-rules"]').addEventListener("click", async ()=>{
+      const fields = {
+        learningSteps: row.querySelector('[data-role="learning-steps"]'),
+        relearningSteps: row.querySelector('[data-role="relearning-steps"]'),
+        deadlineEnabled: row.querySelector('[data-role="deadline-enabled"]'),
+        deadlineDateISO: row.querySelector('[data-role="deadline-date"]'),
+        deadlineTime: row.querySelector('[data-role="deadline-time"]'),
+        studyStartTime: row.querySelector('[data-role="study-start"]'),
+        studyEndTime: row.querySelector('[data-role="study-end"]')
+      };
+      await saveDeckRules(deck, fields);
+      activeSession = null;
+      await refreshEverything();
+      if(currentCard && currentCard.deck_id === deck.id) await nextCard();
+    });
 
     ui.decksList.appendChild(row);
   }
