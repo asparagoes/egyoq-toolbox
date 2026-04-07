@@ -11,5 +11,6 @@
 - add category button in the setup panel should stick at the right side
 ### mcq-quiz-loader
 - add table example, in addition to csv (or omit csv, just use table instead)
+- edit footer emoticon
 ### flashflow
 - 
