@@ -106,6 +106,9 @@ button,input,select,textarea{font:inherit;color:inherit}
   display:grid;grid-template-columns:minmax(240px,290px) minmax(0,1fr) minmax(260px,320px);
   gap:14px;align-items:start
 }
+.left-col{order:1}
+.center-col{order:2}
+.right-col{order:3}
 .side-stack{display:grid;gap:12px}
 .panel{
   background:var(--panel);border:1px solid var(--border);border-radius:20px;overflow:hidden;
@@ -122,8 +125,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .panel-title{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);display:flex;gap:6px;align-items:center}
 .panel-body{padding:13px 14px}
 .panel.collapsed .panel-body{display:none}
+.panel.collapsed.hover-open .panel-body{display:block}
 .hint{font-size:11px;color:var(--text3);line-height:1.5}
 .stack-tools{display:flex;gap:4px}
+.icon-inline{
+  width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.icon-inline svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .drag-handle{
   gap:2px;
   cursor:grab;
@@ -168,7 +176,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   display:flex;justify-content:space-between;gap:8px;align-items:center;color:var(--text3);
   font-size:12px;font-weight:700;margin-bottom:10px;flex-wrap:wrap
 }
-.progress-wrap{margin-bottom:16px}
+.progress-wrap{margin-top:18px;padding-top:12px;border-top:1px solid var(--border)}
 .progress-head{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--text3)}
 .progress-bar{height:8px;border-radius:999px;background:var(--bg3);overflow:hidden}
 .progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width .25s ease}
@@ -187,10 +195,19 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .mic-btn:hover{transform:translateY(-1px)}
 .mic-btn.on{background:color-mix(in srgb, var(--red) 10%, transparent);border-color:var(--red)}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.card-corner-tools{
+  position:absolute;top:18px;right:18px;z-index:5;display:flex;gap:8px
+}
+.card-corner-tools .icon-btn{
+  width:34px;height:34px;border-radius:12px;background:color-mix(in srgb, var(--panel) 78%, transparent);backdrop-filter:blur(10px)
+}
+.card-corner-tools .icon-btn.danger{color:var(--red);border-color:color-mix(in srgb, var(--red) 30%, var(--border))}
+.show-row{display:flex;justify-content:center;margin:14px 0 10px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;justify-content:center}
 .show-btn{
   border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;
-  border-radius:16px;padding:11px 18px;font-weight:800;font-size:14px;box-shadow:0 8px 20px var(--accentSoft);transition:all .15s ease
+  border-radius:16px;padding:11px 18px;font-weight:800;font-size:14px;box-shadow:0 8px 20px var(--accentSoft);transition:all .15s ease;
+  min-width:min(100%,240px);justify-content:center
 }
 .show-btn:hover{transform:translateY(-1px)}
 .status-line{min-height:20px;font-size:12px;font-weight:600;color:var(--text3)}
@@ -223,15 +240,19 @@ button,input,select,textarea{font:inherit;color:inherit}
 .empty-card .title{font-size:20px;font-weight:800;margin-bottom:6px}
 .empty-card .sub{color:var(--text3);max-width:320px}
 .session-list,.deck-list{display:grid;gap:8px}
+.session-list{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
 .session-row,.deck-row{
   border:1px solid var(--border);border-radius:16px;background:var(--bg3);padding:10px 11px
 }
 .session-row.done{border-color:color-mix(in srgb, var(--green) 35%, var(--border))}
 .session-row.missed{border-color:color-mix(in srgb, var(--red) 35%, var(--border))}
+.session-row{
+  min-height:96px;display:flex;flex-direction:column;gap:10px;justify-content:space-between
+}
 .session-main,.deck-name{font-weight:700}
 .session-sub,.deck-meta{font-size:12px;color:var(--text3);margin-top:2px}
 .badge{
-  margin-left:auto;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap
+  align-self:flex-start;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap
 }
 .row-split{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
 .deck-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
@@ -266,18 +287,66 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
   opacity:0;transition:all .2s ease;pointer-events:none;font-size:12px;font-weight:700
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.review-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px
+}
+.toggle-tile{
+  border:1px solid var(--border);background:var(--bg3);color:var(--text2);border-radius:16px;padding:12px 10px;
+  text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-height:72px;transition:all .15s ease
+}
+.toggle-tile:hover{border-color:var(--border2);transform:translateY(-1px)}
+.toggle-tile[aria-pressed="true"]{
+  border-color:color-mix(in srgb, var(--accent) 40%, var(--border));
+  background:color-mix(in srgb, var(--accent) 10%, var(--bg3));
+  color:var(--text)
+}
+.toggle-tile strong{font-size:12px;line-height:1.3}
+.toggle-tile span{font-size:11px;line-height:1.45;color:var(--text3)}
+.toggle-tile[aria-pressed="true"] span{color:color-mix(in srgb, var(--accent2) 65%, var(--text3))}
+.help-stack{display:grid;gap:12px}
+.help-lead{
+  padding:14px 15px;border:1px solid color-mix(in srgb, var(--accent) 30%, var(--border));border-radius:18px;
+  background:linear-gradient(135deg,color-mix(in srgb, var(--accent) 12%, var(--panel2)), color-mix(in srgb, var(--cyan) 8%, var(--panel)));
+  color:var(--text2);line-height:1.7
+}
+.help-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.help-card{
+  border:1px solid var(--border);border-radius:18px;padding:14px;background:var(--bg3)
+}
+.help-kicker{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid var(--border2);
+  background:var(--surface);color:var(--accent2);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase
+}
+.help-card h3{margin:10px 0 6px;font-size:15px}
+.help-card p{margin:0;color:var(--text2);line-height:1.7}
+.help-note{
+  padding:12px 13px;border-radius:16px;border:1px dashed color-mix(in srgb, var(--cyan) 40%, var(--border2));
+  background:color-mix(in srgb, var(--cyan) 8%, var(--panel));color:var(--text2);line-height:1.65
+}
+.tool-footer{
+  max-width:var(--maxw);margin:4px auto 20px;padding:0 14px;color:var(--text3);text-align:center;font-size:13px
+}
+.tool-footer a{color:inherit}
+.footer-home{
+  display:inline-block;margin-top:8px;color:var(--orange);text-decoration:underline;text-underline-offset:3px;font-weight:700
+}
+body.swap-panels .left-col{order:3}
+body.swap-panels .right-col{order:1}
 
 @media(max-width:1220px){
   .workspace{grid-template-columns:1fr}
   .left-col{order:2}
   .center-col{order:1}
   .right-col{order:3}
+  body.swap-panels .left-col{order:3}
+  body.swap-panels .right-col{order:2}
   .card-shell{min-height:unset}
 }
 @media(max-width:900px){
   .page{padding:10px}
   .topbar{padding:10px 12px}
   .tb-right{width:100%;justify-content:flex-start;margin-left:0}
+  .help-grid{grid-template-columns:1fr}
 }
 @media(max-width:760px){
   .question{font-size:20px}
@@ -292,12 +361,13 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
   .divider{display:none}
   .tb-tools,.tb-right{min-width:100%}
   .btn,.stats-pill{width:auto;max-width:100%}
-  .controls{flex-direction:column;align-items:stretch}
-  .controls > *{justify-content:center}
   .input-row{flex-direction:column;align-items:stretch}
   .mic-btn{width:100%}
   .row-split{flex-direction:column}
   .question{font-size:18px}
+  .review-grid{grid-template-columns:1fr}
+  .card-corner-tools{top:14px;right:14px}
+  .session-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 </style>
 </head>
@@ -307,7 +377,6 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
   <div class="divider"></div>
   <div class="tb-tools">
     <label class="btn primary" style="cursor:pointer">📥 Import CSV<input id="csvFile" type="file" accept=".csv,text/csv" hidden></label>
-    <button id="btnTyping" class="btn cyan">⌨ Typing: On</button>
     <div class="dd-wrap settings-only">
       <button id="btnOptions" class="btn">⚙ Options</button>
       <div id="optionsPanel" class="dd-panel hidden">
@@ -316,6 +385,8 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
           <div class="field"><label for="optTheme">Theme</label><select id="optTheme"><option value="dark">Dark</option><option value="light">Light</option></select></div>
           <label class="ck-line"><input type="checkbox" id="optCardOnly"><span>Focus mode (hide side panels)</span></label>
           <label class="ck-line"><input type="checkbox" id="optHideLabels"><span>Hide card labels</span></label>
+          <label class="ck-line"><input type="checkbox" id="optSwapPanels"><span>Swap side columns</span></label>
+          <label class="ck-line"><input type="checkbox" id="optHoverPanels"><span>Hover-expand collapsed panels</span></label>
         </div>
         <div class="dd-group">
           <div class="dd-title">Review</div>
@@ -352,20 +423,20 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
     <div class="left-col side-stack" id="leftStack">
       <section class="panel settings-only" data-side="left" data-panel-id="studyPlan">
         <div class="panel-head">
-          <div class="panel-title">📅 Study Plan</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="2"></rect><path d="M5 2.5v3M11 2.5v3M2.5 6.5h11"></path></svg></span>Study Plan</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
           <div id="planSummary" class="hint">Import a deck to see recommended study sessions.</div>
           <div id="sessionList" class="session-list" style="margin-top:10px"></div>
-          <div class="hint" style="margin-top:10px">Tip: drag panels with the six-dot handle to reorder them.</div>
+          <div class="hint" style="margin-top:10px">Tip: drag panels with the four-dot handle to sort them, or hover collapsed panels to peek inside.</div>
         </div>
       </section>
 
       <section class="panel settings-only" data-side="left" data-panel-id="decks">
         <div class="panel-head">
-          <div class="panel-title">📚 Deck Manager</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 3.5h6a2 2 0 0 1 2 2v7h-6a2 2 0 0 0-2 2z"></path><path d="M5.5 3.5h6a1 1 0 0 1 1 1v8"></path></svg></span>Deck Manager</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
           <div id="decksSummary" class="hint">No decks yet.</div>
@@ -376,18 +447,17 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
 
     <div class="center-col">
       <div class="card-shell">
+        <div class="card-corner-tools">
+          <button id="btnEditCard" class="icon-btn hidden" type="button" title="Edit current card" aria-label="Edit current card">✎</button>
+          <button id="btnDeleteCard" class="icon-btn danger hidden" type="button" title="Delete current card" aria-label="Delete current card">✕</button>
+        </div>
         <div id="timerWrap" class="timer-wrap hidden">
-          <div class="timer-top"><span>⏱ Per-question timer</span><span id="timerVal">—</span></div>
+          <div class="timer-top"><span style="display:inline-flex;align-items:center;gap:6px"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="9" r="4.5"></circle><path d="M8 9V6.8M8 9l2 1.4M6.5 2.5h3M11.5 4l1.2-1.2"></path></svg></span>Per-question timer</span><span id="timerVal">—</span></div>
           <div class="timer-track"><div id="timerFill" class="timer-fill"></div></div>
         </div>
 
         <div id="metaRow" class="meta-row"></div>
         <div class="queue-line"><span id="queueLabel">Queue: 0</span><span id="sessionLine">Session: —</span></div>
-
-        <div class="progress-wrap">
-          <div class="progress-head"><span id="progressText">0 / 0 learned</span><span id="progressPct">0%</span></div>
-          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
-        </div>
 
         <div id="question" class="question">
           <div class="empty-card">
@@ -402,11 +472,12 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
           <button id="btnMic" class="mic-btn hidden" title="Voice input">🎤</button>
         </div>
 
+        <div class="show-row">
+          <button id="btnShowAnswer" class="show-btn hidden">Show Answer</button>
+        </div>
+
         <div class="controls">
-          <button id="btnShowAnswer" class="show-btn hidden">👁 Show Answer</button>
-          <button id="btnEditAnswer" class="btn hidden">✏ Edit answer</button>
-          <button id="btnEditCard" class="btn hidden">✏ Edit card</button>
-          <button id="btnDeleteCard" class="btn danger hidden">🗑 Delete card</button>
+          <button id="btnEditAnswer" class="btn hidden">Edit answer</button>
         </div>
 
         <div id="statusLine" class="status-line"></div>
@@ -431,35 +502,42 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
           <button class="rate-btn good" data-grade="3">Good<small>Got it</small><span class="key">3</span></button>
           <button class="rate-btn easy" data-grade="4">Easy<small>Clear</small><span class="key">4</span></button>
         </div>
+
+        <div class="progress-wrap">
+          <div class="progress-head"><span id="progressText">0 / 0 learned</span><span id="progressPct">0%</span></div>
+          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        </div>
       </div>
     </div>
 
     <div class="right-col side-stack" id="rightStack">
       <section class="panel settings-only" data-side="right" data-panel-id="reviewBehavior">
         <div class="panel-head">
-          <div class="panel-title">⚙ Review Behavior</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 5h10M5 8h6M4 11h8"></path><circle cx="5" cy="5" r="1"></circle><circle cx="9" cy="8" r="1"></circle><circle cx="7" cy="11" r="1"></circle></svg></span>Review Behavior</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
-          <label class="ck-line"><input type="checkbox" id="reviewTyping"><span>Typing mode</span></label>
-          <label class="ck-line"><input type="checkbox" id="reviewAutoRate"><span>Auto-rate typed answers</span></label>
-          <label class="ck-line"><input type="checkbox" id="reviewRandomize"><span>Randomize cards</span></label>
-          <label class="ck-line"><input type="checkbox" id="reviewVoice"><span>Voice input</span></label>
-          <label class="ck-line"><input type="checkbox" id="reviewTts"><span>Read question aloud</span></label>
-          <label class="ck-line"><input type="checkbox" id="reviewHideLabels"><span>Hide labels</span></label>
-          <label class="ck-line"><input type="checkbox" id="reviewCardOnly"><span>Focus mode</span></label>
+          <div class="review-grid">
+            <button id="reviewTyping" class="toggle-tile" type="button" aria-pressed="false"><strong>Typing mode</strong><span>Type first, then reveal.</span></button>
+            <button id="reviewAutoRate" class="toggle-tile" type="button" aria-pressed="false"><strong>Auto-rate typing</strong><span>Estimate the grade from answer closeness.</span></button>
+            <button id="reviewRandomize" class="toggle-tile" type="button" aria-pressed="false"><strong>Randomize order</strong><span>Shuffle the review queue.</span></button>
+            <button id="reviewVoice" class="toggle-tile" type="button" aria-pressed="false"><strong>Voice input</strong><span>Use your microphone while typing.</span></button>
+            <button id="reviewTts" class="toggle-tile" type="button" aria-pressed="false"><strong>Read aloud</strong><span>Speak the prompt before you answer.</span></button>
+            <button id="reviewHideLabels" class="toggle-tile" type="button" aria-pressed="false"><strong>Hide card labels</strong><span>Keep metadata chips out of the way.</span></button>
+            <button id="reviewCardOnly" class="toggle-tile" type="button" aria-pressed="false"><strong>Focus mode</strong><span>Hide both side panels.</span></button>
+          </div>
           <div class="grid2" style="margin-top:8px">
             <div class="field"><label for="reviewDelay">Auto-advance delay (sec)</label><input id="reviewDelay" type="number" min="0" max="60" step="1"></div>
             <div class="field"><label for="reviewTimeLimit">Question time limit (sec)</label><input id="reviewTimeLimit" type="number" min="0" max="600" step="5"></div>
           </div>
-          <div class="hint" style="margin-top:8px">When the timer ends, the answer is revealed. You rate the card, then the next card loads. No session time limit.</div>
+          <div class="hint" style="margin-top:8px">Tip: drag these panels with the four-dot handle. Timer expiry reveals the answer automatically; rating still happens after you review it.</div>
         </div>
       </section>
 
       <section class="panel settings-only" data-side="right" data-panel-id="mode">
         <div class="panel-head">
-          <div class="panel-title">🎯 Deadline Planner</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.8"></circle><circle cx="8" cy="8" r="1.2"></circle><path d="M8 3.2v1.2M8 11.6v1.2M3.2 8h1.2M11.6 8h1.2"></path></svg></span>Deadline Planner</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
           <div id="modeValue" class="big-val" style="font-size:24px">Regular</div>
@@ -488,8 +566,8 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
 
       <section class="panel settings-only" data-side="right" data-panel-id="goal">
         <div class="panel-head">
-          <div class="panel-title">🏆 Goal Progress</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 3.5h6v2.2a3 3 0 0 1-6 0z"></path><path d="M5 4.5H3.5A1.5 1.5 0 0 0 5 7M11 4.5h1.5A1.5 1.5 0 0 1 11 7M8 8.7v2.1M6.2 13h3.6"></path></svg></span>Goal Progress</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
           <div id="goalValue" class="big-val">0 / 0</div>
@@ -499,8 +577,8 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
 
       <section class="panel settings-only" data-side="right" data-panel-id="session">
         <div class="panel-head">
-          <div class="panel-title">▶ Current Session</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 3.5l6 4.5-6 4.5z"></path></svg></span>Current Session</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
           <div id="sessionChip" class="session-chip"><span class="dot"></span><span id="sessionValue">Idle</span></div>
@@ -515,13 +593,32 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
 <dialog id="helpDialog">
   <div class="modal-head">How FlashFlow works</div>
   <div class="modal-body">
-    <p><strong>Import:</strong> one CSV becomes one deck. FlashFlow supports <code>front/back</code>, question-bank style <code>Stem/Answer/Explanation</code>, and <code>text</code> entries with <code>[[answer]]</code> markers.</p>
-    <p><strong>Review flow:</strong> reveal the answer first, then rate the card with <strong>Again / Hard / Good / Easy</strong>. Those ratings drive the spaced-repetition schedule, so they matter more than speed.</p>
-    <p><strong>Typing mode:</strong> if enabled, you type your answer before revealing. You can keep grading manually, or turn on <strong>Auto-rate typed answers</strong> if you want FlashFlow to estimate the rating from how close your answer was.</p>
-    <p><strong>Deadline planner:</strong> optional. If you set a target deadline, the planner suggests recommended study sessions in the side panel. Without a deadline, the app stays on normal spaced review.</p>
-    <p><strong>Side panels:</strong> use the <strong>six-dot drag handles</strong> to reorder the left and right side panels however you want. The order is saved locally on your device.</p>
-    <p><strong>Deck control:</strong> each deck can be active, inactive, studied solo, renamed, exported, or deleted. Only active decks contribute cards to your queue.</p>
-    <p><strong>Keyboard shortcuts:</strong> <code>Enter</code> = reveal in typing mode · <code>Space</code> = reveal · <code>1 / 2 / 3 / 4</code> = rate.</p>
+    <div class="help-stack">
+      <div class="help-lead"><strong>FlashFlow is built for fast, adaptive study.</strong> Import a deck, choose how strict or minimal you want the review experience to feel, and let the spacing system keep surfacing the cards that need more attention.</div>
+      <div class="help-grid">
+        <section class="help-card">
+          <div class="help-kicker">Import</div>
+          <h3>Bring in almost any flashcard sheet</h3>
+          <p>One CSV becomes one deck. FlashFlow accepts simple <code>front/back</code> rows, question-bank style <code>Stem/Answer/Explanation</code>, and cloze-style <code>[[answer]]</code> markers inside plain text.</p>
+        </section>
+        <section class="help-card">
+          <div class="help-kicker">Review</div>
+          <h3>Reveal, judge, and move on</h3>
+          <p>Study one card at a time. Reveal the answer, compare it honestly, then rate it with <strong>Again / Hard / Good / Easy</strong>. Those ratings shape when the card returns.</p>
+        </section>
+        <section class="help-card">
+          <div class="help-kicker">Typing</div>
+          <h3>Use typing only when you need it</h3>
+          <p>Typing mode is great for recall-heavy subjects. You can keep manual grading, or switch on <strong>Auto-rate typing</strong> if you want FlashFlow to estimate the result from answer closeness.</p>
+        </section>
+        <section class="help-card">
+          <div class="help-kicker">Panels</div>
+          <h3>Make the workspace fit you</h3>
+          <p>Use the <strong>four-dot handles</strong> to sort the side panels. You can also <strong>swap the left and right columns</strong>, collapse panels manually, or let collapsed panels open on hover for quick peeks.</p>
+        </section>
+      </div>
+      <div class="help-note"><strong>Useful shortcuts:</strong> <code>Enter</code> reveals while typing, <code>Space</code> reveals the answer, and <code>1 / 2 / 3 / 4</code> rates the current card after reveal. If you use a deadline, the study plan compresses toward that target automatically.</div>
+    </div>
   </div>
   <div class="modal-foot"><button id="btnCloseHelp" class="btn">Close</button></div>
 </dialog>
@@ -539,6 +636,11 @@ dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
   </div>
   <div class="modal-foot"><button id="btnCloseManage" class="btn">Close</button></div>
 </dialog>
+
+<footer class="tool-footer">
+  <div>Made with <span aria-hidden="true">🧡</span> by <a href="../../">egyoq</a>.</div>
+  <a class="footer-home" href="../../">_(·] ∠)_</a>
+</footer>
 
 <dialog id="editCardDialog">
   <div class="modal-head">Edit Current Card</div>
@@ -567,10 +669,10 @@ db.version(1).stores({
 
 const $ = id => document.getElementById(id);
 const ui = {
-  csvFile:$("csvFile"), btnTyping:$("btnTyping"), btnOptions:$("btnOptions"), optionsPanel:$("optionsPanel"),
+  csvFile:$("csvFile"), btnOptions:$("btnOptions"), optionsPanel:$("optionsPanel"),
   btnManageCards:$("btnManageCards"), btnHelp:$("btnHelp"), helpDialog:$("helpDialog"), btnCloseHelp:$("btnCloseHelp"),
   btnReset:$("btnReset"), statsText:$("statsText"), btnThemeQuick:$("btnThemeQuick"),
-  optTheme:$("optTheme"), optCardOnly:$("optCardOnly"), optHideLabels:$("optHideLabels"),
+  optTheme:$("optTheme"), optCardOnly:$("optCardOnly"), optHideLabels:$("optHideLabels"), optSwapPanels:$("optSwapPanels"), optHoverPanels:$("optHoverPanels"),
   optReverse:$("optReverse"), optAutoRate:$("optAutoRate"), optRandomize:$("optRandomize"),
   optDelay:$("optDelay"), optQuestionLimit:$("optQuestionLimit"), optVoice:$("optVoice"), optTts:$("optTts"),
   btnShowPanels:$("btnShowPanels"),
@@ -607,8 +709,10 @@ const settings = {
   randomizeCards:false,
   voiceEnabled:false,
   ttsEnabled:false,
-  hideLabels:false,
+  hideLabels:true,
   cardOnlyView:false,
+  swapPanels:false,
+  hoverExpandPanels:true,
   reverseImport:false,
   autoAdvanceDelaySec:5,
   perQuestionLimitSec:0,
@@ -667,14 +771,21 @@ function loadSettings(){
   if(!settings.collapsed) settings.collapsed = {};
 }
 function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+function syncToggleButton(btn, active){
+  if(!btn) return;
+  btn.setAttribute("aria-pressed", active ? "true" : "false");
+}
 
 function syncUI(){
   document.body.dataset.theme = settings.theme;
   document.body.classList.toggle("card-only", !!settings.cardOnlyView);
+  document.body.classList.toggle("swap-panels", !!settings.swapPanels);
 
   ui.optTheme.value = settings.theme;
   ui.optCardOnly.checked = settings.cardOnlyView;
   ui.optHideLabels.checked = settings.hideLabels;
+  ui.optSwapPanels.checked = settings.swapPanels;
+  ui.optHoverPanels.checked = settings.hoverExpandPanels;
   ui.optReverse.checked = settings.reverseImport;
   ui.optAutoRate.checked = settings.autoRateTyping;
   ui.optRandomize.checked = settings.randomizeCards;
@@ -683,13 +794,13 @@ function syncUI(){
   ui.optVoice.checked = settings.voiceEnabled;
   ui.optTts.checked = settings.ttsEnabled;
 
-  ui.reviewTyping.checked = settings.typingMode;
-  ui.reviewAutoRate.checked = settings.autoRateTyping;
-  ui.reviewRandomize.checked = settings.randomizeCards;
-  ui.reviewVoice.checked = settings.voiceEnabled;
-  ui.reviewTts.checked = settings.ttsEnabled;
-  ui.reviewHideLabels.checked = settings.hideLabels;
-  ui.reviewCardOnly.checked = settings.cardOnlyView;
+  syncToggleButton(ui.reviewTyping, settings.typingMode);
+  syncToggleButton(ui.reviewAutoRate, settings.autoRateTyping);
+  syncToggleButton(ui.reviewRandomize, settings.randomizeCards);
+  syncToggleButton(ui.reviewVoice, settings.voiceEnabled);
+  syncToggleButton(ui.reviewTts, settings.ttsEnabled);
+  syncToggleButton(ui.reviewHideLabels, settings.hideLabels);
+  syncToggleButton(ui.reviewCardOnly, settings.cardOnlyView);
   ui.reviewDelay.value = settings.autoAdvanceDelaySec;
   ui.reviewTimeLimit.value = settings.perQuestionLimitSec;
 
@@ -700,7 +811,6 @@ function syncUI(){
   ui.optStudyStart.value = settings.studyStartTime || "08:00";
   ui.optStudyEnd.value = settings.studyEndTime || "22:00";
 
-  ui.btnTyping.textContent = `⌨ Typing: ${settings.typingMode ? "On" : "Off"}`;
   ui.btnThemeQuick.textContent = settings.theme === "dark" ? "🌙 Dark" : "☀ Light";
 }
 
@@ -715,9 +825,11 @@ function applyPanelLayout(){
   document.querySelectorAll("[data-panel-id]").forEach(panel=>{
     const id = panel.dataset.panelId;
     panel.classList.toggle("collapsed", !!settings.collapsed[id]);
+    panel.classList.remove("hover-open");
     panel.querySelector(".collapse-btn").textContent = panel.classList.contains("collapsed") ? "+" : "−";
   });
   setupPanelDragging();
+  setupPanelHoverBehavior();
 }
 
 let dragArmedPanel = null;
@@ -803,11 +915,32 @@ function setupPanelDragging(){
   });
 }
 
+function setupPanelHoverBehavior(){
+  document.querySelectorAll("[data-panel-id]").forEach(panel=>{
+    if(panel.dataset.hoverReady === "true") return;
+    panel.dataset.hoverReady = "true";
+
+    const openPreview = ()=>{
+      if(settings.hoverExpandPanels && panel.classList.contains("collapsed")) panel.classList.add("hover-open");
+    };
+    const closePreview = ()=>{
+      if(!panel.matches(":hover") && !panel.contains(document.activeElement)) panel.classList.remove("hover-open");
+    };
+
+    panel.addEventListener("pointerenter", openPreview);
+    panel.addEventListener("pointerleave", closePreview);
+    panel.addEventListener("focusin", openPreview);
+    panel.addEventListener("focusout", ()=>requestAnimationFrame(closePreview));
+  });
+}
+
 function bindSettings(){
   const handlers = [
     [ui.optTheme,"change",()=>settings.theme = ui.optTheme.value],
     [ui.optCardOnly,"change",()=>settings.cardOnlyView = ui.optCardOnly.checked],
     [ui.optHideLabels,"change",()=>settings.hideLabels = ui.optHideLabels.checked],
+    [ui.optSwapPanels,"change",()=>settings.swapPanels = ui.optSwapPanels.checked],
+    [ui.optHoverPanels,"change",()=>settings.hoverExpandPanels = ui.optHoverPanels.checked],
     [ui.optReverse,"change",()=>settings.reverseImport = ui.optReverse.checked],
     [ui.optAutoRate,"change",()=>settings.autoRateTyping = ui.optAutoRate.checked],
     [ui.optRandomize,"change",()=>settings.randomizeCards = ui.optRandomize.checked],
@@ -815,13 +948,6 @@ function bindSettings(){
     [ui.optQuestionLimit,"input",()=>settings.perQuestionLimitSec = clamp(Number(ui.optQuestionLimit.value)||0,0,600)],
     [ui.optVoice,"change",()=>settings.voiceEnabled = ui.optVoice.checked],
     [ui.optTts,"change",()=>settings.ttsEnabled = ui.optTts.checked],
-    [ui.reviewTyping,"change",()=>settings.typingMode = ui.reviewTyping.checked],
-    [ui.reviewAutoRate,"change",()=>settings.autoRateTyping = ui.reviewAutoRate.checked],
-    [ui.reviewRandomize,"change",()=>settings.randomizeCards = ui.reviewRandomize.checked],
-    [ui.reviewVoice,"change",()=>settings.voiceEnabled = ui.reviewVoice.checked],
-    [ui.reviewTts,"change",()=>settings.ttsEnabled = ui.reviewTts.checked],
-    [ui.reviewHideLabels,"change",()=>settings.hideLabels = ui.reviewHideLabels.checked],
-    [ui.reviewCardOnly,"change",()=>settings.cardOnlyView = ui.reviewCardOnly.checked],
     [ui.reviewDelay,"input",()=>settings.autoAdvanceDelaySec = clamp(Number(ui.reviewDelay.value)||0,0,60)],
     [ui.reviewTimeLimit,"input",()=>settings.perQuestionLimitSec = clamp(Number(ui.reviewTimeLimit.value)||0,0,600)],
     [ui.optTimezone,"change",()=>settings.timezone = ui.optTimezone.value],
@@ -837,6 +963,28 @@ function bindSettings(){
       capStudyWindowEnd();
       saveSettings();
       syncUI();
+      applyPanelLayout();
+      setupVoice();
+      if(currentCard) showQuestion(currentCard, true);
+      await refreshEverything();
+    });
+  }
+
+  const reviewToggleHandlers = [
+    [ui.reviewTyping, ()=>settings.typingMode = !settings.typingMode],
+    [ui.reviewAutoRate, ()=>settings.autoRateTyping = !settings.autoRateTyping],
+    [ui.reviewRandomize, ()=>settings.randomizeCards = !settings.randomizeCards],
+    [ui.reviewVoice, ()=>settings.voiceEnabled = !settings.voiceEnabled],
+    [ui.reviewTts, ()=>settings.ttsEnabled = !settings.ttsEnabled],
+    [ui.reviewHideLabels, ()=>settings.hideLabels = !settings.hideLabels],
+    [ui.reviewCardOnly, ()=>settings.cardOnlyView = !settings.cardOnlyView]
+  ];
+  for(const [el, fn] of reviewToggleHandlers){
+    el.addEventListener("click", async ()=>{
+      fn();
+      saveSettings();
+      syncUI();
+      applyPanelLayout();
       setupVoice();
       if(currentCard) showQuestion(currentCard, true);
       await refreshEverything();
@@ -1196,9 +1344,10 @@ function showQuestion(card, sameCard=false){
   ui.inputRow.classList.toggle("hidden", !settings.typingMode);
   ui.answerInput.disabled = !settings.typingMode;
   ui.answerInput.value = sameCard ? ui.answerInput.value : "";
-  ui.btnShowAnswer.classList.remove("hidden");
+  ui.btnShowAnswer.classList.toggle("hidden", revealed);
   ui.btnEditCard.classList.remove("hidden");
   ui.btnDeleteCard.classList.remove("hidden");
+  ui.btnEditAnswer.classList.toggle("hidden", !settings.typingMode || !revealed);
   ui.btnMic.classList.toggle("hidden", !settings.voiceEnabled || !settings.typingMode || !recognition);
   ui.sessionLine.textContent = `Session: ${activeSession ? (activeSession.source === "custom" ? "Custom" : "Recommended") : "—"}`;
   if(settings.typingMode) ui.answerInput.focus();
@@ -1394,7 +1543,6 @@ async function computePlan(){
   const dl = deadlineMs();
   const horizon = dl || (now + DAY_MS * 4);
   const sessions = [];
-  let labelN = 1;
   const startDay = new Date(now); startDay.setHours(0,0,0,0);
   const endDay = new Date(horizon); endDay.setHours(0,0,0,0);
   const startMin = timeToMinutes(settings.studyStartTime);
@@ -1412,7 +1560,7 @@ async function computePlan(){
       const at = day + minute * 60000;
       if(at < now - 3600000) continue;
       if(dl && at > dl) continue;
-      sessions.push({session_key:`rec-${lastDeckSignature}-${at}`, time_ms:at, source:"recommended", expected_cards:expectedPer, label:`Session ${labelN++}`});
+      sessions.push({session_key:`rec-${lastDeckSignature}-${at}`, time_ms:at, source:"recommended", expected_cards:expectedPer});
     }
   }
   return sessions.slice(0, 12);
@@ -1462,13 +1610,12 @@ async function refreshPlan(){
     const row = document.createElement("div");
     row.className = `session-row ${log ? "done" : item.time_ms < Date.now() ? "missed" : ""}`;
     row.innerHTML = `
-      <div class="row-split">
-        <div>
-          <div class="session-main">${item.label}</div>
-          <div class="session-sub">${fmtShort(item.time_ms)} · ${fmtTime(item.time_ms)} · ~${item.expected_cards} cards</div>
-        </div>
-        <div class="badge">${log ? `Done · ${log.cards_reviewed || 1}` : item.time_ms < Date.now() ? "Missed" : "Planned"}</div>
-      </div>`;
+      <div>
+        <div class="session-main">${fmtShort(item.time_ms)}</div>
+        <div class="session-sub">${fmtTime(item.time_ms)}</div>
+      </div>
+      <div class="session-sub">~${item.expected_cards} cards</div>
+      <div class="badge">${log ? `Done · ${log.cards_reviewed || 1}` : item.time_ms < Date.now() ? "Missed" : "Planned"}</div>`;
     ui.sessionList.appendChild(row);
   }
 }
@@ -1627,12 +1774,6 @@ ui.csvFile.addEventListener("change", async e=>{
   try{ await importCSV(file); } catch(err){ console.error(err); toast("Import failed."); }
   finally{ ui.csvFile.value = ""; }
 });
-ui.btnTyping.addEventListener("click", async ()=>{
-  settings.typingMode = !settings.typingMode;
-  saveSettings(); syncUI(); setupVoice();
-  if(currentCard) showQuestion(currentCard, true);
-  await refreshEverything();
-});
 ui.btnThemeQuick.addEventListener("click", ()=>{
   settings.theme = settings.theme === "dark" ? "light" : "dark";
   saveSettings(); syncUI();
@@ -1702,13 +1843,15 @@ ui.answerInput.addEventListener("keydown", e=>{
 
 window.addEventListener("keydown", async e=>{
   if(!currentCard) return;
-  if(e.key === " " && e.target !== ui.answerInput && !revealed){
+  if(e.key === " " && e.target !== ui.answerInput && !e.target.closest("button")){
     e.preventDefault();
-    const info = revealAnswer();
-    if(settings.typingMode && settings.autoRateTyping && info){
-      const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
-      const wrong = wrongPercent(info.user, target);
-      scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
+    if(!revealed){
+      const info = revealAnswer();
+      if(settings.typingMode && settings.autoRateTyping && info){
+        const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
+        const wrong = wrongPercent(info.user, target);
+        scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
+      }
     }
   }
   if(["1","2","3","4"].includes(e.key) && !ui.ratings.classList.contains("hidden") && e.target !== ui.answerInput){
