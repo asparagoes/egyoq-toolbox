@@ -3,6 +3,7 @@
 - change description
 - add favicon
 - add about/contact page
+- add a floating egyoq button (for back and other options)
 ## tools
 ### grade-calculator
 - add autoscrolling when sorting
