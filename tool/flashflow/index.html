@@ -176,10 +176,28 @@ button,input,select,textarea{font:inherit;color:inherit}
   display:flex;justify-content:space-between;gap:8px;align-items:center;color:var(--text3);
   font-size:12px;font-weight:700;margin-bottom:10px;flex-wrap:wrap
 }
+.queue-primary{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap
+}
+.queue-sep{opacity:.42}
+.queue-controls{
+  display:flex;align-items:center;gap:6px
+}
+.queue-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;border:1px solid var(--border);
+  background:var(--surface);font-size:11px;font-weight:800;color:var(--text2)
+}
+.queue-pill.again{color:#fb7185;border-color:color-mix(in srgb, #fb7185 35%, var(--border))}
+.queue-pill.hard{color:#f59e0b;border-color:color-mix(in srgb, #f59e0b 35%, var(--border))}
+.queue-pill.good{color:#22c55e;border-color:color-mix(in srgb, #22c55e 35%, var(--border))}
 .progress-wrap{margin-top:18px;padding-top:12px;border-top:1px solid var(--border)}
 .progress-head{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--text3)}
 .progress-bar{height:8px;border-radius:999px;background:var(--bg3);overflow:hidden}
-.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width .25s ease}
+.progress-bar{display:flex}
+.progress-fill{height:100%;width:0;transition:width .25s ease}
+.progress-fill.again{background:linear-gradient(90deg,#ef4444,#e11d48)}
+.progress-fill.hard{background:linear-gradient(90deg,#f59e0b,#ea580c)}
+.progress-fill.good{background:linear-gradient(90deg,#22c55e,#06b6d4)}
 .question{
   flex:1;font-size:clamp(18px,2vw,26px);font-weight:650;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:180px
 }
@@ -204,6 +222,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .card-corner-tools .icon-btn.danger{color:var(--red);border-color:color-mix(in srgb, var(--red) 30%, var(--border))}
 .show-row{display:flex;justify-content:center;margin:14px 0 10px}
 .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;justify-content:center}
+.history-btn{
+  width:32px;height:32px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text3);
+  display:flex;align-items:center;justify-content:center;cursor:pointer
+}
+.history-btn:hover{background:var(--surface2);color:var(--text)}
+.history-btn:disabled{opacity:.45;cursor:not-allowed}
 .show-btn{
   border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;
   border-radius:16px;padding:11px 18px;font-weight:800;font-size:14px;box-shadow:0 8px 20px var(--accentSoft);transition:all .15s ease;
@@ -240,14 +264,36 @@ button,input,select,textarea{font:inherit;color:inherit}
 .empty-card .title{font-size:20px;font-weight:800;margin-bottom:6px}
 .empty-card .sub{color:var(--text3);max-width:320px}
 .session-list,.deck-list{display:grid;gap:8px}
-.session-list{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
+.session-list{grid-template-columns:1fr}
 .session-row,.deck-row{
   border:1px solid var(--border);border-radius:16px;background:var(--bg3);padding:10px 11px
 }
 .session-row.done{border-color:color-mix(in srgb, var(--green) 35%, var(--border))}
 .session-row.missed{border-color:color-mix(in srgb, var(--red) 35%, var(--border))}
 .session-row{
-  min-height:96px;display:flex;flex-direction:column;gap:10px;justify-content:space-between
+  min-height:88px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px 15px
+}
+.session-date{
+  display:flex;flex-direction:column;align-items:flex-start;min-width:64px
+}
+.session-day{
+  font-size:46px;font-weight:900;line-height:.9;letter-spacing:-.05em
+}
+.session-month{
+  font-size:18px;font-weight:800;letter-spacing:.06em;text-transform:uppercase
+}
+.session-divider{
+  width:1px;align-self:stretch;background:var(--border)
+}
+.session-copy{
+  display:flex;flex-direction:column;gap:6px;min-width:0
+}
+.session-line-main{
+  font-size:13px;font-weight:800;display:flex;gap:10px;flex-wrap:wrap;align-items:center
+}
+.session-line-sub{font-size:12px;color:var(--text3)}
+.session-deck-dot{
+  width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto
 }
 .session-main,.deck-name{font-weight:700}
 .session-sub,.deck-meta{font-size:12px;color:var(--text3);margin-top:2px}
@@ -268,6 +314,55 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .deck-config.hidden{display:none}
 .deck-config-actions{display:flex;justify-content:flex-end}
+.deck-top{
+  display:flex;justify-content:space-between;gap:10px;align-items:flex-start
+}
+.deck-color{
+  width:34px;height:34px;border-radius:12px;border:1px solid var(--border);padding:4px;background:var(--surface);cursor:pointer
+}
+.deck-mini-grid{
+  display:grid;grid-template-columns:1fr 110px;gap:8px;margin-top:10px
+}
+.deck-select-btn.active{
+  border-color:color-mix(in srgb, var(--accent) 40%, var(--border));background:color-mix(in srgb, var(--accent) 10%, var(--surface))
+}
+.calendar-panel{
+  display:grid;gap:10px
+}
+.calendar-top{
+  display:flex;justify-content:space-between;align-items:center;gap:8px
+}
+.calendar-title{
+  font-size:24px;font-weight:900;letter-spacing:-.04em
+}
+.calendar-nav{display:flex;gap:6px}
+.calendar-grid{
+  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px
+}
+.calendar-weekday{
+  text-align:center;font-size:11px;font-weight:800;color:var(--text3);padding-bottom:6px
+}
+.calendar-cell{
+  min-height:76px;border:1px solid var(--border);border-radius:16px;background:var(--bg3);padding:8px;display:flex;flex-direction:column;gap:6px
+}
+.calendar-cell.muted{opacity:.38}
+.calendar-cell.today{border-color:color-mix(in srgb, var(--accent) 40%, var(--border));box-shadow:0 0 0 2px var(--accentSoft) inset}
+.calendar-cell .day-num{font-size:13px;font-weight:800}
+.calendar-dots{
+  display:flex;flex-wrap:wrap;gap:4px;margin-top:auto
+}
+.calendar-dots span{
+  width:8px;height:8px;border-radius:50%;display:block
+}
+.calendar-legend{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px
+}
+.calendar-legend-item{
+  display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);min-width:0
+}
+.calendar-legend-item span{
+  width:10px;height:10px;border-radius:50%;display:block;flex:0 0 auto
+}
 .scheduler-note{
   margin-top:12px;padding:12px 13px;border-radius:16px;border:1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
   background:linear-gradient(135deg,color-mix(in srgb, var(--accent) 10%, var(--panel2)), color-mix(in srgb, var(--cyan) 5%, var(--panel)));
@@ -389,6 +484,9 @@ body.swap-panels .right-col{order:1}
   .manage-row{grid-template-columns:auto 1fr}
   .manage-row > .mini-btn{grid-column:1 / -1;justify-self:start}
   .algo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .session-row{grid-template-columns:1fr}
+  .session-divider{display:none}
+  .calendar-legend{grid-template-columns:1fr}
 }
 @media(max-width:560px){
   .topbar{gap:8px}
@@ -401,7 +499,10 @@ body.swap-panels .right-col{order:1}
   .question{font-size:18px}
   .review-grid{grid-template-columns:1fr}
   .card-corner-tools{top:14px;right:14px}
-  .session-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .queue-line{align-items:flex-start}
+  .queue-controls{width:100%;justify-content:flex-start}
+  .calendar-grid{gap:4px}
+  .calendar-cell{min-height:64px;padding:6px}
 }
 </style>
 </head>
@@ -467,6 +568,26 @@ body.swap-panels .right-col{order:1}
         </div>
       </section>
 
+      <section class="panel settings-only" data-side="left" data-panel-id="calendar">
+        <div class="panel-head">
+          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="2"></rect><path d="M5 2.5v3M11 2.5v3M2.5 6.5h11"></path></svg></span>Calendar</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+        </div>
+        <div class="panel-body">
+          <div class="calendar-panel">
+            <div class="calendar-top">
+              <div id="calendarTitle" class="calendar-title">April</div>
+              <div class="calendar-nav">
+                <button id="btnCalendarPrev" class="icon-btn" type="button" aria-label="Previous month">‹</button>
+                <button id="btnCalendarNext" class="icon-btn" type="button" aria-label="Next month">›</button>
+              </div>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+            <div id="calendarLegend" class="calendar-legend"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="panel settings-only" data-side="left" data-panel-id="decks">
         <div class="panel-head">
           <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 3.5h6a2 2 0 0 1 2 2v7h-6a2 2 0 0 0-2 2z"></path><path d="M5.5 3.5h6a1 1 0 0 1 1 1v8"></path></svg></span>Deck Manager</div>
@@ -483,7 +604,7 @@ body.swap-panels .right-col{order:1}
       <div class="card-shell">
         <div class="card-corner-tools">
           <button id="btnEditCard" class="icon-btn hidden" type="button" title="Edit current card" aria-label="Edit current card">✎</button>
-          <button id="btnDeleteCard" class="icon-btn danger hidden" type="button" title="Delete current card" aria-label="Delete current card">✕</button>
+          <button id="btnDeleteCard" class="icon-btn danger hidden" type="button" title="Delete current card" aria-label="Delete current card">🗑</button>
         </div>
         <div id="timerWrap" class="timer-wrap hidden">
           <div class="timer-top"><span style="display:inline-flex;align-items:center;gap:6px"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="9" r="4.5"></circle><path d="M8 9V6.8M8 9l2 1.4M6.5 2.5h3M11.5 4l1.2-1.2"></path></svg></span>Per-question timer</span><span id="timerVal">—</span></div>
@@ -491,7 +612,17 @@ body.swap-panels .right-col{order:1}
         </div>
 
         <div id="metaRow" class="meta-row"></div>
-        <div class="queue-line"><span id="queueLabel">Queue: 0</span><span id="sessionLine">Session: —</span></div>
+        <div class="queue-line">
+          <div class="queue-primary">
+            <span id="queueLabel">Queue: 0 • 0 • 0</span>
+            <span class="queue-sep">|</span>
+            <span id="sessionLine">Session: —</span>
+          </div>
+          <div class="queue-controls">
+            <button id="btnHistoryBack" class="history-btn" type="button" title="Return to previous card" aria-label="Return to previous card">‹</button>
+            <button id="btnHistoryForward" class="history-btn" type="button" title="Go forward again" aria-label="Go forward again">›</button>
+          </div>
+        </div>
 
         <div id="question" class="question">
           <div class="empty-card">
@@ -538,8 +669,12 @@ body.swap-panels .right-col{order:1}
         </div>
 
         <div class="progress-wrap">
-          <div class="progress-head"><span id="progressText">0 / 0 learned</span><span id="progressPct">0%</span></div>
-          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+          <div class="progress-head"><span id="progressText">Learning lanes</span><span id="progressPct">0 total</span></div>
+          <div class="progress-bar">
+            <div id="progressFillAgain" class="progress-fill again"></div>
+            <div id="progressFillHard" class="progress-fill hard"></div>
+            <div id="progressFillGood" class="progress-fill good"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -575,10 +710,11 @@ body.swap-panels .right-col{order:1}
         </div>
         <div class="panel-body">
           <div id="modeValue" class="big-val" style="font-size:24px">Deck Rules</div>
-          <div id="modeSub" class="hint" style="margin-top:6px">These are the defaults for newly imported decks. Edit any deck in Deck Manager to give it its own deadline and learning steps.</div>
+          <div id="modeSub" class="hint" style="margin-top:6px">Pick a deck here to edit its own planner and learning-step instance. The Study Plan panel follows the deck selected below.</div>
+          <div class="field" style="margin-top:10px"><label for="plannerDeckSelect">Deck instance</label><select id="plannerDeckSelect"></select></div>
           <div class="grid2" style="margin-top:10px">
-            <div class="field"><label for="optLearningSteps">Default learning steps</label><input id="optLearningSteps" type="text" placeholder="1m 10m 1d"></div>
-            <div class="field"><label for="optRelearningSteps">Default relearning steps</label><input id="optRelearningSteps" type="text" placeholder="10m"></div>
+            <div class="field"><label for="optLearningSteps">Learning steps</label><input id="optLearningSteps" type="text" placeholder="1m 10m 1d"></div>
+            <div class="field"><label for="optRelearningSteps">Relearning steps</label><input id="optRelearningSteps" type="text" placeholder="10m"></div>
           </div>
           <div class="field" style="margin-top:10px"><label for="optTimezone">Timezone</label>
             <select id="optTimezone">
@@ -591,12 +727,12 @@ body.swap-panels .right-col{order:1}
               <option value="Australia/Sydney">Australia/Sydney</option>
             </select>
           </div>
-          <label class="ck-line"><input type="checkbox" id="optDeadline"><span>Default imported decks to a target deadline</span></label>
+          <label class="ck-line"><input type="checkbox" id="optDeadline"><span>Use target deadline</span></label>
           <div class="grid2">
-            <div class="field"><label for="optDeadlineDate">Default deadline date</label><input id="optDeadlineDate" type="date"></div>
-            <div class="field"><label for="optDeadlineTime">Default deadline time</label><input id="optDeadlineTime" type="time"></div>
-            <div class="field"><label for="optStudyStart">Default study window start</label><input id="optStudyStart" type="time"></div>
-            <div class="field"><label for="optStudyEnd">Default study window end</label><input id="optStudyEnd" type="time"></div>
+            <div class="field"><label for="optDeadlineDate">Deadline date</label><input id="optDeadlineDate" type="date"></div>
+            <div class="field"><label for="optDeadlineTime">Deadline time</label><input id="optDeadlineTime" type="time"></div>
+            <div class="field"><label for="optStudyStart">Study window start</label><input id="optStudyStart" type="time"></div>
+            <div class="field"><label for="optStudyEnd">Study window end</label><input id="optStudyEnd" type="time"></div>
           </div>
           <div class="scheduler-note">
             <strong>Learning path:</strong> New cards stay in <strong>learning</strong> until they finish the steps above, then they <strong>graduate into review cards</strong>. If a review card gets an <strong>Again</strong>, it drops into <strong>relearning</strong> and follows the relearning steps before returning to review.
@@ -672,10 +808,10 @@ body.swap-panels .right-col{order:1}
         <section class="help-card">
           <div class="help-kicker">Panels</div>
           <h3>Make the workspace fit you</h3>
-          <p>Use the <strong>four-dot handles</strong> to sort the side panels. You can also <strong>swap the left and right columns</strong>, collapse panels manually, or let collapsed panels open on hover for quick peeks.</p>
+          <p>Use the <strong>four-dot handles</strong> to sort the side panels. The <strong>pin</strong> keeps a panel open; the hollow state lets it auto-collapse and open on hover.</p>
         </section>
       </div>
-      <div class="help-note"><strong>Useful shortcuts:</strong> <code>Enter</code> reveals while typing, <code>Space</code> reveals the answer, and <code>1 / 2 / 3 / 4</code> rates the current card after reveal. If you use a deadline, the study plan compresses toward that target automatically, and each deck can keep its own deadline plus learning-step setup.</div>
+      <div class="help-note"><strong>Useful shortcuts:</strong> <code>Enter</code> or <code>Space</code> reveals the answer, <code>1 / 2 / 3 / 4</code> rates the current card after reveal, and <code>← / →</code> steps backward or forward through recent reviews so you can fix a rating. Active decks appear in the calendar with their own colors.</div>
     </div>
   </div>
   <div class="modal-foot"><button id="btnCloseHelp" class="btn">Close</button></div>
@@ -736,17 +872,18 @@ const ui = {
   optDelay:$("optDelay"), optQuestionLimit:$("optQuestionLimit"), optVoice:$("optVoice"), optTts:$("optTts"),
   btnShowPanels:$("btnShowPanels"),
   planSummary:$("planSummary"), sessionList:$("sessionList"), decksSummary:$("decksSummary"), decksList:$("decksList"),
+  calendarTitle:$("calendarTitle"), calendarGrid:$("calendarGrid"), calendarLegend:$("calendarLegend"), btnCalendarPrev:$("btnCalendarPrev"), btnCalendarNext:$("btnCalendarNext"),
   reviewTyping:$("reviewTyping"), reviewAutoRate:$("reviewAutoRate"), reviewRandomize:$("reviewRandomize"),
   reviewVoice:$("reviewVoice"), reviewTts:$("reviewTts"), reviewHideLabels:$("reviewHideLabels"),
   reviewCardOnly:$("reviewCardOnly"), reviewDelay:$("reviewDelay"), reviewTimeLimit:$("reviewTimeLimit"),
-  modeValue:$("modeValue"), modeSub:$("modeSub"), optTimezone:$("optTimezone"),
+  modeValue:$("modeValue"), modeSub:$("modeSub"), plannerDeckSelect:$("plannerDeckSelect"), optTimezone:$("optTimezone"),
   optDeadline:$("optDeadline"), optDeadlineDate:$("optDeadlineDate"), optDeadlineTime:$("optDeadlineTime"),
   optStudyStart:$("optStudyStart"), optStudyEnd:$("optStudyEnd"),
   goalValue:$("goalValue"), goalSub:$("goalSub"),
   sessionValue:$("sessionValue"), sessionSub:$("sessionSub"), btnCustomSession:$("btnCustomSession"),
   timerWrap:$("timerWrap"), timerVal:$("timerVal"), timerFill:$("timerFill"),
   metaRow:$("metaRow"), queueLabel:$("queueLabel"), sessionLine:$("sessionLine"),
-  progressText:$("progressText"), progressPct:$("progressPct"), progressFill:$("progressFill"),
+  progressText:$("progressText"), progressPct:$("progressPct"), progressFillAgain:$("progressFillAgain"), progressFillHard:$("progressFillHard"), progressFillGood:$("progressFillGood"), btnHistoryBack:$("btnHistoryBack"), btnHistoryForward:$("btnHistoryForward"),
   question:$("question"), inputRow:$("inputRow"), answerInput:$("answerInput"), btnMic:$("btnMic"),
   btnShowAnswer:$("btnShowAnswer"), btnEditAnswer:$("btnEditAnswer"), btnEditCard:$("btnEditCard"), btnDeleteCard:$("btnDeleteCard"),
   statusLine:$("statusLine"), diffBox:$("diffBox"), revealBox:$("revealBox"), answer:$("answer"),
@@ -783,12 +920,14 @@ const settings = {
   studyStartTime:"08:00",
   studyEndTime:"22:00",
   timezone:"Asia/Manila",
-  panelOrder:{left:["studyPlan","decks"],right:["reviewBehavior","mode","goal","session"]},
+  selectedDeckId:"",
+  panelOrder:{left:["studyPlan","calendar","decks"],right:["reviewBehavior","mode","goal","session"]},
   collapsed:{}
 };
 
 let currentCard = null;
 let queue = [];
+let queueStats = {again:0, hard:0, good:0};
 let revealed = false;
 let recognition = null;
 let listening = false;
@@ -799,6 +938,10 @@ let autoAdvanceTimer = null;
 let activeSession = null;
 let lastPlan = [];
 let lastDeckSignature = "";
+let deckCache = [];
+let calendarCursor = new Date();
+let reviewUndoStack = [];
+let reviewRedoStack = [];
 const DEFAULT_DECK_RULES = {
   learningSteps:"1m 10m 1d",
   relearningSteps:"10m",
@@ -806,8 +949,12 @@ const DEFAULT_DECK_RULES = {
   deadlineDateISO:"",
   deadlineTime:"09:00",
   studyStartTime:"08:00",
-  studyEndTime:"22:00"
+  studyEndTime:"22:00",
+  color:"#8b5cf6",
+  sessionStartMode:"now",
+  sessionStartAt:""
 };
+const DECK_COLORS = ["#8b5cf6","#22c55e","#3b82f6","#f97316","#ec4899","#14b8a6","#eab308","#f43f5e"];
 
 function escapeHtml(s){return String(s ?? "").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
 function uid(){return (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);}
@@ -828,7 +975,10 @@ function normalizeDeckRules(data={}){
     deadlineDateISO: String(data.deadlineDateISO || ""),
     deadlineTime: String(data.deadlineTime || DEFAULT_DECK_RULES.deadlineTime),
     studyStartTime: String(data.studyStartTime || DEFAULT_DECK_RULES.studyStartTime),
-    studyEndTime: String(data.studyEndTime || DEFAULT_DECK_RULES.studyEndTime)
+    studyEndTime: String(data.studyEndTime || DEFAULT_DECK_RULES.studyEndTime),
+    color: /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(data.color || "")) ? String(data.color) : DEFAULT_DECK_RULES.color,
+    sessionStartMode: ["now","custom","manual"].includes(String(data.sessionStartMode || "")) ? String(data.sessionStartMode) : DEFAULT_DECK_RULES.sessionStartMode,
+    sessionStartAt: String(data.sessionStartAt || "")
   };
 }
 function deckRulesFromSettings(){
@@ -845,6 +995,10 @@ function deckRulesFromSettings(){
 function decorateDeck(deck){
   const rules = normalizeDeckRules(deck || {});
   return {...(deck || {}), ...rules};
+}
+function pickNextDeckColor(){
+  const used = new Set(deckCache.map(deck=>deck.color));
+  return DECK_COLORS.find(color=>!used.has(color)) || DECK_COLORS[deckCache.length % DECK_COLORS.length];
 }
 function norm(s){
   return String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
@@ -873,13 +1027,45 @@ function loadSettings(){
   }catch{}
   settings.defaultLearningSteps = normalizeStepString(settings.defaultLearningSteps, DEFAULT_DECK_RULES.learningSteps);
   settings.defaultRelearningSteps = normalizeStepString(settings.defaultRelearningSteps, DEFAULT_DECK_RULES.relearningSteps);
-  if(!settings.panelOrder) settings.panelOrder = {left:["studyPlan","decks"],right:["reviewBehavior","mode","goal","session"]};
+  if(!settings.panelOrder) settings.panelOrder = {left:["studyPlan","calendar","decks"],right:["reviewBehavior","mode","goal","session"]};
+  if(!settings.panelOrder.left?.includes("calendar")) settings.panelOrder.left = ["studyPlan","calendar","decks"];
   if(!settings.collapsed) settings.collapsed = {};
 }
 function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
 function syncToggleButton(btn, active){
   if(!btn) return;
   btn.setAttribute("aria-pressed", active ? "true" : "false");
+}
+function selectedDeck(){
+  return deckCache.find(deck=>deck.id === settings.selectedDeckId) || null;
+}
+function selectedDeckRules(){
+  return selectedDeck() || deckRulesFromSettings();
+}
+function ensureSelectedDeck(){
+  if(settings.selectedDeckId && deckCache.some(deck=>deck.id === settings.selectedDeckId)) return;
+  settings.selectedDeckId = deckCache.find(deck=>deck.active !== false)?.id || deckCache[0]?.id || "";
+}
+function syncPlannerDeckOptions(){
+  if(!ui.plannerDeckSelect) return;
+  const previous = settings.selectedDeckId;
+  ui.plannerDeckSelect.innerHTML = `<option value="">Defaults for new decks</option>` + deckCache.map(deck=>`<option value="${escapeHtml(deck.id)}">${escapeHtml(deck.name)}</option>`).join("");
+  ui.plannerDeckSelect.value = deckCache.some(deck=>deck.id === previous) ? previous : "";
+}
+function syncPlannerFields(){
+  const rules = selectedDeckRules();
+  const deck = selectedDeck();
+  ui.optLearningSteps.value = rules.learningSteps;
+  ui.optRelearningSteps.value = rules.relearningSteps;
+  ui.optDeadline.checked = rules.deadlineEnabled;
+  ui.optDeadlineDate.value = rules.deadlineDateISO || "";
+  ui.optDeadlineTime.value = rules.deadlineTime || "09:00";
+  ui.optStudyStart.value = rules.studyStartTime || "08:00";
+  ui.optStudyEnd.value = rules.studyEndTime || "22:00";
+  ui.modeValue.textContent = deck ? deck.name : "Defaults";
+  ui.modeSub.textContent = deck
+    ? `Editing ${deck.name}. This deck alone controls the Study Plan panel and can keep its own deadline, steps, and session start.`
+    : "These values are only used when you import a brand-new deck.";
 }
 
 function syncUI(){
@@ -913,13 +1099,9 @@ function syncUI(){
   ui.reviewTimeLimit.value = settings.perQuestionLimitSec;
 
   ui.optTimezone.value = settings.timezone;
-  ui.optDeadline.checked = settings.deadlineEnabled;
-  ui.optDeadlineDate.value = settings.deadlineDateISO || "";
-  ui.optDeadlineTime.value = settings.deadlineTime || "09:00";
-  ui.optStudyStart.value = settings.studyStartTime || "08:00";
-  ui.optStudyEnd.value = settings.studyEndTime || "22:00";
-
   ui.btnThemeQuick.textContent = settings.theme === "dark" ? "🌙 Dark" : "☀ Light";
+  syncPlannerDeckOptions();
+  syncPlannerFields();
 }
 
 function applyPanelLayout(){
@@ -934,7 +1116,11 @@ function applyPanelLayout(){
     const id = panel.dataset.panelId;
     panel.classList.toggle("collapsed", !!settings.collapsed[id]);
     panel.classList.remove("hover-open");
-    panel.querySelector(".collapse-btn").textContent = panel.classList.contains("collapsed") ? "+" : "−";
+    const pinBtn = panel.querySelector(".collapse-btn");
+    const pinned = !panel.classList.contains("collapsed");
+    pinBtn.textContent = pinned ? "◉" : "◎";
+    pinBtn.title = pinned ? "Pinned open" : "Auto collapse / hover open";
+    pinBtn.setAttribute("aria-label", pinBtn.title);
   });
   setupPanelDragging();
   setupPanelHoverBehavior();
@@ -1042,6 +1228,35 @@ function setupPanelHoverBehavior(){
   });
 }
 
+async function persistPlannerSource(){
+  const targetDeck = selectedDeck();
+  const rules = capDeckStudyWindowEnd(normalizeDeckRules({
+    learningSteps: ui.optLearningSteps.value,
+    relearningSteps: ui.optRelearningSteps.value,
+    deadlineEnabled: ui.optDeadline.checked,
+    deadlineDateISO: ui.optDeadlineDate.value || "",
+    deadlineTime: ui.optDeadlineTime.value || "09:00",
+    studyStartTime: ui.optStudyStart.value || "08:00",
+    studyEndTime: ui.optStudyEnd.value || "22:00",
+    color: targetDeck?.color || DEFAULT_DECK_RULES.color,
+    sessionStartMode: targetDeck?.sessionStartMode || "now",
+    sessionStartAt: targetDeck?.sessionStartAt || ""
+  }));
+  if(targetDeck){
+    await db.decks.update(targetDeck.id, rules);
+    deckCache = await getDecks();
+  }else{
+    settings.defaultLearningSteps = rules.learningSteps;
+    settings.defaultRelearningSteps = rules.relearningSteps;
+    settings.deadlineEnabled = rules.deadlineEnabled;
+    settings.deadlineDateISO = rules.deadlineDateISO;
+    settings.deadlineTime = rules.deadlineTime;
+    settings.studyStartTime = rules.studyStartTime;
+    settings.studyEndTime = rules.studyEndTime;
+    saveSettings();
+  }
+}
+
 function bindSettings(){
   const handlers = [
     [ui.optTheme,"change",()=>settings.theme = ui.optTheme.value],
@@ -1049,8 +1264,6 @@ function bindSettings(){
     [ui.optHideLabels,"change",()=>settings.hideLabels = ui.optHideLabels.checked],
     [ui.optSwapPanels,"change",()=>settings.swapPanels = ui.optSwapPanels.checked],
     [ui.optHoverPanels,"change",()=>settings.hoverExpandPanels = ui.optHoverPanels.checked],
-    [ui.optLearningSteps,"change",()=>settings.defaultLearningSteps = normalizeStepString(ui.optLearningSteps.value, DEFAULT_DECK_RULES.learningSteps)],
-    [ui.optRelearningSteps,"change",()=>settings.defaultRelearningSteps = normalizeStepString(ui.optRelearningSteps.value, DEFAULT_DECK_RULES.relearningSteps)],
     [ui.optReverse,"change",()=>settings.reverseImport = ui.optReverse.checked],
     [ui.optAutoRate,"change",()=>settings.autoRateTyping = ui.optAutoRate.checked],
     [ui.optRandomize,"change",()=>settings.randomizeCards = ui.optRandomize.checked],
@@ -1061,11 +1274,6 @@ function bindSettings(){
     [ui.reviewDelay,"input",()=>settings.autoAdvanceDelaySec = clamp(Number(ui.reviewDelay.value)||0,0,60)],
     [ui.reviewTimeLimit,"input",()=>settings.perQuestionLimitSec = clamp(Number(ui.reviewTimeLimit.value)||0,0,600)],
     [ui.optTimezone,"change",()=>settings.timezone = ui.optTimezone.value],
-    [ui.optDeadline,"change",()=>settings.deadlineEnabled = ui.optDeadline.checked],
-    [ui.optDeadlineDate,"input",()=>settings.deadlineDateISO = ui.optDeadlineDate.value || ""],
-    [ui.optDeadlineTime,"input",()=>settings.deadlineTime = ui.optDeadlineTime.value || "09:00"],
-    [ui.optStudyStart,"input",()=>settings.studyStartTime = ui.optStudyStart.value || "08:00"],
-    [ui.optStudyEnd,"input",()=>settings.studyEndTime = ui.optStudyEnd.value || "22:00"]
   ];
   for(const [el,ev,fn] of handlers){
     el.addEventListener(ev, async ()=>{
@@ -1079,6 +1287,25 @@ function bindSettings(){
       await refreshEverything();
     });
   }
+
+  [ui.optLearningSteps, ui.optRelearningSteps, ui.optDeadline, ui.optDeadlineDate, ui.optDeadlineTime, ui.optStudyStart, ui.optStudyEnd].forEach(el=>{
+    el.addEventListener(el.type === "checkbox" ? "change" : "input", async ()=>{
+      await persistPlannerSource();
+      capStudyWindowEnd();
+      saveSettings();
+      syncUI();
+      if(currentCard) showQuestion(currentCard, true);
+      await refreshEverything();
+    });
+  });
+
+  ui.plannerDeckSelect.addEventListener("change", async ()=>{
+    settings.selectedDeckId = ui.plannerDeckSelect.value || "";
+    saveSettings();
+    deckCache = await getDecks();
+    syncUI();
+    await refreshEverything();
+  });
 
   const reviewToggleHandlers = [
     [ui.reviewTyping, ()=>settings.typingMode = !settings.typingMode],
@@ -1157,12 +1384,31 @@ function stateLabel(card){
   if(state === State.Relearning) return "Relearning";
   return "";
 }
+function bucketForGrade(gradeInt){
+  if(gradeInt === 1) return "again";
+  if(gradeInt === 2) return "hard";
+  return "good";
+}
+function bucketForCard(card){
+  if(card?.queue_bucket) return card.queue_bucket;
+  if(isNew(card)) return "good";
+  if([State.Learning, State.Relearning].includes(stateOf(card))) return "hard";
+  return "good";
+}
+function queueDeckId(){
+  if(activeSession?.deck_id) return activeSession.deck_id;
+  if(activeSession?.source === "custom") return settings.selectedDeckId || "";
+  return "";
+}
 
 async function getDecks(){
   const decks = await db.decks.orderBy("created_ms").toArray();
   const updates = [];
+  const assignedColors = new Set();
   const normalized = decks.map(deck=>{
-    const merged = decorateDeck(deck);
+    const fallbackColor = deck.color || DECK_COLORS.find(color=>!assignedColors.has(color)) || DECK_COLORS[assignedColors.size % DECK_COLORS.length];
+    assignedColors.add(fallbackColor);
+    const merged = decorateDeck({...deck, color: fallbackColor});
     if(
       deck.learningSteps !== merged.learningSteps ||
       deck.relearningSteps !== merged.relearningSteps ||
@@ -1170,7 +1416,10 @@ async function getDecks(){
       deck.deadlineDateISO !== merged.deadlineDateISO ||
       deck.deadlineTime !== merged.deadlineTime ||
       deck.studyStartTime !== merged.studyStartTime ||
-      deck.studyEndTime !== merged.studyEndTime
+      deck.studyEndTime !== merged.studyEndTime ||
+      deck.color !== merged.color ||
+      deck.sessionStartMode !== merged.sessionStartMode ||
+      deck.sessionStartAt !== merged.sessionStartAt
     ){
       updates.push(db.decks.update(deck.id, {
         learningSteps: merged.learningSteps,
@@ -1179,12 +1428,17 @@ async function getDecks(){
         deadlineDateISO: merged.deadlineDateISO,
         deadlineTime: merged.deadlineTime,
         studyStartTime: merged.studyStartTime,
-        studyEndTime: merged.studyEndTime
+        studyEndTime: merged.studyEndTime,
+        color: merged.color,
+        sessionStartMode: merged.sessionStartMode,
+        sessionStartAt: merged.sessionStartAt
       }));
     }
     return merged;
   });
   if(updates.length) await Promise.all(updates);
+  deckCache = normalized;
+  ensureSelectedDeck();
   return normalized;
 }
 async function getActiveDeckIds(){ return (await getDecks()).filter(d=>d.active !== false).map(d=>d.id); }
@@ -1204,7 +1458,7 @@ async function createDeck(file){
   let i = 2;
   while(names.has(name)) name = `${base} (${i++})`;
   const defaults = deckRulesFromSettings();
-  const deck = { id: uid(), name, active:true, created_ms:Date.now(), ...defaults };
+  const deck = { id: uid(), name, active:true, created_ms:Date.now(), color:pickNextDeckColor(), sessionStartMode:"now", sessionStartAt:"", ...defaults };
   await db.decks.add(deck);
   return deck;
 }
@@ -1342,7 +1596,7 @@ async function importCSV(file){
       for(const card of cards){
         await db.cards.add({
           id:uid(), deck_id:deck.id, deck_name:deck.name, created_ms:nowMs, due_ms:nowMs,
-          fsrs_card:createEmptyCard(new Date(nowMs)), ...card
+          fsrs_card:createEmptyCard(new Date(nowMs)), queue_bucket:"good", ...card
         });
         created++;
       }
@@ -1357,8 +1611,14 @@ async function importCSV(file){
 async function buildQueue(includeFuture=false){
   const cards = await getActiveCards();
   const now = Date.now();
-  let due = cards.filter(c => c.due_ms <= now || isNew(c));
-  due.sort((a,b)=>a.due_ms - b.due_ms);
+  const deckId = queueDeckId();
+  const scoped = deckId ? cards.filter(card=>card.deck_id === deckId) : cards;
+  let due = scoped.filter(c => c.due_ms <= now || isNew(c));
+  const rank = {again:0, hard:1, good:2};
+  due.sort((a,b)=>{
+    const bucketDelta = rank[bucketForCard(a)] - rank[bucketForCard(b)];
+    return bucketDelta || a.due_ms - b.due_ms;
+  });
   if(settings.randomizeCards){
     for(let i=due.length-1;i>0;i--){
       const j = Math.floor(Math.random() * (i+1));
@@ -1366,7 +1626,7 @@ async function buildQueue(includeFuture=false){
     }
   }
   if(includeFuture){
-    let future = cards.filter(c => c.due_ms > now).sort((a,b)=>a.due_ms - b.due_ms).slice(0, 30);
+    let future = scoped.filter(c => c.due_ms > now).sort((a,b)=>a.due_ms - b.due_ms).slice(0, 30);
     if(settings.randomizeCards){
       for(let i=future.length-1;i>0;i--){
         const j = Math.floor(Math.random() * (i+1));
@@ -1377,6 +1637,11 @@ async function buildQueue(includeFuture=false){
   }else{
     queue = due;
   }
+  queueStats = queue.reduce((acc, card)=>{
+    const bucket = bucketForCard(card);
+    acc[bucket] = (acc[bucket] || 0) + 1;
+    return acc;
+  }, {again:0, hard:0, good:0});
 }
 
 function renderMeta(card){
@@ -1464,6 +1729,22 @@ function speakQuestion(text){
     speechSynthesis.speak(utter);
   }catch{}
 }
+function anyModalOpen(){
+  return [ui.helpDialog, ui.manageDialog, ui.editCardDialog].some(dialog=>dialog?.open);
+}
+function isEditableShortcutTarget(target){
+  if(target === ui.answerInput) return false;
+  return !!target.closest("textarea, select, input");
+}
+function triggerRevealFromShortcut(){
+  if(!currentCard || revealed) return;
+  const info = revealAnswer();
+  if(settings.typingMode && settings.autoRateTyping && info){
+    const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
+    const wrong = wrongPercent(info.user, target);
+    scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
+  }
+}
 
 function startTimer(){
   stopTimer();
@@ -1508,7 +1789,8 @@ function showQuestion(card, sameCard=false){
   ui.btnDeleteCard.classList.remove("hidden");
   ui.btnEditAnswer.classList.toggle("hidden", !settings.typingMode || !revealed);
   ui.btnMic.classList.toggle("hidden", !settings.voiceEnabled || !settings.typingMode || !recognition);
-  ui.sessionLine.textContent = `Session: ${activeSession ? (activeSession.source === "custom" ? "Custom" : "Recommended") : "—"}`;
+  const sessionDeck = deckCache.find(deck=>deck.id === (activeSession?.deck_id || card.deck_id));
+  ui.sessionLine.textContent = `Session: ${activeSession ? (activeSession.source === "custom" ? "Custom" : "Recommended") : "—"}${sessionDeck ? ` · ${sessionDeck.name}` : ""}`;
   if(settings.typingMode) ui.answerInput.focus();
   speakQuestion(card.spoken_front || card.front_plain || "");
   startTimer();
@@ -1630,31 +1912,77 @@ async function gradeCard(gradeInt, meta={}){
   const deck = decorateDeck(await db.decks.get(currentCard.deck_id));
   const scheduler = makeScheduler(deck);
   const rating = gradeInt === 1 ? Rating.Again : gradeInt === 2 ? Rating.Hard : gradeInt === 3 ? Rating.Good : Rating.Easy;
+  const beforeCard = structuredClone(currentCard);
   const result = scheduler.next(currentCard.fsrs_card, new Date(), rating);
   let dueMs = result.card.due instanceof Date ? result.card.due.getTime() : Date.parse(result.card.due);
   dueMs = capDueToDeadline(dueMs, deck);
+  const queueBucket = bucketForGrade(gradeInt);
+  let reviewId = null;
 
   await db.transaction("rw", db.cards, db.reviews, async ()=>{
-    await db.cards.update(currentCard.id, {fsrs_card:result.card, due_ms:dueMs});
-    await db.reviews.add({
+    await db.cards.update(currentCard.id, {fsrs_card:result.card, due_ms:dueMs, queue_bucket:queueBucket});
+    reviewId = await db.reviews.add({
       card_id:currentCard.id, review_ms:Date.now(), rating:gradeInt,
       user_answer:meta.user_answer || "", matched_answer:meta.matched_answer || "", wrong_percent:meta.wrong_percent ?? null
     });
   });
+  reviewUndoStack.push({
+    beforeCard,
+    afterCard:{...beforeCard, fsrs_card:result.card, due_ms:dueMs, queue_bucket:queueBucket},
+    reviewId,
+    meta:{...meta, rating:gradeInt}
+  });
+  reviewRedoStack = [];
 
   await recordSessionCard();
+  await nextCard();
+}
+
+async function undoLastReview(){
+  const entry = reviewUndoStack.pop();
+  if(!entry) return;
+  await db.transaction("rw", db.cards, db.reviews, async ()=>{
+    await db.cards.put(entry.beforeCard);
+    if(entry.reviewId != null) await db.reviews.delete(entry.reviewId);
+  });
+  reviewRedoStack.push(entry);
+  currentCard = entry.beforeCard;
+  activeSession = activeSession || {source:"custom", session_key:`custom-${Date.now()}`, planned_ms:Date.now(), deck_id:entry.beforeCard.deck_id};
+  await buildQueue(activeSession?.source === "custom");
+  const bucket = bucketForCard(entry.beforeCard);
+  queueStats[bucket] = Math.max(0, (queueStats[bucket] || 0) - 1);
+  showQuestion(entry.beforeCard);
+  await refreshEverything();
+}
+
+async function redoLastReview(){
+  const entry = reviewRedoStack.pop();
+  if(!entry) return;
+  let reviewId = null;
+  await db.transaction("rw", db.cards, db.reviews, async ()=>{
+    await db.cards.put(entry.afterCard);
+    reviewId = await db.reviews.add({
+      card_id:entry.afterCard.id,
+      review_ms:Date.now(),
+      rating:entry.meta.rating,
+      user_answer:entry.meta.user_answer || "",
+      matched_answer:entry.meta.matched_answer || "",
+      wrong_percent:entry.meta.wrong_percent ?? null
+    });
+  });
+  reviewUndoStack.push({...entry, reviewId});
   await nextCard();
 }
 
 async function nextCard(customStart=false){
   clearAutoAdvance();
   if(customStart){
-    activeSession = {source:"custom", session_key:`custom-${Date.now()}`, planned_ms:Date.now()};
+    activeSession = {source:"custom", session_key:`custom-${Date.now()}`, planned_ms:Date.now(), deck_id:settings.selectedDeckId || ""};
+  }else if(!activeSession || activeSession.source !== "custom"){
+    activeSession = pickSession();
   }
   await buildQueue(activeSession?.source === "custom");
   await refreshEverything();
-
-  if(!activeSession || activeSession.source !== "custom") activeSession = pickSession();
   if(!queue.length){
     currentCard = null;
     resetRevealUI();
@@ -1668,7 +1996,12 @@ async function nextCard(customStart=false){
     activeSession = null;
     return;
   }
-  showQuestion(queue.shift());
+  const next = queue.shift();
+  const bucket = bucketForCard(next);
+  queueStats[bucket] = Math.max(0, (queueStats[bucket] || 0) - 1);
+  await refreshStats();
+  await refreshProgress();
+  showQuestion(next);
 }
 
 async function refreshStats(){
@@ -1677,23 +2010,29 @@ async function refreshStats(){
   const cards = await getActiveCards();
   const due = cards.filter(c=>c.due_ms <= Date.now() || isNew(c)).length;
   ui.statsText.textContent = cards.length ? `${activeDeckIds.length} active deck(s) · ${cards.length} cards · ${due} due` : "No active deck";
-  ui.queueLabel.textContent = `Queue: ${queue.length}`;
+  ui.queueLabel.innerHTML = `Queue:
+    <span class="queue-pill again">${queueStats.again || 0}</span>
+    <span class="queue-pill hard">${queueStats.hard || 0}</span>
+    <span class="queue-pill good">${queueStats.good || 0}</span>`;
+  ui.btnHistoryBack.disabled = reviewUndoStack.length === 0;
+  ui.btnHistoryForward.disabled = reviewRedoStack.length === 0;
 }
 
 async function refreshProgress(){
-  const cards = await getActiveCards();
-  if(!cards.length){
-    ui.progressText.textContent = "0 / 0 learned";
-    ui.progressPct.textContent = "0%";
-    ui.progressFill.style.width = "0%";
+  const total = (queueStats.again || 0) + (queueStats.hard || 0) + (queueStats.good || 0);
+  if(!total){
+    ui.progressText.textContent = "Learning lanes";
+    ui.progressPct.textContent = "0 total";
+    ui.progressFillAgain.style.width = "0%";
+    ui.progressFillHard.style.width = "0%";
+    ui.progressFillGood.style.width = "0%";
     return;
   }
-  const due = cards.filter(c=>c.due_ms <= Date.now() || isNew(c)).length;
-  const done = cards.length - due;
-  const pct = Math.round((done / cards.length) * 100);
-  ui.progressText.textContent = `${done} / ${cards.length} learned`;
-  ui.progressPct.textContent = `${pct}%`;
-  ui.progressFill.style.width = `${pct}%`;
+  ui.progressText.textContent = `Again ${queueStats.again || 0} • Hard ${queueStats.hard || 0} • Good ${queueStats.good || 0}`;
+  ui.progressPct.textContent = `${total} total`;
+  ui.progressFillAgain.style.width = `${((queueStats.again || 0) / total) * 100}%`;
+  ui.progressFillHard.style.width = `${((queueStats.hard || 0) / total) * 100}%`;
+  ui.progressFillGood.style.width = `${((queueStats.good || 0) / total) * 100}%`;
 }
 
 async function computePlan(){
@@ -1705,10 +2044,15 @@ async function computePlan(){
   for(const deck of decks){
     const deckCards = cards.filter(card=>card.deck_id === deck.id);
     if(!deckCards.length) continue;
+    if(deck.sessionStartMode === "manual") continue;
     const rules = capDeckStudyWindowEnd(deck);
     const dl = deadlineMs(rules);
     const horizon = dl || (now + DAY_MS * 4);
-    const startDay = new Date(now); startDay.setHours(0,0,0,0);
+    const initialStartMs = deck.sessionStartMode === "custom" && deck.sessionStartAt
+      ? new Date(deck.sessionStartAt).getTime()
+      : now;
+    const startAnchor = Number.isFinite(initialStartMs) ? Math.max(now, initialStartMs) : now;
+    const startDay = new Date(startAnchor); startDay.setHours(0,0,0,0);
     const endDay = new Date(horizon); endDay.setHours(0,0,0,0);
     const startMin = timeToMinutes(rules.studyStartTime);
     let endMin = Math.max(startMin + 60, timeToMinutes(rules.studyEndTime));
@@ -1723,7 +2067,7 @@ async function computePlan(){
       for(let i=0;i<count;i++){
         const minute = Math.round(startMin + (span * (i + 1) / (count + 1)));
         const at = day + minute * 60000;
-        if(at < now - 3600000) continue;
+        if(at < startAnchor - 3600000) continue;
         if(dl && at > dl) continue;
         sessions.push({
           session_key:`rec-${deck.id}-${at}`,
@@ -1740,23 +2084,71 @@ async function computePlan(){
 }
 
 function pickSession(){
-  if(!lastPlan.length) return {source:"recommended", session_key:`live-${Date.now()}`, planned_ms:Date.now()};
+  const selectedId = settings.selectedDeckId || "";
+  const sourcePlan = selectedId ? lastPlan.filter(item=>item.deck_id === selectedId) : lastPlan;
+  if(!sourcePlan.length) return {source:"recommended", session_key:`live-${Date.now()}`, planned_ms:Date.now(), deck_id:selectedId};
   const now = Date.now();
-  const nearest = [...lastPlan].sort((a,b)=>Math.abs(a.time_ms-now) - Math.abs(b.time_ms-now))[0];
-  return {source:"recommended", session_key:nearest.session_key, planned_ms:nearest.time_ms};
+  const nearest = [...sourcePlan].sort((a,b)=>Math.abs(a.time_ms-now) - Math.abs(b.time_ms-now))[0];
+  return {source:"recommended", session_key:nearest.session_key, planned_ms:nearest.time_ms, deck_id:nearest.deck_id};
+}
+
+function renderCalendar(planItems, decks){
+  const cursor = new Date(calendarCursor);
+  cursor.setDate(1);
+  const monthLabel = new Intl.DateTimeFormat("en-US",{month:"long"}).format(cursor);
+  ui.calendarTitle.textContent = monthLabel;
+  ui.calendarGrid.innerHTML = "";
+  const weekdayLabels = ["S","M","T","W","T","F","S"];
+  weekdayLabels.forEach(label=>{
+    const cell = document.createElement("div");
+    cell.className = "calendar-weekday";
+    cell.textContent = label;
+    ui.calendarGrid.appendChild(cell);
+  });
+  const firstWeekday = cursor.getDay();
+  const firstCell = new Date(cursor);
+  firstCell.setDate(1 - firstWeekday);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  for(let i=0;i<42;i++){
+    const cellDate = new Date(firstCell);
+    cellDate.setDate(firstCell.getDate() + i);
+    const cell = document.createElement("div");
+    cell.className = "calendar-cell";
+    if(cellDate.getMonth() !== cursor.getMonth()) cell.classList.add("muted");
+    const compare = new Date(cellDate); compare.setHours(0,0,0,0);
+    if(compare.getTime() === today.getTime()) cell.classList.add("today");
+    const dotWrap = document.createElement("div");
+    dotWrap.className = "calendar-dots";
+    const matches = planItems.filter(item=>{
+      const d = new Date(item.time_ms);
+      return d.getFullYear() === cellDate.getFullYear() && d.getMonth() === cellDate.getMonth() && d.getDate() === cellDate.getDate();
+    });
+    const byDeck = new Map();
+    matches.forEach(item=>byDeck.set(item.deck_id, item));
+    [...byDeck.values()].slice(0,4).forEach(item=>{
+      const dot = document.createElement("span");
+      const deck = decks.find(entry=>entry.id === item.deck_id);
+      dot.style.background = deck?.color || DEFAULT_DECK_RULES.color;
+      dot.title = `${item.deck_name} · ${fmtShort(item.time_ms)} ${fmtTime(item.time_ms)}`;
+      dotWrap.appendChild(dot);
+    });
+    cell.innerHTML = `<div class="day-num">${cellDate.getDate()}</div>`;
+    cell.appendChild(dotWrap);
+    ui.calendarGrid.appendChild(cell);
+  }
+  ui.calendarLegend.innerHTML = decks.filter(deck=>deck.active !== false).map(deck=>`
+    <div class="calendar-legend-item"><span style="background:${escapeHtml(deck.color)}"></span><div>${escapeHtml(deck.name)}</div></div>
+  `).join("");
 }
 
 async function refreshPlan(){
   const activeDecks = (await getDecks()).filter(deck=>deck.active !== false);
   const cards = await getActiveCards();
   lastPlan = await computePlan();
-  const deadlineDecks = activeDecks.filter(deck=>deck.deadlineEnabled && deck.deadlineDateISO);
-  ui.modeValue.textContent = activeDecks.length ? `${deadlineDecks.length}/${activeDecks.length}` : "Defaults";
-  ui.modeSub.textContent = activeDecks.length
-    ? (deadlineDecks.length
-      ? `${deadlineDecks.length} active deck(s) are pacing toward their own deadlines.`
-      : "No active deck deadlines right now. New decks still use the defaults above.")
-    : "These values become the defaults for newly imported decks.";
+  const deck = selectedDeck();
+  const selectedPlan = deck ? lastPlan.filter(item=>item.deck_id === deck.id) : lastPlan;
+  renderCalendar(lastPlan, activeDecks);
 
   if(!cards.length){
     ui.planSummary.textContent = "Import a deck to see recommended study sessions.";
@@ -1766,33 +2158,37 @@ async function refreshPlan(){
     return;
   }
 
-  ui.planSummary.innerHTML = deadlineDecks.length
-    ? `<strong>Per-deck planning active.</strong> Suggested sessions now blend deck-specific deadlines and study windows.`
-    : `<strong>Regular schedule.</strong> Sessions below are suggested return times across your active decks.`;
+  ui.planSummary.innerHTML = deck
+    ? `<strong>${escapeHtml(deck.name)}</strong> is the active planning deck. Sessions below follow only this deck's rules.`
+    : `<strong>Defaults selected.</strong> Choose a deck in Deadline Planner to inspect its own schedule.`;
 
   const logs = (await db.sessions.toArray()).filter(x=>x.deck_scope === lastDeckSignature);
-  const today = dayKey(Date.now());
-  const doneToday = logs.filter(x=>x.day_key === today && x.source === "recommended").length;
-  const plannedToday = lastPlan.filter(x=>dayKey(x.time_ms) === today).length;
-  const due = cards.filter(c=>c.due_ms <= Date.now() || isNew(c)).length;
-  ui.goalValue.textContent = `${doneToday} / ${plannedToday}`;
-  ui.goalSub.textContent = `${due} due card(s) right now`;
+  const doneTotal = logs.filter(x=>x.source === "recommended").length;
+  ui.goalValue.textContent = `${doneTotal} / ${lastPlan.length}`;
+  ui.goalSub.textContent = `${selectedPlan.length} planned session(s) for ${deck ? deck.name : "the selected view"}`;
 
   ui.sessionList.innerHTML = "";
-  if(!lastPlan.length){
+  if(!selectedPlan.length){
     ui.sessionList.innerHTML = `<div class="session-row"><div class="session-main">No sessions yet</div><div class="session-sub">Cards will show up once due.</div></div>`;
     return;
   }
-  for(const item of lastPlan){
+  for(const item of selectedPlan){
     const log = logs.find(x=>x.session_key === item.session_key);
     const row = document.createElement("div");
     row.className = `session-row ${log ? "done" : item.time_ms < Date.now() ? "missed" : ""}`;
+    const day = new Intl.DateTimeFormat("en-US",{day:"2-digit"}).format(new Date(item.time_ms));
+    const month = new Intl.DateTimeFormat("en-US",{month:"short"}).format(new Date(item.time_ms));
+    const deckColor = activeDecks.find(entry=>entry.id === item.deck_id)?.color || DEFAULT_DECK_RULES.color;
     row.innerHTML = `
-      <div>
-        <div class="session-main">${fmtShort(item.time_ms)}</div>
-        <div class="session-sub">${fmtTime(item.time_ms)} · ${escapeHtml(item.deck_name || "Deck")}</div>
+      <div class="session-date">
+        <div class="session-day">${day}</div>
+        <div class="session-month">${month}</div>
       </div>
-      <div class="session-sub">~${item.expected_cards} cards</div>
+      <div class="session-divider"></div>
+      <div class="session-copy">
+        <div class="session-line-main"><span>${new Intl.DateTimeFormat("en-US",{weekday:"short",hour:"numeric",minute:"2-digit"}).format(new Date(item.time_ms))}</span><span>~${item.expected_cards} cards</span></div>
+        <div class="session-line-sub"><span class="session-deck-dot" style="background:${escapeHtml(deckColor)}"></span> ${escapeHtml(item.deck_name || "Deck")}</div>
+      </div>
       <div class="badge">${log ? `Done · ${log.cards_reviewed || 1}` : item.time_ms < Date.now() ? "Missed" : "Planned"}</div>`;
     ui.sessionList.appendChild(row);
   }
@@ -1804,20 +2200,6 @@ function deckDeadlineSummary(deck){
     : "No deadline";
 }
 
-async function saveDeckRules(deck, fields){
-  const nextRules = capDeckStudyWindowEnd(normalizeDeckRules({
-    learningSteps: fields.learningSteps.value,
-    relearningSteps: fields.relearningSteps.value,
-    deadlineEnabled: fields.deadlineEnabled.checked,
-    deadlineDateISO: fields.deadlineDateISO.value,
-    deadlineTime: fields.deadlineTime.value,
-    studyStartTime: fields.studyStartTime.value,
-    studyEndTime: fields.studyEndTime.value
-  }));
-  await db.decks.update(deck.id, nextRules);
-  toast(`Updated rules for "${deck.name}"`);
-}
-
 async function refreshDecksUI(){
   const decks = await getDecks();
   ui.decksSummary.textContent = decks.length ? `${decks.filter(d=>d.active !== false).length} active · ${decks.length} total deck(s)` : "No decks yet.";
@@ -1827,29 +2209,35 @@ async function refreshDecksUI(){
     const row = document.createElement("div");
     row.className = "deck-row";
     row.innerHTML = `
-      <div class="deck-name">${escapeHtml(deck.name)}</div>
-      <div class="deck-meta">${count} cards · ${deck.active !== false ? "Active" : "Inactive"}</div>
+      <div class="deck-top">
+        <div>
+          <div class="deck-name">${escapeHtml(deck.name)}</div>
+          <div class="deck-meta">${count} cards · ${deck.active !== false ? "Active" : "Inactive"}</div>
+        </div>
+        <input class="deck-color" data-role="deck-color" type="color" value="${escapeHtml(deck.color)}" title="Deck color">
+      </div>
       <div class="deck-summary">
         <span class="deck-rule">Learn: ${escapeHtml(deck.learningSteps)}</span>
         <span class="deck-rule">Relearn: ${escapeHtml(deck.relearningSteps)}</span>
         <span class="deck-rule">${escapeHtml(deckDeadlineSummary(deck))}</span>
+        <span class="deck-rule">Start: ${deck.sessionStartMode === "custom" && deck.sessionStartAt ? escapeHtml(fmtDateTime(new Date(deck.sessionStartAt).getTime())) : deck.sessionStartMode === "manual" ? "Manual" : "Now"}</span>
       </div>
       <div class="deck-actions"></div>
-      <div class="deck-config hidden">
-        <div class="grid2">
-          <div class="field"><label>Learning steps</label><input data-role="learning-steps" type="text" value="${escapeHtml(deck.learningSteps)}"></div>
-          <div class="field"><label>Relearning steps</label><input data-role="relearning-steps" type="text" value="${escapeHtml(deck.relearningSteps)}"></div>
-          <div class="field"><label>Deadline date</label><input data-role="deadline-date" type="date" value="${escapeHtml(deck.deadlineDateISO || "")}"></div>
-          <div class="field"><label>Deadline time</label><input data-role="deadline-time" type="time" value="${escapeHtml(deck.deadlineTime)}"></div>
-          <div class="field"><label>Study window start</label><input data-role="study-start" type="time" value="${escapeHtml(deck.studyStartTime)}"></div>
-          <div class="field"><label>Study window end</label><input data-role="study-end" type="time" value="${escapeHtml(deck.studyEndTime)}"></div>
+      <div class="deck-mini-grid">
+        <div class="field">
+          <label>First session</label>
+          <select data-role="session-start-mode">
+            <option value="now" ${deck.sessionStartMode === "now" ? "selected" : ""}>Immediately now</option>
+            <option value="custom" ${deck.sessionStartMode === "custom" ? "selected" : ""}>Custom time</option>
+            <option value="manual" ${deck.sessionStartMode === "manual" ? "selected" : ""}>Manual play only</option>
+          </select>
         </div>
-        <label class="ck-line" style="margin:0"><input data-role="deadline-enabled" type="checkbox" ${deck.deadlineEnabled ? "checked" : ""}><span>Use a target deadline for this deck</span></label>
-        <div class="hint">These rules apply only to this deck. Learning steps control how new cards graduate into review, and relearning steps handle lapsed review cards.</div>
-        <div class="deck-config-actions"><button class="mini-btn" data-role="save-rules">Save deck rules</button></div>
+        <div class="field">
+          <label>Custom time</label>
+          <input data-role="session-start-at" type="datetime-local" value="${escapeHtml(deck.sessionStartAt || "")}">
+        </div>
       </div>`;
     const actions = row.querySelector(".deck-actions");
-    const config = row.querySelector(".deck-config");
 
     const toggle = document.createElement("label");
     toggle.className = "ck-line";
@@ -1865,7 +2253,14 @@ async function refreshDecksUI(){
 
     const solo = document.createElement("button");
     solo.className = "mini-btn"; solo.textContent = "Study this only";
-    solo.onclick = async ()=>{ await setOnlyDeck(deck.id); activeSession = null; await refreshEverything(); await nextCard(); };
+    solo.onclick = async ()=>{
+      await setOnlyDeck(deck.id);
+      settings.selectedDeckId = deck.id;
+      saveSettings();
+      activeSession = null;
+      await refreshEverything();
+      await nextCard();
+    };
     actions.appendChild(solo);
 
     const rename = document.createElement("button");
@@ -1873,10 +2268,15 @@ async function refreshDecksUI(){
     rename.onclick = async ()=>{ if(await renameDeck(deck)){ await refreshEverything(); await nextCard(); } };
     actions.appendChild(rename);
 
-    const rulesBtn = document.createElement("button");
-    rulesBtn.className = "mini-btn"; rulesBtn.textContent = "Deck rules";
-    rulesBtn.onclick = ()=> config.classList.toggle("hidden");
-    actions.appendChild(rulesBtn);
+    const selectBtn = document.createElement("button");
+    selectBtn.className = `mini-btn deck-select-btn ${settings.selectedDeckId === deck.id ? "active" : ""}`; selectBtn.textContent = "Open in planner";
+    selectBtn.onclick = async ()=>{
+      settings.selectedDeckId = deck.id;
+      saveSettings();
+      syncUI();
+      await refreshPlan();
+    };
+    actions.appendChild(selectBtn);
 
     const exportBtn = document.createElement("button");
     exportBtn.className = "mini-btn"; exportBtn.textContent = "Export";
@@ -1887,21 +2287,19 @@ async function refreshDecksUI(){
     del.className = "mini-btn danger"; del.textContent = "Delete";
     del.onclick = async ()=>{ if(await deleteDeck(deck)){ activeSession = null; await refreshEverything(); await nextCard(); } };
     actions.appendChild(del);
-
-    row.querySelector('[data-role="save-rules"]').addEventListener("click", async ()=>{
-      const fields = {
-        learningSteps: row.querySelector('[data-role="learning-steps"]'),
-        relearningSteps: row.querySelector('[data-role="relearning-steps"]'),
-        deadlineEnabled: row.querySelector('[data-role="deadline-enabled"]'),
-        deadlineDateISO: row.querySelector('[data-role="deadline-date"]'),
-        deadlineTime: row.querySelector('[data-role="deadline-time"]'),
-        studyStartTime: row.querySelector('[data-role="study-start"]'),
-        studyEndTime: row.querySelector('[data-role="study-end"]')
-      };
-      await saveDeckRules(deck, fields);
+    row.querySelector('[data-role="deck-color"]').addEventListener("input", async e=>{
+      await db.decks.update(deck.id, {color:e.target.value});
+      await refreshEverything();
+    });
+    row.querySelector('[data-role="session-start-mode"]').addEventListener("change", async e=>{
+      await db.decks.update(deck.id, {sessionStartMode:e.target.value});
       activeSession = null;
       await refreshEverything();
-      if(currentCard && currentCard.deck_id === deck.id) await nextCard();
+    });
+    row.querySelector('[data-role="session-start-at"]').addEventListener("change", async e=>{
+      await db.decks.update(deck.id, {sessionStartAt:e.target.value});
+      activeSession = null;
+      await refreshEverything();
     });
 
     ui.decksList.appendChild(row);
@@ -1909,6 +2307,8 @@ async function refreshDecksUI(){
 }
 
 async function refreshEverything(){
+  deckCache = await getDecks();
+  syncUI();
   await refreshStats();
   await refreshProgress();
   await refreshPlan();
@@ -1918,9 +2318,10 @@ async function refreshEverything(){
 
 function syncSessionUI(){
   const text = activeSession ? (activeSession.source === "custom" ? "Custom" : "Recommended") : "Idle";
+  const sessionDeck = deckCache.find(deck=>deck.id === activeSession?.deck_id);
   ui.sessionValue.textContent = text;
   ui.sessionSub.textContent = activeSession
-    ? (activeSession.source === "custom" ? "Studying beyond the recommended queue." : "Tracking a recommended study session.")
+    ? `${activeSession.source === "custom" ? "Studying beyond the recommended queue." : "Tracking a recommended study session."}${sessionDeck ? ` ${sessionDeck.name} is the active deck.` : ""}`
     : "No session active.";
 }
 
@@ -2012,6 +2413,10 @@ ui.csvFile.addEventListener("change", async e=>{
   try{ await importCSV(file); } catch(err){ console.error(err); toast("Import failed."); }
   finally{ ui.csvFile.value = ""; }
 });
+document.addEventListener("click", e=>{
+  const btn = e.target.closest("button");
+  if(btn) requestAnimationFrame(()=>btn.blur());
+});
 ui.btnThemeQuick.addEventListener("click", ()=>{
   settings.theme = settings.theme === "dark" ? "light" : "dark";
   saveSettings(); syncUI();
@@ -2036,14 +2441,11 @@ ui.btnCustomSession.addEventListener("click", async ()=>{
 });
 
 ui.btnMic.addEventListener("click", toggleMic);
-ui.btnShowAnswer.addEventListener("click", ()=>{
-  const info = revealAnswer();
-  if(settings.typingMode && settings.autoRateTyping && info){
-    const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
-    const wrong = wrongPercent(info.user, target);
-    scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
-  }
-});
+ui.btnShowAnswer.addEventListener("click", triggerRevealFromShortcut);
+ui.btnHistoryBack.addEventListener("click", undoLastReview);
+ui.btnHistoryForward.addEventListener("click", redoLastReview);
+ui.btnCalendarPrev.addEventListener("click", ()=>{ calendarCursor.setMonth(calendarCursor.getMonth() - 1); renderCalendar(lastPlan, deckCache.filter(deck=>deck.active !== false)); });
+ui.btnCalendarNext.addEventListener("click", ()=>{ calendarCursor.setMonth(calendarCursor.getMonth() + 1); renderCalendar(lastPlan, deckCache.filter(deck=>deck.active !== false)); });
 ui.btnEditAnswer.addEventListener("click", ()=>{
   clearAutoAdvance();
   ui.answerInput.disabled = false;
@@ -2071,28 +2473,19 @@ ui.ratings.addEventListener("click", async e=>{
 ui.answerInput.addEventListener("keydown", e=>{
   if(e.key !== "Enter") return;
   e.preventDefault();
-  const info = revealAnswer();
-  if(settings.typingMode && settings.autoRateTyping && info){
-    const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
-    const wrong = wrongPercent(info.user, target);
-    scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
-  }
+  triggerRevealFromShortcut();
 });
 
 window.addEventListener("keydown", async e=>{
-  if(!currentCard) return;
-  if(e.key === " " && e.target !== ui.answerInput && !e.target.closest("button")){
+  if(!currentCard || anyModalOpen()) return;
+  if((e.key === " " || e.key === "Enter") && !isEditableShortcutTarget(e.target)){
     e.preventDefault();
-    if(!revealed){
-      const info = revealAnswer();
-      if(settings.typingMode && settings.autoRateTyping && info){
-        const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
-        const wrong = wrongPercent(info.user, target);
-        scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
-      }
-    }
+    if(document.activeElement instanceof HTMLElement && document.activeElement.matches("button")) document.activeElement.blur();
+    triggerRevealFromShortcut();
   }
-  if(["1","2","3","4"].includes(e.key) && !ui.ratings.classList.contains("hidden") && e.target !== ui.answerInput){
+  if(e.key === "ArrowLeft" && !isEditableShortcutTarget(e.target)){ e.preventDefault(); await undoLastReview(); }
+  if(e.key === "ArrowRight" && !isEditableShortcutTarget(e.target)){ e.preventDefault(); await redoLastReview(); }
+  if(["1","2","3","4"].includes(e.key) && !ui.ratings.classList.contains("hidden") && !isEditableShortcutTarget(e.target)){
     const user = settings.typingMode ? (ui.answerInput.value || "") : "";
     const matched = bestMatch(user, currentCard.accepted || []);
     const wrong = (settings.typingMode && user.trim()) ? wrongPercent(user, matched || currentCard.back_plain || "") : null;
