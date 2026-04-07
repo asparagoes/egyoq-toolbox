@@ -1,5 +1,21 @@
 [
   {
+    "title": "FlashFlow",
+    "description": "Adaptive flashcards with typing mode, spaced repetition, deadline planning, and deck management for self-paced study.",
+    "url": "./tool/flashflow/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "./tool/flashflow/favicon.svg",
+    "emoji": "⚡",
+    "tags": [
+      "study",
+      "flashcards",
+      "spaced repetition",
+      "adaptive learning",
+      "review",
+      "memorization"
+    ]
+  },
+  {
     "title": "Grade Calculator",
     "description": "Track subject grades across different terms with weighted categories, transmutation, goals, and autosave.",
     "url": "./tool/grade-calculator/",

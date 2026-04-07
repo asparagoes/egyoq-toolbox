@@ -1,0 +1,1772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FlashFlow</title>
+<meta
+  name="description"
+  content="Adaptive flashcards with typing mode, spaced repetition, deadline planning, and deck management for self-paced study."
+/>
+<meta
+  name="tool:description"
+  content="Adaptive flashcards with typing mode, spaced repetition, deadline planning, and deck management for self-paced study."
+/>
+<meta name="tool:tags" content="study,flashcards,spaced repetition,adaptive learning,review,memorization" />
+<meta name="tool:emoji" content="⚡" />
+<meta name="theme-color" content="#0c111b" />
+<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --r6:6px; --r10:10px; --r14:14px; --r18:18px; --r22:22px; --r999:999px;
+  --shadow:0 14px 36px rgba(0,0,0,.12);
+  --shadow-lg:0 24px 64px rgba(0,0,0,.18);
+  --maxw:1700px;
+}
+body[data-theme="dark"]{
+  --bg:#0c111b; --bg2:#111827; --bg3:#172033; --panel:#141c2b; --panel2:#0f1726;
+  --border:#25314a; --border2:#34425f; --text:#eef3ff; --text2:#b0bdd6; --text3:#74829f;
+  --accent:#7c6dfa; --accent2:#9f95ff; --accentSoft:rgba(124,109,250,.16);
+  --cyan:#22d3ee; --green:#10b981; --red:#f43f5e; --orange:#f59e0b;
+  --surface:#1d2740; --surface2:#212f4a; --topbar:rgba(12,17,27,.88);
+}
+body[data-theme="light"]{
+  --bg:#f5f7fb; --bg2:#ffffff; --bg3:#f1f4fa; --panel:#ffffff; --panel2:#f6f8fc;
+  --border:#dbe3f0; --border2:#c4d1e5; --text:#162033; --text2:#4f5d77; --text3:#7b879d;
+  --accent:#5b56e8; --accent2:#7a74ef; --accentSoft:rgba(91,86,232,.12);
+  --cyan:#0ea5c6; --green:#059669; --red:#e11d48; --orange:#d97706;
+  --surface:#f5f7fc; --surface2:#edf2fa; --topbar:rgba(245,247,251,.9);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:Inter,system-ui,sans-serif;background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 22%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg) 100%);
+  color:var(--text);min-height:100vh;font-size:14px;transition:background .2s,color .2s;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:999px}
+.topbar{
+  position:sticky;top:0;z-index:50;min-height:64px;padding:10px 14px;display:flex;align-items:center;gap:10px;
+  background:var(--topbar);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);flex-wrap:wrap
+}
+.brand{
+  font-weight:800;font-size:clamp(15px,1.4vw,18px);letter-spacing:-.02em;white-space:nowrap;
+  background:linear-gradient(135deg,var(--accent2),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.divider{width:1px;height:20px;background:var(--border)}
+.tb-tools,.tb-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tb-tools{flex:1;min-width:260px}
+.tb-right{margin-left:auto}
+.btn,.mini-btn{
+  border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;
+  transition:all .15s ease;display:inline-flex;align-items:center;gap:6px;
+}
+.btn{
+  padding:8px 12px;border-radius:12px;font-weight:650;font-size:12px;white-space:nowrap;
+}
+.mini-btn{
+  padding:5px 8px;border-radius:9px;font-size:11px;font-weight:650;
+}
+.btn:hover,.mini-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border2);transform:translateY(-1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 4px var(--accentSoft)}
+.btn.primary:hover{background:var(--accent2)}
+.btn.cyan{background:color-mix(in srgb, var(--cyan) 15%, transparent);border-color:color-mix(in srgb, var(--cyan) 40%, var(--border));color:var(--cyan)}
+.btn.danger,.mini-btn.danger{background:color-mix(in srgb, var(--red) 10%, transparent);border-color:color-mix(in srgb, var(--red) 35%, var(--border));color:var(--red)}
+.stats-pill{
+  padding:7px 10px;border:1px solid var(--border);border-radius:999px;background:var(--panel2);
+  font-size:12px;font-weight:650;color:var(--text2)
+}
+.dd-wrap{position:relative}
+.dd-panel{
+  position:absolute;right:0;top:calc(100% + 8px);z-index:70;width:min(360px,calc(100vw - 24px));
+  background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);
+  padding:12px;max-height:80vh;overflow:auto
+}
+.dd-group + .dd-group{border-top:1px solid var(--border);margin-top:12px;padding-top:12px}
+.dd-title{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--text3);margin-bottom:8px}
+.ck-line{display:flex;gap:8px;align-items:flex-start;margin:8px 0;color:var(--text2);font-weight:500}
+.ck-line input{margin-top:2px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px}
+.field input,.field select,.field textarea{
+  width:100%;border:1px solid var(--border);background:var(--bg3);color:var(--text);
+  border-radius:12px;padding:10px 11px;outline:none
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentSoft)}
+.field textarea{min-height:88px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.page{max-width:var(--maxw);margin:0 auto;padding:14px}
+.workspace{
+  display:grid;grid-template-columns:minmax(240px,290px) minmax(0,1fr) minmax(260px,320px);
+  gap:14px;align-items:start
+}
+.side-stack{display:grid;gap:12px}
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:20px;overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.03)
+}
+.panel.dragging{
+  opacity:.62;
+  transform:scale(.985);
+  box-shadow:var(--shadow-lg);
+}
+.panel-head{
+  display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--panel2)
+}
+.panel-title{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);display:flex;gap:6px;align-items:center}
+.panel-body{padding:13px 14px}
+.panel.collapsed .panel-body{display:none}
+.hint{font-size:11px;color:var(--text3);line-height:1.5}
+.stack-tools{display:flex;gap:4px}
+.drag-handle{
+  gap:2px;
+  cursor:grab;
+}
+.drag-handle:active{cursor:grabbing}
+.drag-dots{
+  display:grid;
+  grid-template-columns:repeat(2,4px);
+  gap:3px;
+}
+.drag-dots span{
+  width:4px;height:4px;border-radius:50%;background:currentColor;display:block;
+}
+.icon-btn{
+  width:28px;height:28px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text3);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease
+}
+.icon-btn:hover{background:var(--surface2);color:var(--text);transform:translateY(-1px)}
+.card-shell{
+  background:var(--panel);border:1px solid var(--border);border-radius:24px;min-height:clamp(520px,72vh,860px);padding:clamp(14px,2vw,22px);
+  display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--shadow)
+}
+.card-shell:before{
+  content:"";position:absolute;right:-50px;top:-50px;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,var(--accentSoft),transparent 70%);pointer-events:none
+}
+.timer-wrap{margin-bottom:14px}
+.timer-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:var(--text3);margin-bottom:6px}
+.timer-track{height:8px;border-radius:999px;background:var(--bg3);overflow:hidden}
+.timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width .2s linear}
+.timer-fill.warn{background:linear-gradient(90deg,var(--orange),#fbbf24)}
+.timer-fill.danger{background:linear-gradient(90deg,var(--red),#fb7185)}
+.meta-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pill{
+  padding:4px 10px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);
+  color:var(--text2);font-size:11px;font-weight:600
+}
+.pill.deck{border-color:color-mix(in srgb, var(--accent) 45%, var(--border));color:var(--accent2)}
+.pill.topic{border-color:color-mix(in srgb, var(--cyan) 45%, var(--border));color:var(--cyan)}
+.pill.diff{border-color:color-mix(in srgb, var(--orange) 45%, var(--border));color:var(--orange)}
+.queue-line{
+  display:flex;justify-content:space-between;gap:8px;align-items:center;color:var(--text3);
+  font-size:12px;font-weight:700;margin-bottom:10px;flex-wrap:wrap
+}
+.progress-wrap{margin-bottom:16px}
+.progress-head{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--text3)}
+.progress-bar{height:8px;border-radius:999px;background:var(--bg3);overflow:hidden}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width .25s ease}
+.question{
+  flex:1;font-size:clamp(18px,2vw,26px);font-weight:650;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:180px
+}
+.input-row{display:flex;gap:10px;align-items:center;margin:12px 0 10px}
+.answer-input{
+  flex:1;min-width:0;padding:12px 14px;border-radius:16px;border:1.5px solid var(--border);
+  background:var(--bg3);font-size:15px
+}
+.answer-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accentSoft)}
+.answer-input:disabled{opacity:.65}
+.mic-btn{
+  width:46px;height:46px;border-radius:16px;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .15s ease
+}
+.mic-btn:hover{transform:translateY(-1px)}
+.mic-btn.on{background:color-mix(in srgb, var(--red) 10%, transparent);border-color:var(--red)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.show-btn{
+  border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;
+  border-radius:16px;padding:11px 18px;font-weight:800;font-size:14px;box-shadow:0 8px 20px var(--accentSoft);transition:all .15s ease
+}
+.show-btn:hover{transform:translateY(-1px)}
+.status-line{min-height:20px;font-size:12px;font-weight:600;color:var(--text3)}
+.reveal-box{
+  margin-top:12px;padding:15px;border:1px solid var(--border);border-radius:18px;background:var(--bg3)
+}
+.sec-label{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin:0 0 8px}
+.answer-text{font-size:17px;font-weight:700;line-height:1.6;white-space:pre-wrap}
+.expl-text{font-size:14px;line-height:1.65;color:var(--text2);white-space:pre-wrap}
+.accepted-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.acc-tag{padding:5px 9px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--text2)}
+.diff-box{
+  margin-top:10px;padding:12px;border-radius:14px;border:1px dashed var(--border2);background:var(--bg3);line-height:1.7
+}
+.same{color:var(--green)} .missing{color:var(--red);text-decoration:underline wavy 1.5px} .extra{color:var(--orange);text-decoration:underline 1.5px}
+.ratings{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.rate-btn{
+  border:none;border-radius:18px;min-height:68px;font-weight:800;cursor:pointer;color:#fff;font-size:15px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;position:relative;transition:transform .15s ease
+}
+.rate-btn:hover{transform:translateY(-1px)}
+.rate-btn small{font-size:11px;font-weight:500;opacity:.88}
+.rate-btn .key{position:absolute;top:6px;right:7px;font-size:10px;opacity:.7}
+.rate-btn.again{background:linear-gradient(135deg,#ef4444,#e11d48)}
+.rate-btn.hard{background:linear-gradient(135deg,#f59e0b,#ea580c)}
+.rate-btn.good{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.rate-btn.easy{background:linear-gradient(135deg,#10b981,#059669)}
+.empty-card{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 16px}
+.empty-card .big{font-size:50px;margin-bottom:10px}
+.empty-card .title{font-size:20px;font-weight:800;margin-bottom:6px}
+.empty-card .sub{color:var(--text3);max-width:320px}
+.session-list,.deck-list{display:grid;gap:8px}
+.session-row,.deck-row{
+  border:1px solid var(--border);border-radius:16px;background:var(--bg3);padding:10px 11px
+}
+.session-row.done{border-color:color-mix(in srgb, var(--green) 35%, var(--border))}
+.session-row.missed{border-color:color-mix(in srgb, var(--red) 35%, var(--border))}
+.session-main,.deck-name{font-weight:700}
+.session-sub,.deck-meta{font-size:12px;color:var(--text3);margin-top:2px}
+.badge{
+  margin-left:auto;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap
+}
+.row-split{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.deck-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.big-val{font-size:32px;font-weight:800;line-height:1}
+.session-chip{
+  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);
+  border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--text2)
+}
+.session-chip .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.float-restore{
+  position:fixed;right:16px;bottom:16px;z-index:40;display:none;box-shadow:var(--shadow-lg)
+}
+body.card-only .settings-only{display:none!important}
+body.card-only .workspace{grid-template-columns:minmax(0,1fr)}
+body.card-only .side-stack{display:none!important}
+body.card-only .float-restore{display:inline-flex}
+dialog{
+  border:none;border-radius:22px;padding:0;width:min(840px,calc(100vw - 22px));box-shadow:0 20px 80px rgba(0,0,0,.28)
+}
+dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
+.modal-head,.modal-foot{padding:14px 16px;background:var(--panel2)}
+.modal-head{border-bottom:1px solid var(--border);font-size:18px;font-weight:800}
+.modal-foot{border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.modal-body{padding:14px 16px;max-height:68vh;overflow:auto;background:var(--panel)}
+.manage-row{
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:10px;border:1px solid var(--border);border-radius:14px;background:var(--bg3);align-items:start
+}
+.manage-list{display:grid;gap:8px}
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);z-index:100;
+  padding:10px 14px;border-radius:999px;background:var(--surface2);border:1px solid var(--border2);box-shadow:var(--shadow-lg);
+  opacity:0;transition:all .2s ease;pointer-events:none;font-size:12px;font-weight:700
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:1220px){
+  .workspace{grid-template-columns:1fr}
+  .left-col{order:2}
+  .center-col{order:1}
+  .right-col{order:3}
+  .card-shell{min-height:unset}
+}
+@media(max-width:900px){
+  .page{padding:10px}
+  .topbar{padding:10px 12px}
+  .tb-right{width:100%;justify-content:flex-start;margin-left:0}
+}
+@media(max-width:760px){
+  .question{font-size:20px}
+  .ratings{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid2{grid-template-columns:1fr}
+  .dd-panel{left:0;right:auto;width:min(360px,calc(100vw - 24px))}
+  .manage-row{grid-template-columns:auto 1fr}
+  .manage-row > .mini-btn{grid-column:1 / -1;justify-self:start}
+}
+@media(max-width:560px){
+  .topbar{gap:8px}
+  .divider{display:none}
+  .tb-tools,.tb-right{min-width:100%}
+  .btn,.stats-pill{width:auto;max-width:100%}
+  .controls{flex-direction:column;align-items:stretch}
+  .controls > *{justify-content:center}
+  .input-row{flex-direction:column;align-items:stretch}
+  .mic-btn{width:100%}
+  .row-split{flex-direction:column}
+  .question{font-size:18px}
+}
+</style>
+</head>
+<body data-theme="dark">
+<div class="topbar">
+  <div class="brand">⚡ FlashFlow</div>
+  <div class="divider"></div>
+  <div class="tb-tools">
+    <label class="btn primary" style="cursor:pointer">📥 Import CSV<input id="csvFile" type="file" accept=".csv,text/csv" hidden></label>
+    <button id="btnTyping" class="btn cyan">⌨ Typing: On</button>
+    <div class="dd-wrap settings-only">
+      <button id="btnOptions" class="btn">⚙ Options</button>
+      <div id="optionsPanel" class="dd-panel hidden">
+        <div class="dd-group">
+          <div class="dd-title">Appearance</div>
+          <div class="field"><label for="optTheme">Theme</label><select id="optTheme"><option value="dark">Dark</option><option value="light">Light</option></select></div>
+          <label class="ck-line"><input type="checkbox" id="optCardOnly"><span>Focus mode (hide side panels)</span></label>
+          <label class="ck-line"><input type="checkbox" id="optHideLabels"><span>Hide card labels</span></label>
+        </div>
+        <div class="dd-group">
+          <div class="dd-title">Review</div>
+          <label class="ck-line"><input type="checkbox" id="optReverse"><span>Create reverse cards on import</span></label>
+          <label class="ck-line"><input type="checkbox" id="optAutoRate"><span>Auto-rate typed answers</span></label>
+          <label class="ck-line"><input type="checkbox" id="optRandomize"><span>Randomize card order</span></label>
+          <div class="grid2">
+            <div class="field"><label for="optDelay">Auto-advance delay (sec)</label><input id="optDelay" type="number" min="0" max="60" step="1"></div>
+            <div class="field"><label for="optQuestionLimit">Question time limit (sec)</label><input id="optQuestionLimit" type="number" min="0" max="600" step="5"></div>
+          </div>
+        </div>
+        <div class="dd-group">
+          <div class="dd-title">Voice</div>
+          <label class="ck-line"><input type="checkbox" id="optVoice"><span>Enable voice input</span></label>
+          <label class="ck-line"><input type="checkbox" id="optTts"><span>Read question aloud</span></label>
+        </div>
+      </div>
+    </div>
+    <button id="btnManageCards" class="btn settings-only">🗂 Cards</button>
+    <button id="btnHelp" class="btn settings-only">❓ Help</button>
+    <button id="btnReset" class="btn danger settings-only">🗑 Reset</button>
+  </div>
+  <div class="tb-right">
+    <button id="btnThemeQuick" class="btn settings-only">🌙 Theme</button>
+    <div id="statsText" class="stats-pill">No deck loaded</div>
+  </div>
+</div>
+
+<button id="btnShowPanels" class="btn primary float-restore">◀ Show side panels</button>
+<div id="toast" class="toast"></div>
+
+<div class="page">
+  <div class="workspace">
+    <div class="left-col side-stack" id="leftStack">
+      <section class="panel settings-only" data-side="left" data-panel-id="studyPlan">
+        <div class="panel-head">
+          <div class="panel-title">📅 Study Plan</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+        </div>
+        <div class="panel-body">
+          <div id="planSummary" class="hint">Import a deck to see recommended study sessions.</div>
+          <div id="sessionList" class="session-list" style="margin-top:10px"></div>
+          <div class="hint" style="margin-top:10px">Tip: drag panels with the six-dot handle to reorder them.</div>
+        </div>
+      </section>
+
+      <section class="panel settings-only" data-side="left" data-panel-id="decks">
+        <div class="panel-head">
+          <div class="panel-title">📚 Deck Manager</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+        </div>
+        <div class="panel-body">
+          <div id="decksSummary" class="hint">No decks yet.</div>
+          <div id="decksList" class="deck-list" style="margin-top:10px"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="center-col">
+      <div class="card-shell">
+        <div id="timerWrap" class="timer-wrap hidden">
+          <div class="timer-top"><span>⏱ Per-question timer</span><span id="timerVal">—</span></div>
+          <div class="timer-track"><div id="timerFill" class="timer-fill"></div></div>
+        </div>
+
+        <div id="metaRow" class="meta-row"></div>
+        <div class="queue-line"><span id="queueLabel">Queue: 0</span><span id="sessionLine">Session: —</span></div>
+
+        <div class="progress-wrap">
+          <div class="progress-head"><span id="progressText">0 / 0 learned</span><span id="progressPct">0%</span></div>
+          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        </div>
+
+        <div id="question" class="question">
+          <div class="empty-card">
+            <div class="big">📭</div>
+            <div class="title">No cards loaded</div>
+            <div class="sub">Import a CSV file to start studying.</div>
+          </div>
+        </div>
+
+        <div id="inputRow" class="input-row hidden">
+          <input id="answerInput" class="answer-input" type="text" placeholder="Type your answer, then press Enter to reveal">
+          <button id="btnMic" class="mic-btn hidden" title="Voice input">🎤</button>
+        </div>
+
+        <div class="controls">
+          <button id="btnShowAnswer" class="show-btn hidden">👁 Show Answer</button>
+          <button id="btnEditAnswer" class="btn hidden">✏ Edit answer</button>
+          <button id="btnEditCard" class="btn hidden">✏ Edit card</button>
+          <button id="btnDeleteCard" class="btn danger hidden">🗑 Delete card</button>
+        </div>
+
+        <div id="statusLine" class="status-line"></div>
+        <div id="diffBox" class="diff-box hidden"></div>
+
+        <div id="revealBox" class="reveal-box hidden">
+          <div class="sec-label">Expected answer</div>
+          <div id="answer" class="answer-text"></div>
+          <div id="explanationSection" class="hidden" style="margin-top:12px">
+            <div class="sec-label">Explanation</div>
+            <div id="explanation" class="expl-text"></div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="sec-label">Accepted answers</div>
+            <div id="acceptedList" class="accepted-wrap"></div>
+          </div>
+        </div>
+
+        <div id="ratings" class="ratings hidden">
+          <button class="rate-btn again" data-grade="1">Again<small>Forgot</small><span class="key">1</span></button>
+          <button class="rate-btn hard" data-grade="2">Hard<small>Barely</small><span class="key">2</span></button>
+          <button class="rate-btn good" data-grade="3">Good<small>Got it</small><span class="key">3</span></button>
+          <button class="rate-btn easy" data-grade="4">Easy<small>Clear</small><span class="key">4</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-col side-stack" id="rightStack">
+      <section class="panel settings-only" data-side="right" data-panel-id="reviewBehavior">
+        <div class="panel-head">
+          <div class="panel-title">⚙ Review Behavior</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+        </div>
+        <div class="panel-body">
+          <label class="ck-line"><input type="checkbox" id="reviewTyping"><span>Typing mode</span></label>
+          <label class="ck-line"><input type="checkbox" id="reviewAutoRate"><span>Auto-rate typed answers</span></label>
+          <label class="ck-line"><input type="checkbox" id="reviewRandomize"><span>Randomize cards</span></label>
+          <label class="ck-line"><input type="checkbox" id="reviewVoice"><span>Voice input</span></label>
+          <label class="ck-line"><input type="checkbox" id="reviewTts"><span>Read question aloud</span></label>
+          <label class="ck-line"><input type="checkbox" id="reviewHideLabels"><span>Hide labels</span></label>
+          <label class="ck-line"><input type="checkbox" id="reviewCardOnly"><span>Focus mode</span></label>
+          <div class="grid2" style="margin-top:8px">
+            <div class="field"><label for="reviewDelay">Auto-advance delay (sec)</label><input id="reviewDelay" type="number" min="0" max="60" step="1"></div>
+            <div class="field"><label for="reviewTimeLimit">Question time limit (sec)</label><input id="reviewTimeLimit" type="number" min="0" max="600" step="5"></div>
+          </div>
+          <div class="hint" style="margin-top:8px">When the timer ends, the answer is revealed. You rate the card, then the next card loads. No session time limit.</div>
+        </div>
+      </section>
+
+      <section class="panel settings-only" data-side="right" data-panel-id="mode">
+        <div class="panel-head">
+          <div class="panel-title">🎯 Deadline Planner</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+        </div>
+        <div class="panel-body">
+          <div id="modeValue" class="big-val" style="font-size:24px">Regular</div>
+          <div id="modeSub" class="hint" style="margin-top:6px">No deadline set.</div>
+          <div class="field" style="margin-top:10px"><label for="optTimezone">Timezone</label>
+            <select id="optTimezone">
+              <option value="Asia/Manila">Asia/Manila (default)</option>
+              <option value="UTC">UTC</option>
+              <option value="Asia/Tokyo">Asia/Tokyo</option>
+              <option value="Europe/London">Europe/London</option>
+              <option value="America/New_York">America/New_York</option>
+              <option value="America/Los_Angeles">America/Los_Angeles</option>
+              <option value="Australia/Sydney">Australia/Sydney</option>
+            </select>
+          </div>
+          <label class="ck-line"><input type="checkbox" id="optDeadline"><span>Use target deadline</span></label>
+          <div class="grid2">
+            <div class="field"><label for="optDeadlineDate">Deadline date</label><input id="optDeadlineDate" type="date"></div>
+            <div class="field"><label for="optDeadlineTime">Deadline time</label><input id="optDeadlineTime" type="time"></div>
+            <div class="field"><label for="optStudyStart">Study window start</label><input id="optStudyStart" type="time"></div>
+            <div class="field"><label for="optStudyEnd">Study window end</label><input id="optStudyEnd" type="time"></div>
+          </div>
+          <div class="hint" style="margin-top:8px">Study window end is capped to the deadline time.</div>
+        </div>
+      </section>
+
+      <section class="panel settings-only" data-side="right" data-panel-id="goal">
+        <div class="panel-head">
+          <div class="panel-title">🏆 Goal Progress</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+        </div>
+        <div class="panel-body">
+          <div id="goalValue" class="big-val">0 / 0</div>
+          <div id="goalSub" class="hint" style="margin-top:6px">Sessions completed today.</div>
+        </div>
+      </section>
+
+      <section class="panel settings-only" data-side="right" data-panel-id="session">
+        <div class="panel-head">
+          <div class="panel-title">▶ Current Session</div>
+          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to reorder"><span class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+        </div>
+        <div class="panel-body">
+          <div id="sessionChip" class="session-chip"><span class="dot"></span><span id="sessionValue">Idle</span></div>
+          <div id="sessionSub" class="hint" style="margin-top:8px">No session active.</div>
+          <button id="btnCustomSession" class="btn cyan" style="margin-top:12px;width:100%;justify-content:center">▶ Start custom session</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<dialog id="helpDialog">
+  <div class="modal-head">How FlashFlow works</div>
+  <div class="modal-body">
+    <p><strong>Import:</strong> one CSV becomes one deck. FlashFlow supports <code>front/back</code>, question-bank style <code>Stem/Answer/Explanation</code>, and <code>text</code> entries with <code>[[answer]]</code> markers.</p>
+    <p><strong>Review flow:</strong> reveal the answer first, then rate the card with <strong>Again / Hard / Good / Easy</strong>. Those ratings drive the spaced-repetition schedule, so they matter more than speed.</p>
+    <p><strong>Typing mode:</strong> if enabled, you type your answer before revealing. You can keep grading manually, or turn on <strong>Auto-rate typed answers</strong> if you want FlashFlow to estimate the rating from how close your answer was.</p>
+    <p><strong>Deadline planner:</strong> optional. If you set a target deadline, the planner suggests recommended study sessions in the side panel. Without a deadline, the app stays on normal spaced review.</p>
+    <p><strong>Side panels:</strong> use the <strong>six-dot drag handles</strong> to reorder the left and right side panels however you want. The order is saved locally on your device.</p>
+    <p><strong>Deck control:</strong> each deck can be active, inactive, studied solo, renamed, exported, or deleted. Only active decks contribute cards to your queue.</p>
+    <p><strong>Keyboard shortcuts:</strong> <code>Enter</code> = reveal in typing mode · <code>Space</code> = reveal · <code>1 / 2 / 3 / 4</code> = rate.</p>
+  </div>
+  <div class="modal-foot"><button id="btnCloseHelp" class="btn">Close</button></div>
+</dialog>
+
+<dialog id="manageDialog">
+  <div class="modal-head">Manage Cards</div>
+  <div class="modal-body">
+    <div class="controls" style="margin-bottom:12px">
+      <button id="btnSelectAllCards" class="btn">Select all</button>
+      <button id="btnClearCardSelection" class="btn">Clear</button>
+      <button id="btnExportCardsCsv" class="btn">Export CSV</button>
+      <button id="btnDeleteSelectedCards" class="btn danger">Delete selected</button>
+    </div>
+    <div id="manageCardList" class="manage-list"></div>
+  </div>
+  <div class="modal-foot"><button id="btnCloseManage" class="btn">Close</button></div>
+</dialog>
+
+<dialog id="editCardDialog">
+  <div class="modal-head">Edit Current Card</div>
+  <div class="modal-body">
+    <div class="field"><label for="editFront">Question</label><textarea id="editFront"></textarea></div>
+    <div class="field" style="margin-top:10px"><label for="editBack">Answer</label><textarea id="editBack"></textarea></div>
+    <div class="field" style="margin-top:10px"><label for="editAccepted">Accepted answers (semicolon separated)</label><input id="editAccepted" type="text"></div>
+    <div class="field" style="margin-top:10px"><label for="editExplanation">Explanation</label><textarea id="editExplanation"></textarea></div>
+  </div>
+  <div class="modal-foot"><button id="btnCloseEditCard" class="btn">Cancel</button><button id="btnSaveEditCard" class="btn primary">Save</button></div>
+</dialog>
+
+<script type="module">
+import { Dexie } from "https://unpkg.com/dexie/dist/modern/dexie.mjs";
+import Papa from "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm";
+import { diffChars } from "https://cdn.jsdelivr.net/npm/diff@8.0.3/+esm";
+import { createEmptyCard, fsrs, generatorParameters, Rating, State } from "https://unpkg.com/ts-fsrs@4.7.1/dist/index.mjs?module";
+
+const db = new Dexie("FlashFlow_Pro_v1");
+db.version(1).stores({
+  cards:"id,deck_id,due_ms,created_ms",
+  reviews:"++id,card_id,review_ms",
+  sessions:"++id,session_key,day_key,deck_scope,source",
+  decks:"id,name,active,created_ms"
+});
+
+const $ = id => document.getElementById(id);
+const ui = {
+  csvFile:$("csvFile"), btnTyping:$("btnTyping"), btnOptions:$("btnOptions"), optionsPanel:$("optionsPanel"),
+  btnManageCards:$("btnManageCards"), btnHelp:$("btnHelp"), helpDialog:$("helpDialog"), btnCloseHelp:$("btnCloseHelp"),
+  btnReset:$("btnReset"), statsText:$("statsText"), btnThemeQuick:$("btnThemeQuick"),
+  optTheme:$("optTheme"), optCardOnly:$("optCardOnly"), optHideLabels:$("optHideLabels"),
+  optReverse:$("optReverse"), optAutoRate:$("optAutoRate"), optRandomize:$("optRandomize"),
+  optDelay:$("optDelay"), optQuestionLimit:$("optQuestionLimit"), optVoice:$("optVoice"), optTts:$("optTts"),
+  btnShowPanels:$("btnShowPanels"),
+  planSummary:$("planSummary"), sessionList:$("sessionList"), decksSummary:$("decksSummary"), decksList:$("decksList"),
+  reviewTyping:$("reviewTyping"), reviewAutoRate:$("reviewAutoRate"), reviewRandomize:$("reviewRandomize"),
+  reviewVoice:$("reviewVoice"), reviewTts:$("reviewTts"), reviewHideLabels:$("reviewHideLabels"),
+  reviewCardOnly:$("reviewCardOnly"), reviewDelay:$("reviewDelay"), reviewTimeLimit:$("reviewTimeLimit"),
+  modeValue:$("modeValue"), modeSub:$("modeSub"), optTimezone:$("optTimezone"),
+  optDeadline:$("optDeadline"), optDeadlineDate:$("optDeadlineDate"), optDeadlineTime:$("optDeadlineTime"),
+  optStudyStart:$("optStudyStart"), optStudyEnd:$("optStudyEnd"),
+  goalValue:$("goalValue"), goalSub:$("goalSub"),
+  sessionValue:$("sessionValue"), sessionSub:$("sessionSub"), btnCustomSession:$("btnCustomSession"),
+  timerWrap:$("timerWrap"), timerVal:$("timerVal"), timerFill:$("timerFill"),
+  metaRow:$("metaRow"), queueLabel:$("queueLabel"), sessionLine:$("sessionLine"),
+  progressText:$("progressText"), progressPct:$("progressPct"), progressFill:$("progressFill"),
+  question:$("question"), inputRow:$("inputRow"), answerInput:$("answerInput"), btnMic:$("btnMic"),
+  btnShowAnswer:$("btnShowAnswer"), btnEditAnswer:$("btnEditAnswer"), btnEditCard:$("btnEditCard"), btnDeleteCard:$("btnDeleteCard"),
+  statusLine:$("statusLine"), diffBox:$("diffBox"), revealBox:$("revealBox"), answer:$("answer"),
+  explanationSection:$("explanationSection"), explanation:$("explanation"), acceptedList:$("acceptedList"),
+  ratings:$("ratings"), manageDialog:$("manageDialog"), manageCardList:$("manageCardList"),
+  btnSelectAllCards:$("btnSelectAllCards"), btnClearCardSelection:$("btnClearCardSelection"),
+  btnExportCardsCsv:$("btnExportCardsCsv"), btnDeleteSelectedCards:$("btnDeleteSelectedCards"), btnCloseManage:$("btnCloseManage"),
+  editCardDialog:$("editCardDialog"), editFront:$("editFront"), editBack:$("editBack"), editAccepted:$("editAccepted"),
+  editExplanation:$("editExplanation"), btnCloseEditCard:$("btnCloseEditCard"), btnSaveEditCard:$("btnSaveEditCard"),
+  toast:$("toast")
+};
+
+const DAY_MS = 86400000;
+const SETTINGS_KEY = "flashflow_pro_settings";
+const settings = {
+  theme:"dark",
+  typingMode:true,
+  autoRateTyping:false,
+  randomizeCards:false,
+  voiceEnabled:false,
+  ttsEnabled:false,
+  hideLabels:false,
+  cardOnlyView:false,
+  reverseImport:false,
+  autoAdvanceDelaySec:5,
+  perQuestionLimitSec:0,
+  deadlineEnabled:false,
+  deadlineDateISO:"",
+  deadlineTime:"09:00",
+  studyStartTime:"08:00",
+  studyEndTime:"22:00",
+  timezone:"Asia/Manila",
+  panelOrder:{left:["studyPlan","decks"],right:["reviewBehavior","mode","goal","session"]},
+  collapsed:{}
+};
+
+let currentCard = null;
+let queue = [];
+let revealed = false;
+let recognition = null;
+let listening = false;
+let timerFrame = null;
+let timerDeadline = 0;
+let timerTotal = 0;
+let autoAdvanceTimer = null;
+let activeSession = null;
+let lastPlan = [];
+let lastDeckSignature = "";
+
+function escapeHtml(s){return String(s ?? "").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
+function uid(){return (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);}
+function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+function norm(s){
+  return String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
+}
+function dayKey(ms){
+  const fmt = new Intl.DateTimeFormat("en-CA",{timeZone:settings.timezone,year:"numeric",month:"2-digit",day:"2-digit"});
+  return fmt.format(new Date(ms));
+}
+function fmtShort(ms){return new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,month:"short",day:"numeric"}).format(new Date(ms));}
+function fmtTime(ms){return new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,hour:"numeric",minute:"2-digit"}).format(new Date(ms));}
+function fmtDateTime(ms){return new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(ms));}
+function timeToMinutes(v){const [h,m]=String(v || "00:00").split(":").map(Number); return clamp((h||0)*60 + (m||0),0,1439);}
+function toast(msg){
+  ui.toast.textContent = msg;
+  ui.toast.classList.add("show");
+  setTimeout(()=>ui.toast.classList.remove("show"),2200);
+}
+function setStatus(msg){ui.statusLine.textContent = msg || "";}
+function clearAutoAdvance(){ if(autoAdvanceTimer){ clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; } }
+
+function loadSettings(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+    Object.assign(settings,saved);
+  }catch{}
+  if(!settings.panelOrder) settings.panelOrder = {left:["studyPlan","decks"],right:["reviewBehavior","mode","goal","session"]};
+  if(!settings.collapsed) settings.collapsed = {};
+}
+function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+
+function syncUI(){
+  document.body.dataset.theme = settings.theme;
+  document.body.classList.toggle("card-only", !!settings.cardOnlyView);
+
+  ui.optTheme.value = settings.theme;
+  ui.optCardOnly.checked = settings.cardOnlyView;
+  ui.optHideLabels.checked = settings.hideLabels;
+  ui.optReverse.checked = settings.reverseImport;
+  ui.optAutoRate.checked = settings.autoRateTyping;
+  ui.optRandomize.checked = settings.randomizeCards;
+  ui.optDelay.value = settings.autoAdvanceDelaySec;
+  ui.optQuestionLimit.value = settings.perQuestionLimitSec;
+  ui.optVoice.checked = settings.voiceEnabled;
+  ui.optTts.checked = settings.ttsEnabled;
+
+  ui.reviewTyping.checked = settings.typingMode;
+  ui.reviewAutoRate.checked = settings.autoRateTyping;
+  ui.reviewRandomize.checked = settings.randomizeCards;
+  ui.reviewVoice.checked = settings.voiceEnabled;
+  ui.reviewTts.checked = settings.ttsEnabled;
+  ui.reviewHideLabels.checked = settings.hideLabels;
+  ui.reviewCardOnly.checked = settings.cardOnlyView;
+  ui.reviewDelay.value = settings.autoAdvanceDelaySec;
+  ui.reviewTimeLimit.value = settings.perQuestionLimitSec;
+
+  ui.optTimezone.value = settings.timezone;
+  ui.optDeadline.checked = settings.deadlineEnabled;
+  ui.optDeadlineDate.value = settings.deadlineDateISO || "";
+  ui.optDeadlineTime.value = settings.deadlineTime || "09:00";
+  ui.optStudyStart.value = settings.studyStartTime || "08:00";
+  ui.optStudyEnd.value = settings.studyEndTime || "22:00";
+
+  ui.btnTyping.textContent = `⌨ Typing: ${settings.typingMode ? "On" : "Off"}`;
+  ui.btnThemeQuick.textContent = settings.theme === "dark" ? "🌙 Dark" : "☀ Light";
+}
+
+function applyPanelLayout(){
+  for(const [side, order] of Object.entries(settings.panelOrder)){
+    const stack = document.getElementById(side === "left" ? "leftStack" : "rightStack");
+    for(const id of order){
+      const panel = stack.querySelector(`[data-panel-id="${id}"]`);
+      if(panel) stack.appendChild(panel);
+    }
+  }
+  document.querySelectorAll("[data-panel-id]").forEach(panel=>{
+    const id = panel.dataset.panelId;
+    panel.classList.toggle("collapsed", !!settings.collapsed[id]);
+    panel.querySelector(".collapse-btn").textContent = panel.classList.contains("collapsed") ? "+" : "−";
+  });
+  setupPanelDragging();
+}
+
+let dragArmedPanel = null;
+let draggingPanel = null;
+
+function panelAfterElement(stack, y){
+  const items = [...stack.querySelectorAll("[data-panel-id]:not(.dragging)")];
+  return items.reduce((closest, child)=>{
+    const box = child.getBoundingClientRect();
+    const offset = y - (box.top + box.height / 2);
+    if(offset < 0 && offset > closest.offset){
+      return {offset, element:child};
+    }
+    return closest;
+  }, {offset:Number.NEGATIVE_INFINITY, element:null}).element;
+}
+
+function syncPanelOrderFromDom(side){
+  const stack = document.getElementById(side === "left" ? "leftStack" : "rightStack");
+  settings.panelOrder[side] = [...stack.querySelectorAll("[data-panel-id]")].map(panel=>panel.dataset.panelId);
+  saveSettings();
+}
+
+function setupPanelDragging(){
+  document.querySelectorAll("[data-panel-id]").forEach(panel=>{
+    panel.draggable = true;
+    if(panel.dataset.dragReady === "true") return;
+    panel.dataset.dragReady = "true";
+
+    const handle = panel.querySelector(".drag-handle");
+    handle?.addEventListener("pointerdown", ()=>{
+      dragArmedPanel = panel;
+    });
+    handle?.addEventListener("pointerup", ()=>{
+      if(dragArmedPanel === panel) dragArmedPanel = null;
+    });
+    handle?.addEventListener("pointercancel", ()=>{
+      if(dragArmedPanel === panel) dragArmedPanel = null;
+    });
+
+    panel.addEventListener("dragstart", e=>{
+      if(dragArmedPanel !== panel){
+        e.preventDefault();
+        return;
+      }
+      draggingPanel = panel;
+      panel.classList.add("dragging");
+      try{
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", panel.dataset.panelId);
+      }catch{}
+    });
+
+    panel.addEventListener("dragend", ()=>{
+      panel.classList.remove("dragging");
+      dragArmedPanel = null;
+      draggingPanel = null;
+    });
+  });
+
+  document.querySelectorAll(".side-stack").forEach(stack=>{
+    if(stack.dataset.dragReady === "true") return;
+    stack.dataset.dragReady = "true";
+
+    stack.addEventListener("dragover", e=>{
+      if(!draggingPanel) return;
+      const side = stack.id === "leftStack" ? "left" : "right";
+      if(draggingPanel.dataset.side !== side) return;
+      e.preventDefault();
+      const after = panelAfterElement(stack, e.clientY);
+      if(after == null) stack.appendChild(draggingPanel);
+      else stack.insertBefore(draggingPanel, after);
+    });
+
+    stack.addEventListener("drop", e=>{
+      if(!draggingPanel) return;
+      const side = stack.id === "leftStack" ? "left" : "right";
+      if(draggingPanel.dataset.side !== side) return;
+      e.preventDefault();
+      syncPanelOrderFromDom(side);
+      applyPanelLayout();
+    });
+  });
+}
+
+function bindSettings(){
+  const handlers = [
+    [ui.optTheme,"change",()=>settings.theme = ui.optTheme.value],
+    [ui.optCardOnly,"change",()=>settings.cardOnlyView = ui.optCardOnly.checked],
+    [ui.optHideLabels,"change",()=>settings.hideLabels = ui.optHideLabels.checked],
+    [ui.optReverse,"change",()=>settings.reverseImport = ui.optReverse.checked],
+    [ui.optAutoRate,"change",()=>settings.autoRateTyping = ui.optAutoRate.checked],
+    [ui.optRandomize,"change",()=>settings.randomizeCards = ui.optRandomize.checked],
+    [ui.optDelay,"input",()=>settings.autoAdvanceDelaySec = clamp(Number(ui.optDelay.value)||0,0,60)],
+    [ui.optQuestionLimit,"input",()=>settings.perQuestionLimitSec = clamp(Number(ui.optQuestionLimit.value)||0,0,600)],
+    [ui.optVoice,"change",()=>settings.voiceEnabled = ui.optVoice.checked],
+    [ui.optTts,"change",()=>settings.ttsEnabled = ui.optTts.checked],
+    [ui.reviewTyping,"change",()=>settings.typingMode = ui.reviewTyping.checked],
+    [ui.reviewAutoRate,"change",()=>settings.autoRateTyping = ui.reviewAutoRate.checked],
+    [ui.reviewRandomize,"change",()=>settings.randomizeCards = ui.reviewRandomize.checked],
+    [ui.reviewVoice,"change",()=>settings.voiceEnabled = ui.reviewVoice.checked],
+    [ui.reviewTts,"change",()=>settings.ttsEnabled = ui.reviewTts.checked],
+    [ui.reviewHideLabels,"change",()=>settings.hideLabels = ui.reviewHideLabels.checked],
+    [ui.reviewCardOnly,"change",()=>settings.cardOnlyView = ui.reviewCardOnly.checked],
+    [ui.reviewDelay,"input",()=>settings.autoAdvanceDelaySec = clamp(Number(ui.reviewDelay.value)||0,0,60)],
+    [ui.reviewTimeLimit,"input",()=>settings.perQuestionLimitSec = clamp(Number(ui.reviewTimeLimit.value)||0,0,600)],
+    [ui.optTimezone,"change",()=>settings.timezone = ui.optTimezone.value],
+    [ui.optDeadline,"change",()=>settings.deadlineEnabled = ui.optDeadline.checked],
+    [ui.optDeadlineDate,"input",()=>settings.deadlineDateISO = ui.optDeadlineDate.value || ""],
+    [ui.optDeadlineTime,"input",()=>settings.deadlineTime = ui.optDeadlineTime.value || "09:00"],
+    [ui.optStudyStart,"input",()=>settings.studyStartTime = ui.optStudyStart.value || "08:00"],
+    [ui.optStudyEnd,"input",()=>settings.studyEndTime = ui.optStudyEnd.value || "22:00"]
+  ];
+  for(const [el,ev,fn] of handlers){
+    el.addEventListener(ev, async ()=>{
+      fn();
+      capStudyWindowEnd();
+      saveSettings();
+      syncUI();
+      setupVoice();
+      if(currentCard) showQuestion(currentCard, true);
+      await refreshEverything();
+    });
+  }
+}
+
+function capStudyWindowEnd(){
+  if(!settings.deadlineEnabled || !settings.deadlineDateISO) return;
+  const max = timeToMinutes(settings.deadlineTime);
+  const current = timeToMinutes(settings.studyEndTime);
+  if(current > max) settings.studyEndTime = settings.deadlineTime;
+}
+
+function deadlineMs(){
+  if(!settings.deadlineEnabled || !settings.deadlineDateISO) return null;
+  const ms = new Date(`${settings.deadlineDateISO}T${settings.deadlineTime || "09:00"}`).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+function capDueToDeadline(ms){
+  const dl = deadlineMs();
+  return dl ? Math.min(ms, dl - 3600000) : ms;
+}
+
+function makeScheduler(){
+  let request_retention = 0.90;
+  let maximum_interval = 36500;
+  const dl = deadlineMs();
+  if(dl){
+    const days = Math.max(1, Math.ceil((dl - Date.now()) / DAY_MS));
+    maximum_interval = Math.max(1, Math.floor(days / 2));
+    if(days <= 3) request_retention = 0.97;
+    else if(days <= 7) request_retention = 0.95;
+    else if(days <= 14) request_retention = 0.93;
+  }
+  return fsrs(generatorParameters({
+    request_retention, maximum_interval,
+    enable_fuzz:true, enable_short_term:true,
+    learning_steps:["1m","10m"], relearning_steps:["10m"]
+  }));
+}
+
+function stateOf(card){ return card?.fsrs_card?.state; }
+function isNew(card){ return stateOf(card) === State.New; }
+
+async function getDecks(){ return db.decks.orderBy("created_ms").toArray(); }
+async function getActiveDeckIds(){ return (await getDecks()).filter(d=>d.active !== false).map(d=>d.id); }
+function deckSignature(ids){ return [...ids].sort().join(","); }
+
+async function getActiveCards(){
+  const ids = await getActiveDeckIds();
+  if(!ids.length) return [];
+  const all = await db.cards.toArray();
+  return all.filter(c=>ids.includes(c.deck_id));
+}
+
+async function createDeck(file){
+  const base = (file.name || "Deck").replace(/\.[^.]+$/,"");
+  const names = new Set((await getDecks()).map(d=>d.name));
+  let name = base || "Deck";
+  let i = 2;
+  while(names.has(name)) name = `${base} (${i++})`;
+  const deck = { id: uid(), name, active:true, created_ms:Date.now() };
+  await db.decks.add(deck);
+  return deck;
+}
+
+async function renameDeck(deck){
+  const next = prompt("Rename deck", deck.name);
+  if(!next) return false;
+  const name = next.trim();
+  if(!name || name === deck.name) return false;
+  await db.transaction("rw", db.decks, db.cards, async ()=>{
+    await db.decks.update(deck.id, {name});
+    const cards = await db.cards.where("deck_id").equals(deck.id).toArray();
+    for(const c of cards) await db.cards.update(c.id, {deck_name:name});
+  });
+  return true;
+}
+
+async function setOnlyDeck(deckId){
+  const decks = await getDecks();
+  await db.transaction("rw", db.decks, async ()=>{
+    for(const d of decks) await db.decks.update(d.id, {active: d.id === deckId});
+  });
+}
+
+async function deleteDeck(deck){
+  const cards = await db.cards.where("deck_id").equals(deck.id).toArray();
+  if(!confirm(`Delete "${deck.name}" and ${cards.length} card(s)?`)) return false;
+  const ids = cards.map(c=>c.id);
+  await db.transaction("rw", db.decks, db.cards, db.reviews, async ()=>{
+    for(const cid of ids){
+      const reviewIds = await db.reviews.where("card_id").equals(cid).primaryKeys();
+      if(reviewIds.length) await db.reviews.bulkDelete(reviewIds);
+    }
+    if(ids.length) await db.cards.bulkDelete(ids);
+    await db.decks.delete(deck.id);
+  });
+  return true;
+}
+
+function parseLetters(raw){
+  const m = String(raw || "").toUpperCase().match(/[A-E]/g);
+  return m ? [...new Set(m)] : [];
+}
+function parseMarkedText(text){
+  const results = [];
+  const regex = /\[\[(.+?)\]\]/g;
+  const markers = [];
+  let m;
+  while((m = regex.exec(text)) !== null){
+    const [left, hint] = m[1].split("|").map(x => (x || "").trim());
+    markers.push({raw:m[0], start:m.index, end:m.index + m[0].length, answers:left.split(";").map(s=>s.trim()).filter(Boolean), hint:hint || ""});
+  }
+  if(!markers.length) return [];
+  for(let idx=0; idx<markers.length; idx++){
+    let front = "", last = 0;
+    for(let i=0;i<markers.length;i++){
+      const marker = markers[i];
+      front += text.slice(last, marker.start);
+      front += (i === idx) ? `_____${marker.hint ? ` (${marker.hint})` : ""}` : (marker.answers[0] || "<?>");
+      last = marker.end;
+    }
+    front += text.slice(last);
+    let back = text;
+    for(const marker of markers) back = back.replace(marker.raw, marker.answers[0] || "<?>");
+    results.push({
+      front_plain:front, front_html:escapeHtml(front), spoken_front:front,
+      back_plain:back, back_html:escapeHtml(back), accepted:markers[idx].answers,
+      explanation_html:"", meta:{}
+    });
+  }
+  return results;
+}
+function buildQuestionBankCard(row){
+  const stem = String(row.Stem || row.stem || "").trim();
+  if(!stem) return [];
+  const letters = parseLetters(row.Answer || row.answer || "");
+  const accepted = [];
+  for(const letter of letters){
+    accepted.push(letter);
+    const choice = String(row[letter] || row[letter.toLowerCase()] || "").trim();
+    if(choice) accepted.push(`${letter}. ${choice}`);
+  }
+  const answerText = letters.length ? letters.join(", ") : String(row.Answer || row.answer || "").trim();
+  return [{
+    front_plain:stem,
+    front_html:escapeHtml(stem),
+    spoken_front:stem,
+    back_plain:answerText,
+    back_html:escapeHtml(answerText),
+    accepted:accepted.length ? accepted : [answerText],
+    explanation_html:String(row.Explanation || row.explanation || "").trim() ? escapeHtml(String(row.Explanation || row.explanation || "").trim()) : "",
+    meta:{
+      id:String(row.ID || row.id || "").trim(),
+      topic:String(row.Topic || row.topic || "").trim(),
+      difficulty:String(row.Difficulty || row.difficulty || "").trim()
+    }
+  }];
+}
+function buildFrontBackCards(row){
+  const front = String(row.front || row.Front || "").trim();
+  const back = String(row.back || row.Back || "").trim();
+  if(!front || !back) return [];
+  const answers = String(row.answers || row.Answers || "").split(";").map(s=>s.trim()).filter(Boolean);
+  const cards = [{
+    front_plain:front, front_html:escapeHtml(front), spoken_front:front,
+    back_plain:back, back_html:escapeHtml(back), accepted:answers.length ? answers : [back],
+    explanation_html:"", meta:{topic:String(row.tags || row.Tags || "").trim()}
+  }];
+  if(settings.reverseImport){
+    cards.push({
+      front_plain:back, front_html:escapeHtml(back), spoken_front:back,
+      back_plain:front, back_html:escapeHtml(front), accepted:[front],
+      explanation_html:"", meta:{topic:"Reverse"}
+    });
+  }
+  return cards;
+}
+
+async function importCSV(file){
+  const deck = await createDeck(file);
+  const parsed = await new Promise((resolve,reject)=>{
+    Papa.parse(file, {header:true, skipEmptyLines:true, complete:resolve, error:reject});
+  });
+  const rows = parsed.data || [];
+  const nowMs = Date.now();
+  let created = 0;
+  await db.transaction("rw", db.cards, async ()=>{
+    for(const row of rows){
+      let cards = buildQuestionBankCard(row);
+      if(!cards.length){
+        const text = String(row.text || row.Text || "").trim();
+        if(text && /\[\[.+?\]\]/.test(text)) cards = parseMarkedText(text);
+      }
+      if(!cards.length) cards = buildFrontBackCards(row);
+      for(const card of cards){
+        await db.cards.add({
+          id:uid(), deck_id:deck.id, deck_name:deck.name, created_ms:nowMs, due_ms:nowMs,
+          fsrs_card:createEmptyCard(new Date(nowMs)), ...card
+        });
+        created++;
+      }
+    }
+  });
+  toast(`Imported ${created} card(s) into "${deck.name}"`);
+  activeSession = null;
+  await refreshEverything();
+  await nextCard();
+}
+
+async function buildQueue(includeFuture=false){
+  const cards = await getActiveCards();
+  const now = Date.now();
+  let due = cards.filter(c => c.due_ms <= now || isNew(c));
+  due.sort((a,b)=>a.due_ms - b.due_ms);
+  if(settings.randomizeCards){
+    for(let i=due.length-1;i>0;i--){
+      const j = Math.floor(Math.random() * (i+1));
+      [due[i], due[j]] = [due[j], due[i]];
+    }
+  }
+  if(includeFuture){
+    let future = cards.filter(c => c.due_ms > now).sort((a,b)=>a.due_ms - b.due_ms).slice(0, 30);
+    if(settings.randomizeCards){
+      for(let i=future.length-1;i>0;i--){
+        const j = Math.floor(Math.random() * (i+1));
+        [future[i], future[j]] = [future[j], future[i]];
+      }
+    }
+    queue = [...due, ...future];
+  }else{
+    queue = due;
+  }
+}
+
+function renderMeta(card){
+  ui.metaRow.innerHTML = "";
+  if(!card || settings.hideLabels){
+    ui.metaRow.classList.add("hidden");
+    return;
+  }
+  ui.metaRow.classList.remove("hidden");
+  const items = [];
+  if(card.meta?.id) items.push(["", card.meta.id]);
+  if(card.meta?.topic) items.push(["topic", card.meta.topic]);
+  if(card.meta?.difficulty) items.push(["diff", card.meta.difficulty]);
+  if(card.deck_name) items.push(["deck", card.deck_name]);
+  for(const [cls, text] of items){
+    const span = document.createElement("span");
+    span.className = `pill ${cls}`.trim();
+    span.textContent = text;
+    ui.metaRow.appendChild(span);
+  }
+}
+
+function resetRevealUI(){
+  revealed = false;
+  clearAutoAdvance();
+  stopTimer();
+  ui.diffBox.classList.add("hidden");
+  ui.diffBox.innerHTML = "";
+  ui.revealBox.classList.add("hidden");
+  ui.answer.textContent = "";
+  ui.explanation.textContent = "";
+  ui.explanationSection.classList.add("hidden");
+  ui.acceptedList.innerHTML = "";
+  ui.ratings.classList.add("hidden");
+  ui.btnEditAnswer.classList.add("hidden");
+  setStatus("");
+}
+
+function setupVoice(){
+  recognition = null;
+  listening = false;
+  ui.btnMic.classList.remove("on");
+  if(!settings.voiceEnabled || !settings.typingMode){
+    ui.btnMic.classList.add("hidden");
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    ui.btnMic.classList.add("hidden");
+    return;
+  }
+  recognition = new SR();
+  recognition.lang = "en-US";
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  recognition.onresult = e => {
+    let transcript = "";
+    for(let i=e.resultIndex;i<e.results.length;i++) transcript += e.results[i][0].transcript;
+    ui.answerInput.value = transcript.trim();
+  };
+  recognition.onend = ()=>{ listening = false; ui.btnMic.classList.remove("on"); };
+  recognition.onerror = ()=>{ listening = false; ui.btnMic.classList.remove("on"); };
+  ui.btnMic.classList.toggle("hidden", !currentCard || !settings.typingMode);
+}
+function toggleMic(){
+  if(!recognition) return;
+  if(listening){ recognition.stop(); return; }
+  try{
+    listening = true;
+    ui.btnMic.classList.add("on");
+    recognition.start();
+  }catch{
+    listening = false;
+    ui.btnMic.classList.remove("on");
+  }
+}
+function speakQuestion(text){
+  if(!settings.voiceEnabled || !settings.ttsEnabled || !("speechSynthesis" in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "en-US";
+    speechSynthesis.speak(utter);
+  }catch{}
+}
+
+function startTimer(){
+  stopTimer();
+  const secs = Number(settings.perQuestionLimitSec) || 0;
+  if(secs <= 0 || !currentCard) return;
+  timerTotal = secs * 1000;
+  timerDeadline = Date.now() + timerTotal;
+  ui.timerWrap.classList.remove("hidden");
+
+  function tick(){
+    const left = Math.max(0, timerDeadline - Date.now());
+    const pct = (left / timerTotal) * 100;
+    ui.timerVal.textContent = `${Math.ceil(left/1000)}s`;
+    ui.timerFill.style.width = `${pct}%`;
+    ui.timerFill.className = "timer-fill" + (pct <= 20 ? " danger" : pct <= 50 ? " warn" : "");
+    if(left <= 0){
+      if(!revealed){
+        revealAnswer();
+        setStatus("Time is up. Rate the card to continue.");
+      }
+      return;
+    }
+    timerFrame = requestAnimationFrame(tick);
+  }
+  timerFrame = requestAnimationFrame(tick);
+}
+function stopTimer(){
+  if(timerFrame){ cancelAnimationFrame(timerFrame); timerFrame = null; }
+  ui.timerWrap.classList.add("hidden");
+}
+
+function showQuestion(card, sameCard=false){
+  currentCard = card;
+  renderMeta(card);
+  if(!sameCard) resetRevealUI();
+  ui.question.innerHTML = card.front_html || escapeHtml(card.front_plain || "");
+  ui.inputRow.classList.toggle("hidden", !settings.typingMode);
+  ui.answerInput.disabled = !settings.typingMode;
+  ui.answerInput.value = sameCard ? ui.answerInput.value : "";
+  ui.btnShowAnswer.classList.remove("hidden");
+  ui.btnEditCard.classList.remove("hidden");
+  ui.btnDeleteCard.classList.remove("hidden");
+  ui.btnMic.classList.toggle("hidden", !settings.voiceEnabled || !settings.typingMode || !recognition);
+  ui.sessionLine.textContent = `Session: ${activeSession ? (activeSession.source === "custom" ? "Custom" : "Recommended") : "—"}`;
+  if(settings.typingMode) ui.answerInput.focus();
+  speakQuestion(card.spoken_front || card.front_plain || "");
+  startTimer();
+}
+
+function levenshtein(a,b){
+  a = norm(a); b = norm(b);
+  const m = a.length, n = b.length;
+  if(!m) return n;
+  if(!n) return m;
+  const dp = Array.from({length:m+1}, (_,i)=>Array.from({length:n+1}, (_,j)=> i === 0 ? j : j === 0 ? i : 0));
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+function bestMatch(user, accepted){
+  const list = (accepted || []).filter(Boolean);
+  if(!list.length) return "";
+  const exact = list.find(a => norm(a) === norm(user));
+  if(exact) return exact;
+  return list.reduce((best, cur)=>levenshtein(user,cur) < levenshtein(user,best) ? cur : best, list[0]);
+}
+function wrongPercent(user, target){
+  const a = norm(user), b = norm(target);
+  if(!a && !b) return 0;
+  return clamp(Math.round((levenshtein(a,b) / Math.max(1, b.length)) * 100), 0, 100);
+}
+function autoGradeFromWrong(p){
+  if(p <= 25) return 4;
+  if(p <= 50) return 3;
+  if(p <= 75) return 2;
+  return 1;
+}
+
+function renderDiff(correctRaw, userRaw){
+  const correct = norm(correctRaw), user = norm(userRaw);
+  const parts = diffChars(correct, user, {ignoreCase:true});
+  ui.diffBox.innerHTML = "";
+  for(const part of parts){
+    const span = document.createElement("span");
+    span.className = part.removed ? "missing" : part.added ? "extra" : "same";
+    span.textContent = part.value;
+    ui.diffBox.appendChild(span);
+  }
+  const hint = document.createElement("div");
+  hint.className = "hint";
+  hint.style.marginTop = "8px";
+  hint.textContent = "Green = correct · red = missing · orange = extra";
+  ui.diffBox.appendChild(hint);
+  ui.diffBox.classList.remove("hidden");
+}
+
+function revealAnswer(){
+  if(!currentCard || revealed) return null;
+  revealed = true;
+  stopTimer();
+  ui.btnShowAnswer.classList.add("hidden");
+  ui.btnEditAnswer.classList.toggle("hidden", !settings.typingMode);
+  ui.answerInput.disabled = true;
+
+  const user = settings.typingMode ? (ui.answerInput.value || "") : "";
+  const best = bestMatch(user, currentCard.accepted || []);
+  if(settings.typingMode && user.trim()) renderDiff(best || currentCard.back_plain || "", user);
+
+  ui.answer.innerHTML = currentCard.back_html || escapeHtml(currentCard.back_plain || "");
+  if(currentCard.explanation_html){
+    ui.explanationSection.classList.remove("hidden");
+    ui.explanation.innerHTML = currentCard.explanation_html;
+  }
+  for(const a of (currentCard.accepted || [])){
+    const tag = document.createElement("span");
+    tag.className = "acc-tag";
+    tag.textContent = a;
+    ui.acceptedList.appendChild(tag);
+  }
+  ui.revealBox.classList.remove("hidden");
+  ui.ratings.classList.remove("hidden");
+  return {user, best};
+}
+
+async function recordSessionCard(){
+  if(!activeSession) return;
+  const existing = await db.sessions.where("session_key").equals(activeSession.session_key).first();
+  const now = Date.now();
+  if(!existing){
+    await db.sessions.add({
+      session_key:activeSession.session_key,
+      source:activeSession.source,
+      day_key:dayKey(now),
+      planned_ms:activeSession.planned_ms || now,
+      deck_scope:lastDeckSignature,
+      cards_reviewed:1,
+      completed_ms:now
+    });
+  }else{
+    await db.sessions.update(existing.id, {cards_reviewed:(existing.cards_reviewed || 0)+1, completed_ms:now});
+  }
+}
+
+function scheduleAutoAdvance(gradeInt, meta, wrong){
+  clearAutoAdvance();
+  const delayMs = clamp(Number(settings.autoAdvanceDelaySec)||0, 0, 60) * 1000;
+  const labels = ["","Again","Hard","Good","Easy"];
+  setStatus(`Auto-rated ${labels[gradeInt]}${Number.isFinite(wrong) ? ` · ${wrong}% wrong` : ""}${delayMs ? ` · next in ${settings.autoAdvanceDelaySec}s` : ""}`);
+  if(delayMs === 0){
+    gradeCard(gradeInt, meta);
+  }else{
+    autoAdvanceTimer = setTimeout(()=>gradeCard(gradeInt, meta), delayMs);
+  }
+}
+
+async function gradeCard(gradeInt, meta={}){
+  if(!currentCard) return;
+  clearAutoAdvance();
+  const scheduler = makeScheduler();
+  const rating = gradeInt === 1 ? Rating.Again : gradeInt === 2 ? Rating.Hard : gradeInt === 3 ? Rating.Good : Rating.Easy;
+  const result = scheduler.next(currentCard.fsrs_card, new Date(), rating);
+  let dueMs = result.card.due instanceof Date ? result.card.due.getTime() : Date.parse(result.card.due);
+  dueMs = capDueToDeadline(dueMs);
+
+  await db.transaction("rw", db.cards, db.reviews, async ()=>{
+    await db.cards.update(currentCard.id, {fsrs_card:result.card, due_ms:dueMs});
+    await db.reviews.add({
+      card_id:currentCard.id, review_ms:Date.now(), rating:gradeInt,
+      user_answer:meta.user_answer || "", matched_answer:meta.matched_answer || "", wrong_percent:meta.wrong_percent ?? null
+    });
+  });
+
+  await recordSessionCard();
+  await nextCard();
+}
+
+async function nextCard(customStart=false){
+  clearAutoAdvance();
+  if(customStart){
+    activeSession = {source:"custom", session_key:`custom-${Date.now()}`, planned_ms:Date.now()};
+  }
+  await buildQueue(activeSession?.source === "custom");
+  await refreshEverything();
+
+  if(!activeSession || activeSession.source !== "custom") activeSession = pickSession();
+  if(!queue.length){
+    currentCard = null;
+    resetRevealUI();
+    renderMeta(null);
+    ui.inputRow.classList.add("hidden");
+    ui.btnShowAnswer.classList.add("hidden");
+    ui.btnEditCard.classList.add("hidden");
+    ui.btnDeleteCard.classList.add("hidden");
+    ui.question.innerHTML = `<div class="empty-card"><div class="big">${activeSession?.source === "custom" ? "✅" : "🌙"}</div><div class="title">${activeSession?.source === "custom" ? "Custom session complete" : "All caught up"}</div><div class="sub">${activeSession?.source === "custom" ? "No nearby cards left to review." : "No due cards right now. Come back at the next suggested session."}</div></div>`;
+    ui.sessionLine.textContent = "Session: —";
+    activeSession = null;
+    return;
+  }
+  showQuestion(queue.shift());
+}
+
+async function refreshStats(){
+  const activeDeckIds = await getActiveDeckIds();
+  lastDeckSignature = deckSignature(activeDeckIds);
+  const cards = await getActiveCards();
+  const due = cards.filter(c=>c.due_ms <= Date.now() || isNew(c)).length;
+  ui.statsText.textContent = cards.length ? `${activeDeckIds.length} active deck(s) · ${cards.length} cards · ${due} due` : "No active deck";
+  ui.queueLabel.textContent = `Queue: ${queue.length}`;
+}
+
+async function refreshProgress(){
+  const cards = await getActiveCards();
+  if(!cards.length){
+    ui.progressText.textContent = "0 / 0 learned";
+    ui.progressPct.textContent = "0%";
+    ui.progressFill.style.width = "0%";
+    return;
+  }
+  const due = cards.filter(c=>c.due_ms <= Date.now() || isNew(c)).length;
+  const done = cards.length - due;
+  const pct = Math.round((done / cards.length) * 100);
+  ui.progressText.textContent = `${done} / ${cards.length} learned`;
+  ui.progressPct.textContent = `${pct}%`;
+  ui.progressFill.style.width = `${pct}%`;
+}
+
+async function computePlan(){
+  const cards = await getActiveCards();
+  if(!cards.length) return [];
+  const now = Date.now();
+  const dl = deadlineMs();
+  const horizon = dl || (now + DAY_MS * 4);
+  const sessions = [];
+  let labelN = 1;
+  const startDay = new Date(now); startDay.setHours(0,0,0,0);
+  const endDay = new Date(horizon); endDay.setHours(0,0,0,0);
+  const startMin = timeToMinutes(settings.studyStartTime);
+  let endMin = Math.max(startMin + 60, timeToMinutes(settings.studyEndTime));
+  if(dl) endMin = Math.min(endMin, timeToMinutes(settings.deadlineTime));
+  for(let day = startDay.getTime(); day <= endDay.getTime(); day += DAY_MS){
+    const dayEnd = day + DAY_MS - 1;
+    const load = cards.filter(c => c.due_ms <= dayEnd || isNew(c));
+    if(!load.length) continue;
+    const count = dl ? clamp(Math.ceil(load.length / 18), 1, 4) : clamp(Math.ceil(Math.min(load.length, 40) / 20), 1, 2);
+    const expectedPer = clamp(Math.ceil(load.length / count), 10, 35);
+    const span = endMin - startMin;
+    for(let i=0;i<count;i++){
+      const minute = Math.round(startMin + (span * (i + 1) / (count + 1)));
+      const at = day + minute * 60000;
+      if(at < now - 3600000) continue;
+      if(dl && at > dl) continue;
+      sessions.push({session_key:`rec-${lastDeckSignature}-${at}`, time_ms:at, source:"recommended", expected_cards:expectedPer, label:`Session ${labelN++}`});
+    }
+  }
+  return sessions.slice(0, 12);
+}
+
+function pickSession(){
+  if(!lastPlan.length) return {source:"recommended", session_key:`live-${Date.now()}`, planned_ms:Date.now()};
+  const now = Date.now();
+  const nearest = [...lastPlan].sort((a,b)=>Math.abs(a.time_ms-now) - Math.abs(b.time_ms-now))[0];
+  return {source:"recommended", session_key:nearest.session_key, planned_ms:nearest.time_ms};
+}
+
+async function refreshPlan(){
+  const cards = await getActiveCards();
+  lastPlan = await computePlan();
+  const dl = deadlineMs();
+  ui.modeValue.textContent = dl ? "Deadline" : "Regular";
+  ui.modeSub.textContent = dl ? `Target: ${fmtDateTime(dl)}` : "No deadline. Using normal spaced repetition.";
+
+  if(!cards.length){
+    ui.planSummary.textContent = "Import a deck to see recommended study sessions.";
+    ui.sessionList.innerHTML = "";
+    ui.goalValue.textContent = "0 / 0";
+    ui.goalSub.textContent = "Sessions completed today.";
+    return;
+  }
+
+  ui.planSummary.innerHTML = dl
+    ? `<strong>Planner active.</strong> Suggested sessions lead up to ${fmtDateTime(dl)}.`
+    : `<strong>Regular schedule.</strong> Sessions below are suggested return times.`;
+
+  const logs = (await db.sessions.toArray()).filter(x=>x.deck_scope === lastDeckSignature);
+  const today = dayKey(Date.now());
+  const doneToday = logs.filter(x=>x.day_key === today && x.source === "recommended").length;
+  const plannedToday = lastPlan.filter(x=>dayKey(x.time_ms) === today).length;
+  const due = cards.filter(c=>c.due_ms <= Date.now() || isNew(c)).length;
+  ui.goalValue.textContent = `${doneToday} / ${plannedToday}`;
+  ui.goalSub.textContent = `${due} due card(s) right now`;
+
+  ui.sessionList.innerHTML = "";
+  if(!lastPlan.length){
+    ui.sessionList.innerHTML = `<div class="session-row"><div class="session-main">No sessions yet</div><div class="session-sub">Cards will show up once due.</div></div>`;
+    return;
+  }
+  for(const item of lastPlan){
+    const log = logs.find(x=>x.session_key === item.session_key);
+    const row = document.createElement("div");
+    row.className = `session-row ${log ? "done" : item.time_ms < Date.now() ? "missed" : ""}`;
+    row.innerHTML = `
+      <div class="row-split">
+        <div>
+          <div class="session-main">${item.label}</div>
+          <div class="session-sub">${fmtShort(item.time_ms)} · ${fmtTime(item.time_ms)} · ~${item.expected_cards} cards</div>
+        </div>
+        <div class="badge">${log ? `Done · ${log.cards_reviewed || 1}` : item.time_ms < Date.now() ? "Missed" : "Planned"}</div>
+      </div>`;
+    ui.sessionList.appendChild(row);
+  }
+}
+
+async function refreshDecksUI(){
+  const decks = await getDecks();
+  ui.decksSummary.textContent = decks.length ? `${decks.filter(d=>d.active !== false).length} active · ${decks.length} total deck(s)` : "No decks yet.";
+  ui.decksList.innerHTML = "";
+  for(const deck of decks){
+    const count = await db.cards.where("deck_id").equals(deck.id).count();
+    const row = document.createElement("div");
+    row.className = "deck-row";
+    row.innerHTML = `
+      <div class="deck-name">${escapeHtml(deck.name)}</div>
+      <div class="deck-meta">${count} cards · ${deck.active !== false ? "Active" : "Inactive"}</div>
+      <div class="deck-actions"></div>`;
+    const actions = row.querySelector(".deck-actions");
+
+    const toggle = document.createElement("label");
+    toggle.className = "ck-line";
+    toggle.style.margin = "0";
+    toggle.innerHTML = `<input type="checkbox" ${deck.active !== false ? "checked" : ""}><span>Active</span>`;
+    toggle.querySelector("input").addEventListener("change", async e=>{
+      await db.decks.update(deck.id, {active:e.target.checked});
+      activeSession = null;
+      await refreshEverything();
+      await nextCard();
+    });
+    actions.appendChild(toggle);
+
+    const solo = document.createElement("button");
+    solo.className = "mini-btn"; solo.textContent = "Study this only";
+    solo.onclick = async ()=>{ await setOnlyDeck(deck.id); activeSession = null; await refreshEverything(); await nextCard(); };
+    actions.appendChild(solo);
+
+    const rename = document.createElement("button");
+    rename.className = "mini-btn"; rename.textContent = "Rename";
+    rename.onclick = async ()=>{ if(await renameDeck(deck)){ await refreshEverything(); await nextCard(); } };
+    actions.appendChild(rename);
+
+    const exportBtn = document.createElement("button");
+    exportBtn.className = "mini-btn"; exportBtn.textContent = "Export";
+    exportBtn.onclick = async ()=> exportCardsCsv((await db.cards.where("deck_id").equals(deck.id).toArray()), `${deck.name}.csv`);
+    actions.appendChild(exportBtn);
+
+    const del = document.createElement("button");
+    del.className = "mini-btn danger"; del.textContent = "Delete";
+    del.onclick = async ()=>{ if(await deleteDeck(deck)){ activeSession = null; await refreshEverything(); await nextCard(); } };
+    actions.appendChild(del);
+
+    ui.decksList.appendChild(row);
+  }
+}
+
+async function refreshEverything(){
+  await refreshStats();
+  await refreshProgress();
+  await refreshPlan();
+  await refreshDecksUI();
+  syncSessionUI();
+}
+
+function syncSessionUI(){
+  const text = activeSession ? (activeSession.source === "custom" ? "Custom" : "Recommended") : "Idle";
+  ui.sessionValue.textContent = text;
+  ui.sessionSub.textContent = activeSession
+    ? (activeSession.source === "custom" ? "Studying beyond the recommended queue." : "Tracking a recommended study session.")
+    : "No session active.";
+}
+
+function exportCardsCsv(cards, filename="cards.csv"){
+  const rows = cards.map(c=>({
+    front:c.front_plain || "",
+    back:c.back_plain || "",
+    answers:(c.accepted || []).join("; "),
+    explanation:(c.explanation_html || "").replace(/<[^>]+>/g,""),
+    deck:c.deck_name || "",
+    topic:c.meta?.topic || "",
+    difficulty:c.meta?.difficulty || "",
+    id:c.meta?.id || ""
+  }));
+  const csv = Papa.unparse(rows);
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function openManageCards(){
+  const cards = await getActiveCards();
+  ui.manageCardList.innerHTML = "";
+  for(const card of cards){
+    const row = document.createElement("div");
+    row.className = "manage-row";
+    row.innerHTML = `
+      <input type="checkbox" data-card-id="${card.id}">
+      <div>
+        <div style="font-weight:700">${escapeHtml((card.front_plain || "").slice(0, 140))}</div>
+        <div class="hint" style="margin-top:4px">${escapeHtml(card.deck_name || "")}</div>
+      </div>
+      <button class="mini-btn danger" data-delete="${card.id}">Delete</button>`;
+    row.querySelector("[data-delete]").addEventListener("click", async ()=>{
+      await deleteCards([card.id]);
+      await refreshEverything();
+      ui.manageDialog.close();
+      await openManageCards();
+    });
+    ui.manageCardList.appendChild(row);
+  }
+  ui.manageDialog.showModal();
+}
+
+async function deleteCards(ids){
+  if(!ids.length) return;
+  if(!confirm(`Delete ${ids.length} card(s)?`)) return;
+  await db.transaction("rw", db.cards, db.reviews, async ()=>{
+    for(const cid of ids){
+      const reviewIds = await db.reviews.where("card_id").equals(cid).primaryKeys();
+      if(reviewIds.length) await db.reviews.bulkDelete(reviewIds);
+      await db.cards.delete(cid);
+    }
+  });
+}
+
+function openEditCard(){
+  if(!currentCard) return;
+  ui.editFront.value = currentCard.front_plain || "";
+  ui.editBack.value = currentCard.back_plain || "";
+  ui.editAccepted.value = (currentCard.accepted || []).join("; ");
+  ui.editExplanation.value = (currentCard.explanation_html || "").replace(/<[^>]+>/g,"");
+  ui.editCardDialog.showModal();
+}
+
+async function saveCurrentCardEdits(){
+  if(!currentCard) return;
+  const front = ui.editFront.value.trim();
+  const back = ui.editBack.value.trim();
+  const accepted = ui.editAccepted.value.split(";").map(s=>s.trim()).filter(Boolean);
+  const explanation = ui.editExplanation.value.trim();
+  await db.cards.update(currentCard.id, {
+    front_plain:front, front_html:escapeHtml(front), spoken_front:front,
+    back_plain:back, back_html:escapeHtml(back), accepted,
+    explanation_html:explanation ? escapeHtml(explanation) : ""
+  });
+  ui.editCardDialog.close();
+  const updated = await db.cards.get(currentCard.id);
+  if(updated) showQuestion(updated);
+  await refreshEverything();
+}
+
+ui.csvFile.addEventListener("change", async e=>{
+  const file = e.target.files?.[0];
+  if(!file) return;
+  try{ await importCSV(file); } catch(err){ console.error(err); toast("Import failed."); }
+  finally{ ui.csvFile.value = ""; }
+});
+ui.btnTyping.addEventListener("click", async ()=>{
+  settings.typingMode = !settings.typingMode;
+  saveSettings(); syncUI(); setupVoice();
+  if(currentCard) showQuestion(currentCard, true);
+  await refreshEverything();
+});
+ui.btnThemeQuick.addEventListener("click", ()=>{
+  settings.theme = settings.theme === "dark" ? "light" : "dark";
+  saveSettings(); syncUI();
+});
+ui.btnOptions.addEventListener("click", e=>{ e.stopPropagation(); ui.optionsPanel.classList.toggle("hidden"); });
+document.addEventListener("click", e=>{ if(!e.target.closest(".dd-wrap")) ui.optionsPanel.classList.add("hidden"); });
+
+ui.btnHelp.addEventListener("click", ()=>ui.helpDialog.showModal());
+ui.btnCloseHelp.addEventListener("click", ()=>ui.helpDialog.close());
+ui.btnShowPanels.addEventListener("click", ()=>{ settings.cardOnlyView = false; saveSettings(); syncUI(); });
+
+ui.btnReset.addEventListener("click", async ()=>{
+  if(!confirm("Delete all local decks, cards, and history?")) return;
+  await db.delete();
+  localStorage.removeItem(SETTINGS_KEY);
+  location.reload();
+});
+
+ui.btnCustomSession.addEventListener("click", async ()=>{
+  activeSession = {source:"custom", session_key:`custom-${Date.now()}`, planned_ms:Date.now()};
+  await nextCard(true);
+});
+
+ui.btnMic.addEventListener("click", toggleMic);
+ui.btnShowAnswer.addEventListener("click", ()=>{
+  const info = revealAnswer();
+  if(settings.typingMode && settings.autoRateTyping && info){
+    const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
+    const wrong = wrongPercent(info.user, target);
+    scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
+  }
+});
+ui.btnEditAnswer.addEventListener("click", ()=>{
+  clearAutoAdvance();
+  ui.answerInput.disabled = false;
+  ui.answerInput.focus();
+  setStatus("Edit your answer, then reveal again or rate manually.");
+});
+ui.btnEditCard.addEventListener("click", openEditCard);
+ui.btnDeleteCard.addEventListener("click", async ()=>{
+  if(!currentCard) return;
+  await deleteCards([currentCard.id]);
+  currentCard = null;
+  await refreshEverything();
+  await nextCard();
+});
+
+ui.ratings.addEventListener("click", async e=>{
+  const btn = e.target.closest("[data-grade]");
+  if(!btn || !currentCard) return;
+  const user = settings.typingMode ? (ui.answerInput.value || "") : "";
+  const matched = bestMatch(user, currentCard.accepted || []);
+  const wrong = (settings.typingMode && user.trim()) ? wrongPercent(user, matched || currentCard.back_plain || "") : null;
+  await gradeCard(Number(btn.dataset.grade), {user_answer:user, matched_answer:matched, wrong_percent:wrong});
+});
+
+ui.answerInput.addEventListener("keydown", e=>{
+  if(e.key !== "Enter") return;
+  e.preventDefault();
+  const info = revealAnswer();
+  if(settings.typingMode && settings.autoRateTyping && info){
+    const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
+    const wrong = wrongPercent(info.user, target);
+    scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
+  }
+});
+
+window.addEventListener("keydown", async e=>{
+  if(!currentCard) return;
+  if(e.key === " " && e.target !== ui.answerInput && !revealed){
+    e.preventDefault();
+    const info = revealAnswer();
+    if(settings.typingMode && settings.autoRateTyping && info){
+      const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
+      const wrong = wrongPercent(info.user, target);
+      scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
+    }
+  }
+  if(["1","2","3","4"].includes(e.key) && !ui.ratings.classList.contains("hidden") && e.target !== ui.answerInput){
+    const user = settings.typingMode ? (ui.answerInput.value || "") : "";
+    const matched = bestMatch(user, currentCard.accepted || []);
+    const wrong = (settings.typingMode && user.trim()) ? wrongPercent(user, matched || currentCard.back_plain || "") : null;
+    await gradeCard(Number(e.key), {user_answer:user, matched_answer:matched, wrong_percent:wrong});
+  }
+});
+
+ui.btnManageCards.addEventListener("click", openManageCards);
+ui.btnCloseManage.addEventListener("click", ()=>ui.manageDialog.close());
+ui.btnSelectAllCards.addEventListener("click", ()=>ui.manageCardList.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked = true));
+ui.btnClearCardSelection.addEventListener("click", ()=>ui.manageCardList.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked = false));
+ui.btnExportCardsCsv.addEventListener("click", async ()=>{
+  const selected = [...ui.manageCardList.querySelectorAll('input[type="checkbox"]:checked')].map(el=>el.dataset.cardId);
+  let cards;
+  if(selected.length){
+    cards = await Promise.all(selected.map(id=>db.cards.get(id)));
+    cards = cards.filter(Boolean);
+  }else{
+    cards = await getActiveCards();
+  }
+  exportCardsCsv(cards, "flashflow-export.csv");
+});
+ui.btnDeleteSelectedCards.addEventListener("click", async ()=>{
+  const ids = [...ui.manageCardList.querySelectorAll('input[type="checkbox"]:checked')].map(el=>el.dataset.cardId);
+  await deleteCards(ids);
+  ui.manageDialog.close();
+  await refreshEverything();
+  await openManageCards();
+  await nextCard();
+});
+ui.btnCloseEditCard.addEventListener("click", ()=>ui.editCardDialog.close());
+ui.btnSaveEditCard.addEventListener("click", saveCurrentCardEdits);
+
+document.querySelectorAll(".collapse-btn").forEach(btn=>btn.addEventListener("click", ()=>{
+  const panel = btn.closest("[data-panel-id]");
+  const id = panel.dataset.panelId;
+  settings.collapsed[id] = !settings.collapsed[id];
+  saveSettings();
+  applyPanelLayout();
+}));
+
+bindSettings();
+loadSettings();
+capStudyWindowEnd();
+syncUI();
+applyPanelLayout();
+setupVoice();
+await refreshEverything();
+
+const existing = await db.cards.count();
+if(existing){
+  await nextCard();
+}else{
+  ui.inputRow.classList.toggle("hidden", !settings.typingMode);
+}
+</script>
+</body>
+</html>
