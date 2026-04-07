@@ -102,6 +102,33 @@ button,input,select,textarea{font:inherit;color:inherit}
 .field textarea{min-height:88px;resize:vertical}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .page{max-width:var(--maxw);margin:0 auto;padding:14px}
+.subject-switcher{
+  margin-bottom:12px;padding:10px 12px;border:1px solid var(--border);border-radius:20px;background:var(--panel);
+  box-shadow:0 2px 8px rgba(0,0,0,.03)
+}
+.subject-switcher.hidden{display:none}
+.subject-topline{
+  display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px
+}
+.subject-label{
+  font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)
+}
+.subject-tabs{
+  display:flex;gap:8px;overflow:auto;padding-bottom:2px
+}
+.subject-tab{
+  border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;
+  padding:10px 14px;border-radius:14px;font-weight:750;font-size:13px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;
+  transition:all .15s ease
+}
+.subject-tab:hover{background:var(--surface2);color:var(--text)}
+.subject-tab.active{
+  background:color-mix(in srgb, var(--accent) 14%, var(--surface));border-color:color-mix(in srgb, var(--accent) 42%, var(--border));color:var(--text)
+}
+.subject-tab.inactive{opacity:.62}
+.subject-dot{
+  width:10px;height:10px;border-radius:50%;display:block;flex:0 0 auto
+}
 .workspace{
   display:grid;grid-template-columns:minmax(240px,290px) minmax(0,1fr) minmax(260px,320px);
   gap:14px;align-items:start
@@ -268,6 +295,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .session-row,.deck-row{
   border:1px solid var(--border);border-radius:16px;background:var(--bg3);padding:10px 11px
 }
+.deck-row.current{
+  border-color:color-mix(in srgb, var(--accent) 42%, var(--border));
+  box-shadow:0 0 0 1px var(--accentSoft) inset;
+}
+.deck-row.inactive{
+  opacity:.78;
+}
 .session-row.done{border-color:color-mix(in srgb, var(--green) 35%, var(--border))}
 .session-row.missed{border-color:color-mix(in srgb, var(--red) 35%, var(--border))}
 .session-row{
@@ -303,10 +337,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .row-split{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
 .deck-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .deck-summary{
-  display:flex;flex-wrap:wrap;gap:6px;margin-top:8px
+  display:flex;flex-wrap:wrap;gap:5px;margin-top:8px
 }
 .deck-rule{
-  padding:4px 9px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:11px;
+  padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:10px;
   font-weight:700;color:var(--text2)
 }
 .deck-config{
@@ -314,6 +348,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .deck-config.hidden{display:none}
 .deck-config-actions{display:flex;justify-content:flex-end}
+.plan-summary{
+  display:grid;gap:10px;margin-bottom:12px;padding:12px;border:1px solid var(--border);border-radius:16px;background:color-mix(in srgb, var(--panel) 52%, var(--bg3))
+}
+.plan-goal{
+  display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap
+}
+.plan-goal strong{font-size:26px;line-height:1;letter-spacing:-.04em}
+.plan-goal-label{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
 .deck-top{
   display:flex;justify-content:space-between;gap:10px;align-items:flex-start
 }
@@ -327,41 +369,41 @@ button,input,select,textarea{font:inherit;color:inherit}
   border-color:color-mix(in srgb, var(--accent) 40%, var(--border));background:color-mix(in srgb, var(--accent) 10%, var(--surface))
 }
 .calendar-panel{
-  display:grid;gap:10px
+  display:grid;gap:8px
 }
 .calendar-top{
   display:flex;justify-content:space-between;align-items:center;gap:8px
 }
 .calendar-title{
-  font-size:24px;font-weight:900;letter-spacing:-.04em
+  font-size:16px;font-weight:900;letter-spacing:-.04em
 }
 .calendar-nav{display:flex;gap:6px}
 .calendar-grid{
-  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px
+  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px
 }
 .calendar-weekday{
-  text-align:center;font-size:11px;font-weight:800;color:var(--text3);padding-bottom:6px
+  text-align:center;font-size:10px;font-weight:800;color:var(--text3);padding-bottom:3px
 }
 .calendar-cell{
-  min-height:76px;border:1px solid var(--border);border-radius:16px;background:var(--bg3);padding:8px;display:flex;flex-direction:column;gap:6px
+  min-height:46px;border:1px solid var(--border);border-radius:11px;background:var(--bg3);padding:5px;display:flex;flex-direction:column;gap:3px
 }
 .calendar-cell.muted{opacity:.38}
 .calendar-cell.today{border-color:color-mix(in srgb, var(--accent) 40%, var(--border));box-shadow:0 0 0 2px var(--accentSoft) inset}
-.calendar-cell .day-num{font-size:13px;font-weight:800}
+.calendar-cell .day-num{font-size:11px;font-weight:800}
 .calendar-dots{
   display:flex;flex-wrap:wrap;gap:4px;margin-top:auto
 }
 .calendar-dots span{
-  width:8px;height:8px;border-radius:50%;display:block
+  width:6px;height:6px;border-radius:50%;display:block
 }
 .calendar-legend{
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px
 }
 .calendar-legend-item{
-  display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);min-width:0
+  display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text2);min-width:0
 }
 .calendar-legend-item span{
-  width:10px;height:10px;border-radius:50%;display:block;flex:0 0 auto
+  width:7px;height:7px;border-radius:50%;display:block;flex:0 0 auto
 }
 .scheduler-note{
   margin-top:12px;padding:12px 13px;border-radius:16px;border:1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
@@ -538,6 +580,18 @@ body.swap-panels .right-col{order:1}
           <label class="ck-line"><input type="checkbox" id="optVoice"><span>Enable voice input</span></label>
           <label class="ck-line"><input type="checkbox" id="optTts"><span>Read question aloud</span></label>
         </div>
+        <div class="dd-group">
+          <div class="dd-title">New Deck Defaults</div>
+          <div class="grid2">
+            <div class="field"><label for="optDefaultLearningSteps">Learning steps</label><input id="optDefaultLearningSteps" type="text" placeholder="1m 10m 1d"></div>
+            <div class="field"><label for="optDefaultRelearningSteps">Relearning steps</label><input id="optDefaultRelearningSteps" type="text" placeholder="10m"></div>
+            <div class="field"><label for="optDefaultDeadlineDate">Deadline date</label><input id="optDefaultDeadlineDate" type="date"></div>
+            <div class="field"><label for="optDefaultDeadlineTime">Deadline time</label><input id="optDefaultDeadlineTime" type="time"></div>
+            <div class="field"><label for="optDefaultStudyStart">Study window start</label><input id="optDefaultStudyStart" type="time"></div>
+            <div class="field"><label for="optDefaultStudyEnd">Study window end</label><input id="optDefaultStudyEnd" type="time"></div>
+          </div>
+          <label class="ck-line"><input type="checkbox" id="optDefaultDeadline"><span>Give new decks a target deadline</span></label>
+        </div>
       </div>
     </div>
     <button id="btnManageCards" class="btn settings-only">🗂 Cards</button>
@@ -562,7 +616,17 @@ body.swap-panels .right-col{order:1}
           <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
-          <div id="planSummary" class="hint">Import a deck to see recommended study sessions.</div>
+          <div class="plan-summary">
+            <div class="plan-goal">
+              <div>
+                <div class="plan-goal-label">Progress</div>
+                <strong id="planGoalValue">0 / 0</strong>
+              </div>
+              <button id="btnCustomSession" class="btn cyan" type="button">▶ Start custom session</button>
+            </div>
+            <div id="planSummary" class="hint">Import a deck to see recommended study sessions.</div>
+            <div id="planGoalSub" class="hint">Recommended sessions completed over total recommended sessions.</div>
+          </div>
           <div id="sessionList" class="session-list" style="margin-top:10px"></div>
           <div class="hint" style="margin-top:10px">Tip: drag panels with the four-dot handle to sort them, or hover collapsed panels to peek inside.</div>
         </div>
@@ -601,6 +665,13 @@ body.swap-panels .right-col{order:1}
     </div>
 
     <div class="center-col">
+      <div id="subjectSwitcher" class="subject-switcher settings-only hidden">
+        <div class="subject-topline">
+          <div class="subject-label">Decks</div>
+          <div class="hint">Switch decks like subjects.</div>
+        </div>
+        <div id="deckTabs" class="subject-tabs"></div>
+      </div>
       <div class="card-shell">
         <div class="card-corner-tools">
           <button id="btnEditCard" class="icon-btn hidden" type="button" title="Edit current card" aria-label="Edit current card">✎</button>
@@ -705,16 +776,15 @@ body.swap-panels .right-col{order:1}
 
       <section class="panel settings-only" data-side="right" data-panel-id="mode">
         <div class="panel-head">
-          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.8"></circle><circle cx="8" cy="8" r="1.2"></circle><path d="M8 3.2v1.2M8 11.6v1.2M3.2 8h1.2M11.6 8h1.2"></path></svg></span>Deadline Planner</div>
+          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.8"></circle><circle cx="8" cy="8" r="1.2"></circle><path d="M8 3.2v1.2M8 11.6v1.2M3.2 8h1.2M11.6 8h1.2"></path></svg></span>Deck Settings</div>
           <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
         </div>
         <div class="panel-body">
-          <div id="modeValue" class="big-val" style="font-size:24px">Deck Rules</div>
-          <div id="modeSub" class="hint" style="margin-top:6px">Pick a deck here to edit its own planner and learning-step instance. The Study Plan panel follows the deck selected below.</div>
-          <div class="field" style="margin-top:10px"><label for="plannerDeckSelect">Deck instance</label><select id="plannerDeckSelect"></select></div>
+          <div id="modeValue" class="big-val" style="font-size:24px">Deck</div>
+          <div id="modeSub" class="hint" style="margin-top:6px">The selected deck behaves like the current subject. These settings affect only that deck.</div>
           <div class="grid2" style="margin-top:10px">
-            <div class="field"><label for="optLearningSteps">Learning steps</label><input id="optLearningSteps" type="text" placeholder="1m 10m 1d"></div>
-            <div class="field"><label for="optRelearningSteps">Relearning steps</label><input id="optRelearningSteps" type="text" placeholder="10m"></div>
+            <div class="field"><label for="deckLearningSteps">Learning steps</label><input id="deckLearningSteps" type="text" placeholder="1m 10m 1d"></div>
+            <div class="field"><label for="deckRelearningSteps">Relearning steps</label><input id="deckRelearningSteps" type="text" placeholder="10m"></div>
           </div>
           <div class="field" style="margin-top:10px"><label for="optTimezone">Timezone</label>
             <select id="optTimezone">
@@ -727,12 +797,12 @@ body.swap-panels .right-col{order:1}
               <option value="Australia/Sydney">Australia/Sydney</option>
             </select>
           </div>
-          <label class="ck-line"><input type="checkbox" id="optDeadline"><span>Use target deadline</span></label>
+          <label class="ck-line"><input type="checkbox" id="deckDeadline"><span>Use target deadline</span></label>
           <div class="grid2">
-            <div class="field"><label for="optDeadlineDate">Deadline date</label><input id="optDeadlineDate" type="date"></div>
-            <div class="field"><label for="optDeadlineTime">Deadline time</label><input id="optDeadlineTime" type="time"></div>
-            <div class="field"><label for="optStudyStart">Study window start</label><input id="optStudyStart" type="time"></div>
-            <div class="field"><label for="optStudyEnd">Study window end</label><input id="optStudyEnd" type="time"></div>
+            <div class="field"><label for="deckDeadlineDate">Deadline date</label><input id="deckDeadlineDate" type="date"></div>
+            <div class="field"><label for="deckDeadlineTime">Deadline time</label><input id="deckDeadlineTime" type="time"></div>
+            <div class="field"><label for="deckStudyStart">Study window start</label><input id="deckStudyStart" type="time"></div>
+            <div class="field"><label for="deckStudyEnd">Study window end</label><input id="deckStudyEnd" type="time"></div>
           </div>
           <div class="scheduler-note">
             <strong>Learning path:</strong> New cards stay in <strong>learning</strong> until they finish the steps above, then they <strong>graduate into review cards</strong>. If a review card gets an <strong>Again</strong>, it drops into <strong>relearning</strong> and follows the relearning steps before returning to review.
@@ -749,30 +819,7 @@ body.swap-panels .right-col{order:1}
             <div class="algo-card"><strong>Relearning</strong><span>Again on a review card sends it through relearning steps before it re-enters review.</span></div>
             <div class="algo-card"><strong>FSRS review</strong><span>Once graduated, FSRS adjusts stability and difficulty to schedule the next review.</span></div>
           </div>
-          <div class="hint" style="margin-top:8px">Study window end is capped to the deadline time. Per-deck overrides live in Deck Manager.</div>
-        </div>
-      </section>
-
-      <section class="panel settings-only" data-side="right" data-panel-id="goal">
-        <div class="panel-head">
-          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 3.5h6v2.2a3 3 0 0 1-6 0z"></path><path d="M5 4.5H3.5A1.5 1.5 0 0 0 5 7M11 4.5h1.5A1.5 1.5 0 0 1 11 7M8 8.7v2.1M6.2 13h3.6"></path></svg></span>Goal Progress</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
-        </div>
-        <div class="panel-body">
-          <div id="goalValue" class="big-val">0 / 0</div>
-          <div id="goalSub" class="hint" style="margin-top:6px">Sessions completed today.</div>
-        </div>
-      </section>
-
-      <section class="panel settings-only" data-side="right" data-panel-id="session">
-        <div class="panel-head">
-          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 3.5l6 4.5-6 4.5z"></path></svg></span>Current Session</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
-        </div>
-        <div class="panel-body">
-          <div id="sessionChip" class="session-chip"><span class="dot"></span><span id="sessionValue">Idle</span></div>
-          <div id="sessionSub" class="hint" style="margin-top:8px">No session active.</div>
-          <button id="btnCustomSession" class="btn cyan" style="margin-top:12px;width:100%;justify-content:center">▶ Start custom session</button>
+          <div class="hint" style="margin-top:8px">Study window end is capped to the deadline time. Session start mode/time and deck color stay in Deck Manager.</div>
         </div>
       </section>
     </div>
@@ -867,20 +914,22 @@ const ui = {
   btnManageCards:$("btnManageCards"), btnHelp:$("btnHelp"), helpDialog:$("helpDialog"), btnCloseHelp:$("btnCloseHelp"),
   btnReset:$("btnReset"), statsText:$("statsText"), btnThemeQuick:$("btnThemeQuick"),
   optTheme:$("optTheme"), optCardOnly:$("optCardOnly"), optHideLabels:$("optHideLabels"), optSwapPanels:$("optSwapPanels"), optHoverPanels:$("optHoverPanels"),
-  optLearningSteps:$("optLearningSteps"), optRelearningSteps:$("optRelearningSteps"),
+  optDefaultLearningSteps:$("optDefaultLearningSteps"), optDefaultRelearningSteps:$("optDefaultRelearningSteps"),
+  optDefaultDeadline:$("optDefaultDeadline"), optDefaultDeadlineDate:$("optDefaultDeadlineDate"), optDefaultDeadlineTime:$("optDefaultDeadlineTime"),
+  optDefaultStudyStart:$("optDefaultStudyStart"), optDefaultStudyEnd:$("optDefaultStudyEnd"),
   optReverse:$("optReverse"), optAutoRate:$("optAutoRate"), optRandomize:$("optRandomize"),
   optDelay:$("optDelay"), optQuestionLimit:$("optQuestionLimit"), optVoice:$("optVoice"), optTts:$("optTts"),
   btnShowPanels:$("btnShowPanels"),
-  planSummary:$("planSummary"), sessionList:$("sessionList"), decksSummary:$("decksSummary"), decksList:$("decksList"),
+  subjectSwitcher:$("subjectSwitcher"), deckTabs:$("deckTabs"),
+  planSummary:$("planSummary"), planGoalValue:$("planGoalValue"), planGoalSub:$("planGoalSub"), sessionList:$("sessionList"), decksSummary:$("decksSummary"), decksList:$("decksList"),
   calendarTitle:$("calendarTitle"), calendarGrid:$("calendarGrid"), calendarLegend:$("calendarLegend"), btnCalendarPrev:$("btnCalendarPrev"), btnCalendarNext:$("btnCalendarNext"),
   reviewTyping:$("reviewTyping"), reviewAutoRate:$("reviewAutoRate"), reviewRandomize:$("reviewRandomize"),
   reviewVoice:$("reviewVoice"), reviewTts:$("reviewTts"), reviewHideLabels:$("reviewHideLabels"),
   reviewCardOnly:$("reviewCardOnly"), reviewDelay:$("reviewDelay"), reviewTimeLimit:$("reviewTimeLimit"),
-  modeValue:$("modeValue"), modeSub:$("modeSub"), plannerDeckSelect:$("plannerDeckSelect"), optTimezone:$("optTimezone"),
-  optDeadline:$("optDeadline"), optDeadlineDate:$("optDeadlineDate"), optDeadlineTime:$("optDeadlineTime"),
-  optStudyStart:$("optStudyStart"), optStudyEnd:$("optStudyEnd"),
-  goalValue:$("goalValue"), goalSub:$("goalSub"),
-  sessionValue:$("sessionValue"), sessionSub:$("sessionSub"), btnCustomSession:$("btnCustomSession"),
+  modeValue:$("modeValue"), modeSub:$("modeSub"), optTimezone:$("optTimezone"),
+  deckLearningSteps:$("deckLearningSteps"), deckRelearningSteps:$("deckRelearningSteps"),
+  deckDeadline:$("deckDeadline"), deckDeadlineDate:$("deckDeadlineDate"), deckDeadlineTime:$("deckDeadlineTime"),
+  deckStudyStart:$("deckStudyStart"), deckStudyEnd:$("deckStudyEnd"), btnCustomSession:$("btnCustomSession"),
   timerWrap:$("timerWrap"), timerVal:$("timerVal"), timerFill:$("timerFill"),
   metaRow:$("metaRow"), queueLabel:$("queueLabel"), sessionLine:$("sessionLine"),
   progressText:$("progressText"), progressPct:$("progressPct"), progressFillAgain:$("progressFillAgain"), progressFillHard:$("progressFillHard"), progressFillGood:$("progressFillGood"), btnHistoryBack:$("btnHistoryBack"), btnHistoryForward:$("btnHistoryForward"),
@@ -914,14 +963,14 @@ const settings = {
   perQuestionLimitSec:0,
   defaultLearningSteps:"1m 10m 1d",
   defaultRelearningSteps:"10m",
-  deadlineEnabled:false,
-  deadlineDateISO:"",
-  deadlineTime:"09:00",
-  studyStartTime:"08:00",
-  studyEndTime:"22:00",
+  defaultDeadlineEnabled:false,
+  defaultDeadlineDateISO:"",
+  defaultDeadlineTime:"09:00",
+  defaultStudyStartTime:"08:00",
+  defaultStudyEndTime:"22:00",
   timezone:"Asia/Manila",
   selectedDeckId:"",
-  panelOrder:{left:["studyPlan","calendar","decks"],right:["reviewBehavior","mode","goal","session"]},
+  panelOrder:{left:["studyPlan","calendar","decks"],right:["reviewBehavior","mode"]},
   collapsed:{}
 };
 
@@ -985,11 +1034,11 @@ function deckRulesFromSettings(){
   return normalizeDeckRules({
     learningSteps: settings.defaultLearningSteps,
     relearningSteps: settings.defaultRelearningSteps,
-    deadlineEnabled: settings.deadlineEnabled,
-    deadlineDateISO: settings.deadlineDateISO,
-    deadlineTime: settings.deadlineTime,
-    studyStartTime: settings.studyStartTime,
-    studyEndTime: settings.studyEndTime
+    deadlineEnabled: settings.defaultDeadlineEnabled,
+    deadlineDateISO: settings.defaultDeadlineDateISO,
+    deadlineTime: settings.defaultDeadlineTime,
+    studyStartTime: settings.defaultStudyStartTime,
+    studyEndTime: settings.defaultStudyEndTime
   });
 }
 function decorateDeck(deck){
@@ -1025,16 +1074,44 @@ function loadSettings(){
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
     Object.assign(settings,saved);
   }catch{}
+  if("deadlineEnabled" in settings && !("defaultDeadlineEnabled" in settings)) settings.defaultDeadlineEnabled = !!settings.deadlineEnabled;
+  if("deadlineDateISO" in settings && !("defaultDeadlineDateISO" in settings)) settings.defaultDeadlineDateISO = settings.deadlineDateISO || "";
+  if("deadlineTime" in settings && !("defaultDeadlineTime" in settings)) settings.defaultDeadlineTime = settings.deadlineTime || "09:00";
+  if("studyStartTime" in settings && !("defaultStudyStartTime" in settings)) settings.defaultStudyStartTime = settings.studyStartTime || "08:00";
+  if("studyEndTime" in settings && !("defaultStudyEndTime" in settings)) settings.defaultStudyEndTime = settings.studyEndTime || "22:00";
   settings.defaultLearningSteps = normalizeStepString(settings.defaultLearningSteps, DEFAULT_DECK_RULES.learningSteps);
   settings.defaultRelearningSteps = normalizeStepString(settings.defaultRelearningSteps, DEFAULT_DECK_RULES.relearningSteps);
-  if(!settings.panelOrder) settings.panelOrder = {left:["studyPlan","calendar","decks"],right:["reviewBehavior","mode","goal","session"]};
-  if(!settings.panelOrder.left?.includes("calendar")) settings.panelOrder.left = ["studyPlan","calendar","decks"];
+  if(!settings.panelOrder) settings.panelOrder = {left:["studyPlan","calendar","decks"],right:["reviewBehavior","mode"]};
+  settings.panelOrder.left = (settings.panelOrder.left || ["studyPlan","calendar","decks"]).filter(id=>["studyPlan","calendar","decks"].includes(id));
+  settings.panelOrder.right = (settings.panelOrder.right || ["reviewBehavior","mode"]).filter(id=>["reviewBehavior","mode"].includes(id));
+  if(!settings.panelOrder.left.length) settings.panelOrder.left = ["studyPlan","calendar","decks"];
+  if(!settings.panelOrder.right.length) settings.panelOrder.right = ["reviewBehavior","mode"];
   if(!settings.collapsed) settings.collapsed = {};
 }
 function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
 function syncToggleButton(btn, active){
   if(!btn) return;
   btn.setAttribute("aria-pressed", active ? "true" : "false");
+}
+function renderDeckTabs(){
+  if(!ui.subjectSwitcher || !ui.deckTabs) return;
+  ui.subjectSwitcher.classList.toggle("hidden", deckCache.length === 0);
+  ui.deckTabs.innerHTML = "";
+  for(const deck of deckCache){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `subject-tab ${settings.selectedDeckId === deck.id ? "active" : ""} ${deck.active !== false ? "" : "inactive"}`.trim();
+    btn.innerHTML = `<span class="subject-dot" style="background:${escapeHtml(deck.color)}"></span><span>${escapeHtml(deck.name)}</span>`;
+    btn.addEventListener("click", async ()=>{
+      settings.selectedDeckId = deck.id;
+      saveSettings();
+      syncUI();
+      activeSession = null;
+      await refreshEverything();
+      if(currentCard?.deck_id !== deck.id) await nextCard();
+    });
+    ui.deckTabs.appendChild(btn);
+  }
 }
 function selectedDeck(){
   return deckCache.find(deck=>deck.id === settings.selectedDeckId) || null;
@@ -1046,26 +1123,30 @@ function ensureSelectedDeck(){
   if(settings.selectedDeckId && deckCache.some(deck=>deck.id === settings.selectedDeckId)) return;
   settings.selectedDeckId = deckCache.find(deck=>deck.active !== false)?.id || deckCache[0]?.id || "";
 }
-function syncPlannerDeckOptions(){
-  if(!ui.plannerDeckSelect) return;
-  const previous = settings.selectedDeckId;
-  ui.plannerDeckSelect.innerHTML = `<option value="">Defaults for new decks</option>` + deckCache.map(deck=>`<option value="${escapeHtml(deck.id)}">${escapeHtml(deck.name)}</option>`).join("");
-  ui.plannerDeckSelect.value = deckCache.some(deck=>deck.id === previous) ? previous : "";
-}
-function syncPlannerFields(){
-  const rules = selectedDeckRules();
+function syncDeckSettingsFields(){
+  const rules = selectedDeck();
   const deck = selectedDeck();
-  ui.optLearningSteps.value = rules.learningSteps;
-  ui.optRelearningSteps.value = rules.relearningSteps;
-  ui.optDeadline.checked = rules.deadlineEnabled;
-  ui.optDeadlineDate.value = rules.deadlineDateISO || "";
-  ui.optDeadlineTime.value = rules.deadlineTime || "09:00";
-  ui.optStudyStart.value = rules.studyStartTime || "08:00";
-  ui.optStudyEnd.value = rules.studyEndTime || "22:00";
-  ui.modeValue.textContent = deck ? deck.name : "Defaults";
-  ui.modeSub.textContent = deck
-    ? `Editing ${deck.name}. This deck alone controls the Study Plan panel and can keep its own deadline, steps, and session start.`
-    : "These values are only used when you import a brand-new deck.";
+  if(!deck){
+    ui.deckLearningSteps.value = "";
+    ui.deckRelearningSteps.value = "";
+    ui.deckDeadline.checked = false;
+    ui.deckDeadlineDate.value = "";
+    ui.deckDeadlineTime.value = "09:00";
+    ui.deckStudyStart.value = "08:00";
+    ui.deckStudyEnd.value = "22:00";
+    ui.modeValue.textContent = "No deck";
+    ui.modeSub.textContent = "Import or select a deck to edit deck-specific settings.";
+    return;
+  }
+  ui.deckLearningSteps.value = rules.learningSteps;
+  ui.deckRelearningSteps.value = rules.relearningSteps;
+  ui.deckDeadline.checked = rules.deadlineEnabled;
+  ui.deckDeadlineDate.value = rules.deadlineDateISO || "";
+  ui.deckDeadlineTime.value = rules.deadlineTime || "09:00";
+  ui.deckStudyStart.value = rules.studyStartTime || "08:00";
+  ui.deckStudyEnd.value = rules.studyEndTime || "22:00";
+  ui.modeValue.textContent = deck.name;
+  ui.modeSub.textContent = `Editing ${deck.name}. This deck alone controls the Study Plan panel and keeps its own learning and deadline rules.`;
 }
 
 function syncUI(){
@@ -1081,8 +1162,13 @@ function syncUI(){
   ui.optReverse.checked = settings.reverseImport;
   ui.optAutoRate.checked = settings.autoRateTyping;
   ui.optRandomize.checked = settings.randomizeCards;
-  ui.optLearningSteps.value = settings.defaultLearningSteps;
-  ui.optRelearningSteps.value = settings.defaultRelearningSteps;
+  ui.optDefaultLearningSteps.value = settings.defaultLearningSteps;
+  ui.optDefaultRelearningSteps.value = settings.defaultRelearningSteps;
+  ui.optDefaultDeadline.checked = settings.defaultDeadlineEnabled;
+  ui.optDefaultDeadlineDate.value = settings.defaultDeadlineDateISO || "";
+  ui.optDefaultDeadlineTime.value = settings.defaultDeadlineTime || "09:00";
+  ui.optDefaultStudyStart.value = settings.defaultStudyStartTime || "08:00";
+  ui.optDefaultStudyEnd.value = settings.defaultStudyEndTime || "22:00";
   ui.optDelay.value = settings.autoAdvanceDelaySec;
   ui.optQuestionLimit.value = settings.perQuestionLimitSec;
   ui.optVoice.checked = settings.voiceEnabled;
@@ -1100,8 +1186,8 @@ function syncUI(){
 
   ui.optTimezone.value = settings.timezone;
   ui.btnThemeQuick.textContent = settings.theme === "dark" ? "🌙 Dark" : "☀ Light";
-  syncPlannerDeckOptions();
-  syncPlannerFields();
+  renderDeckTabs();
+  syncDeckSettingsFields();
 }
 
 function applyPanelLayout(){
@@ -1230,31 +1316,32 @@ function setupPanelHoverBehavior(){
 
 async function persistPlannerSource(){
   const targetDeck = selectedDeck();
+  if(!targetDeck) return;
   const rules = capDeckStudyWindowEnd(normalizeDeckRules({
-    learningSteps: ui.optLearningSteps.value,
-    relearningSteps: ui.optRelearningSteps.value,
-    deadlineEnabled: ui.optDeadline.checked,
-    deadlineDateISO: ui.optDeadlineDate.value || "",
-    deadlineTime: ui.optDeadlineTime.value || "09:00",
-    studyStartTime: ui.optStudyStart.value || "08:00",
-    studyEndTime: ui.optStudyEnd.value || "22:00",
-    color: targetDeck?.color || DEFAULT_DECK_RULES.color,
-    sessionStartMode: targetDeck?.sessionStartMode || "now",
-    sessionStartAt: targetDeck?.sessionStartAt || ""
+    learningSteps: ui.deckLearningSteps.value,
+    relearningSteps: ui.deckRelearningSteps.value,
+    deadlineEnabled: ui.deckDeadline.checked,
+    deadlineDateISO: ui.deckDeadlineDate.value || "",
+    deadlineTime: ui.deckDeadlineTime.value || "09:00",
+    studyStartTime: ui.deckStudyStart.value || "08:00",
+    studyEndTime: ui.deckStudyEnd.value || "22:00",
+    color: targetDeck.color || DEFAULT_DECK_RULES.color,
+    sessionStartMode: targetDeck.sessionStartMode || "now",
+    sessionStartAt: targetDeck.sessionStartAt || ""
   }));
-  if(targetDeck){
-    await db.decks.update(targetDeck.id, rules);
-    deckCache = await getDecks();
-  }else{
-    settings.defaultLearningSteps = rules.learningSteps;
-    settings.defaultRelearningSteps = rules.relearningSteps;
-    settings.deadlineEnabled = rules.deadlineEnabled;
-    settings.deadlineDateISO = rules.deadlineDateISO;
-    settings.deadlineTime = rules.deadlineTime;
-    settings.studyStartTime = rules.studyStartTime;
-    settings.studyEndTime = rules.studyEndTime;
-    saveSettings();
-  }
+  await db.decks.update(targetDeck.id, rules);
+  deckCache = await getDecks();
+}
+
+function persistDefaultDeckSettings(){
+  settings.defaultLearningSteps = normalizeStepString(ui.optDefaultLearningSteps.value, DEFAULT_DECK_RULES.learningSteps);
+  settings.defaultRelearningSteps = normalizeStepString(ui.optDefaultRelearningSteps.value, DEFAULT_DECK_RULES.relearningSteps);
+  settings.defaultDeadlineEnabled = ui.optDefaultDeadline.checked;
+  settings.defaultDeadlineDateISO = ui.optDefaultDeadlineDate.value || "";
+  settings.defaultDeadlineTime = ui.optDefaultDeadlineTime.value || "09:00";
+  settings.defaultStudyStartTime = ui.optDefaultStudyStart.value || "08:00";
+  settings.defaultStudyEndTime = ui.optDefaultStudyEnd.value || "22:00";
+  capStudyWindowEnd();
 }
 
 function bindSettings(){
@@ -1271,6 +1358,13 @@ function bindSettings(){
     [ui.optQuestionLimit,"input",()=>settings.perQuestionLimitSec = clamp(Number(ui.optQuestionLimit.value)||0,0,600)],
     [ui.optVoice,"change",()=>settings.voiceEnabled = ui.optVoice.checked],
     [ui.optTts,"change",()=>settings.ttsEnabled = ui.optTts.checked],
+    [ui.optDefaultLearningSteps,"change",persistDefaultDeckSettings],
+    [ui.optDefaultRelearningSteps,"change",persistDefaultDeckSettings],
+    [ui.optDefaultDeadline,"change",persistDefaultDeckSettings],
+    [ui.optDefaultDeadlineDate,"input",persistDefaultDeckSettings],
+    [ui.optDefaultDeadlineTime,"input",persistDefaultDeckSettings],
+    [ui.optDefaultStudyStart,"input",persistDefaultDeckSettings],
+    [ui.optDefaultStudyEnd,"input",persistDefaultDeckSettings],
     [ui.reviewDelay,"input",()=>settings.autoAdvanceDelaySec = clamp(Number(ui.reviewDelay.value)||0,0,60)],
     [ui.reviewTimeLimit,"input",()=>settings.perQuestionLimitSec = clamp(Number(ui.reviewTimeLimit.value)||0,0,600)],
     [ui.optTimezone,"change",()=>settings.timezone = ui.optTimezone.value],
@@ -1288,23 +1382,14 @@ function bindSettings(){
     });
   }
 
-  [ui.optLearningSteps, ui.optRelearningSteps, ui.optDeadline, ui.optDeadlineDate, ui.optDeadlineTime, ui.optStudyStart, ui.optStudyEnd].forEach(el=>{
+  [ui.deckLearningSteps, ui.deckRelearningSteps, ui.deckDeadline, ui.deckDeadlineDate, ui.deckDeadlineTime, ui.deckStudyStart, ui.deckStudyEnd].forEach(el=>{
     el.addEventListener(el.type === "checkbox" ? "change" : "input", async ()=>{
       await persistPlannerSource();
-      capStudyWindowEnd();
       saveSettings();
       syncUI();
       if(currentCard) showQuestion(currentCard, true);
       await refreshEverything();
     });
-  });
-
-  ui.plannerDeckSelect.addEventListener("change", async ()=>{
-    settings.selectedDeckId = ui.plannerDeckSelect.value || "";
-    saveSettings();
-    deckCache = await getDecks();
-    syncUI();
-    await refreshEverything();
   });
 
   const reviewToggleHandlers = [
@@ -1330,10 +1415,10 @@ function bindSettings(){
 }
 
 function capStudyWindowEnd(){
-  if(!settings.deadlineEnabled || !settings.deadlineDateISO) return;
-  const max = timeToMinutes(settings.deadlineTime);
-  const current = timeToMinutes(settings.studyEndTime);
-  if(current > max) settings.studyEndTime = settings.deadlineTime;
+  if(!settings.defaultDeadlineEnabled || !settings.defaultDeadlineDateISO) return;
+  const max = timeToMinutes(settings.defaultDeadlineTime);
+  const current = timeToMinutes(settings.defaultStudyEndTime);
+  if(current > max) settings.defaultStudyEndTime = settings.defaultDeadlineTime;
 }
 
 function capDeckStudyWindowEnd(rules){
@@ -1396,9 +1481,7 @@ function bucketForCard(card){
   return "good";
 }
 function queueDeckId(){
-  if(activeSession?.deck_id) return activeSession.deck_id;
-  if(activeSession?.source === "custom") return settings.selectedDeckId || "";
-  return "";
+  return settings.selectedDeckId || "";
 }
 
 async function getDecks(){
@@ -1449,6 +1532,11 @@ async function getActiveCards(){
   if(!ids.length) return [];
   const all = await db.cards.toArray();
   return all.filter(c=>ids.includes(c.deck_id));
+}
+async function getSelectedDeckCards(){
+  const deckId = queueDeckId();
+  if(deckId) return await db.cards.where("deck_id").equals(deckId).toArray();
+  return getActiveCards();
 }
 
 async function createDeck(file){
@@ -1603,16 +1691,17 @@ async function importCSV(file){
     }
   });
   toast(`Imported ${created} card(s) into "${deck.name}"`);
+  settings.selectedDeckId = deck.id;
+  saveSettings();
   activeSession = null;
   await refreshEverything();
   await nextCard();
 }
 
 async function buildQueue(includeFuture=false){
-  const cards = await getActiveCards();
+  const cards = await getSelectedDeckCards();
   const now = Date.now();
-  const deckId = queueDeckId();
-  const scoped = deckId ? cards.filter(card=>card.deck_id === deckId) : cards;
+  const scoped = cards;
   let due = scoped.filter(c => c.due_ms <= now || isNew(c));
   const rank = {again:0, hard:1, good:2};
   due.sort((a,b)=>{
@@ -1886,11 +1975,16 @@ async function recordSessionCard(){
       day_key:dayKey(now),
       planned_ms:activeSession.planned_ms || now,
       deck_scope:lastDeckSignature,
+      deck_id:activeSession.deck_id || currentCard?.deck_id || "",
       cards_reviewed:1,
       completed_ms:now
     });
   }else{
-    await db.sessions.update(existing.id, {cards_reviewed:(existing.cards_reviewed || 0)+1, completed_ms:now});
+    await db.sessions.update(existing.id, {
+      deck_id:existing.deck_id || activeSession.deck_id || currentCard?.deck_id || "",
+      cards_reviewed:(existing.cards_reviewed || 0)+1,
+      completed_ms:now
+    });
   }
 }
 
@@ -2007,9 +2101,14 @@ async function nextCard(customStart=false){
 async function refreshStats(){
   const activeDeckIds = await getActiveDeckIds();
   lastDeckSignature = deckSignature(activeDeckIds);
-  const cards = await getActiveCards();
+  const selected = selectedDeck();
+  const cards = await getSelectedDeckCards();
   const due = cards.filter(c=>c.due_ms <= Date.now() || isNew(c)).length;
-  ui.statsText.textContent = cards.length ? `${activeDeckIds.length} active deck(s) · ${cards.length} cards · ${due} due` : "No active deck";
+  if(selected){
+    ui.statsText.textContent = `${selected.name} · ${cards.length} cards · ${due} due${selected.active === false ? " · inactive in calendar" : ""}`;
+  }else{
+    ui.statsText.textContent = cards.length ? `${activeDeckIds.length} active deck(s) · ${cards.length} cards · ${due} due` : "No active deck";
+  }
   ui.queueLabel.innerHTML = `Queue:
     <span class="queue-pill again">${queueStats.again || 0}</span>
     <span class="queue-pill hard">${queueStats.hard || 0}</span>
@@ -2095,7 +2194,7 @@ function pickSession(){
 function renderCalendar(planItems, decks){
   const cursor = new Date(calendarCursor);
   cursor.setDate(1);
-  const monthLabel = new Intl.DateTimeFormat("en-US",{month:"long"}).format(cursor);
+  const monthLabel = new Intl.DateTimeFormat("en-US",{month:"long", year:"numeric"}).format(cursor);
   ui.calendarTitle.textContent = monthLabel;
   ui.calendarGrid.innerHTML = "";
   const weekdayLabels = ["S","M","T","W","T","F","S"];
@@ -2137,35 +2236,36 @@ function renderCalendar(planItems, decks){
     cell.appendChild(dotWrap);
     ui.calendarGrid.appendChild(cell);
   }
-  ui.calendarLegend.innerHTML = decks.filter(deck=>deck.active !== false).map(deck=>`
+  const visibleDecks = decks.filter(deck=>deck.active !== false);
+  ui.calendarLegend.classList.toggle("hidden", visibleDecks.length <= 1);
+  ui.calendarLegend.innerHTML = visibleDecks.map(deck=>`
     <div class="calendar-legend-item"><span style="background:${escapeHtml(deck.color)}"></span><div>${escapeHtml(deck.name)}</div></div>
   `).join("");
 }
 
 async function refreshPlan(){
   const activeDecks = (await getDecks()).filter(deck=>deck.active !== false);
-  const cards = await getActiveCards();
+  const selected = selectedDeck();
   lastPlan = await computePlan();
-  const deck = selectedDeck();
-  const selectedPlan = deck ? lastPlan.filter(item=>item.deck_id === deck.id) : lastPlan;
+  const deck = selected;
+  const selectedPlan = deck ? lastPlan.filter(item=>item.deck_id === deck.id) : [];
   renderCalendar(lastPlan, activeDecks);
 
-  if(!cards.length){
-    ui.planSummary.textContent = "Import a deck to see recommended study sessions.";
+  if(!deck){
+    ui.planSummary.textContent = "Select a deck to view its study plan.";
     ui.sessionList.innerHTML = "";
-    ui.goalValue.textContent = "0 / 0";
-    ui.goalSub.textContent = "Sessions completed today.";
+    ui.planGoalValue.textContent = "0 / 0";
+    ui.planGoalSub.textContent = "Recommended sessions completed over total recommended sessions.";
     return;
   }
 
-  ui.planSummary.innerHTML = deck
-    ? `<strong>${escapeHtml(deck.name)}</strong> is the active planning deck. Sessions below follow only this deck's rules.`
-    : `<strong>Defaults selected.</strong> Choose a deck in Deadline Planner to inspect its own schedule.`;
+  ui.planSummary.innerHTML = `<strong>${escapeHtml(deck.name)}</strong> is the current study deck. The list below shows only this deck's recommended sessions.`;
 
   const logs = (await db.sessions.toArray()).filter(x=>x.deck_scope === lastDeckSignature);
-  const doneTotal = logs.filter(x=>x.source === "recommended").length;
-  ui.goalValue.textContent = `${doneTotal} / ${lastPlan.length}`;
-  ui.goalSub.textContent = `${selectedPlan.length} planned session(s) for ${deck ? deck.name : "the selected view"}`;
+  const completedKeys = new Set(logs.filter(x=>x.source === "recommended").map(x=>x.session_key));
+  const doneTotal = selectedPlan.filter(item=>completedKeys.has(item.session_key)).length;
+  ui.planGoalValue.textContent = `${doneTotal} / ${selectedPlan.length}`;
+  ui.planGoalSub.textContent = `${selectedPlan.length} recommended session(s) for ${deck.name}. Calendar dots still show all active decks.`;
 
   ui.sessionList.innerHTML = "";
   if(!selectedPlan.length){
@@ -2208,19 +2308,20 @@ async function refreshDecksUI(){
     const count = await db.cards.where("deck_id").equals(deck.id).count();
     const row = document.createElement("div");
     row.className = "deck-row";
+    row.classList.toggle("current", settings.selectedDeckId === deck.id);
+    row.classList.toggle("inactive", deck.active === false);
     row.innerHTML = `
       <div class="deck-top">
         <div>
           <div class="deck-name">${escapeHtml(deck.name)}</div>
-          <div class="deck-meta">${count} cards · ${deck.active !== false ? "Active" : "Inactive"}</div>
+          <div class="deck-meta">${count} cards · ${deck.active !== false ? "Active in calendar" : "Hidden from calendar"}${settings.selectedDeckId === deck.id ? " · Selected" : ""}</div>
         </div>
         <input class="deck-color" data-role="deck-color" type="color" value="${escapeHtml(deck.color)}" title="Deck color">
       </div>
       <div class="deck-summary">
-        <span class="deck-rule">Learn: ${escapeHtml(deck.learningSteps)}</span>
-        <span class="deck-rule">Relearn: ${escapeHtml(deck.relearningSteps)}</span>
         <span class="deck-rule">${escapeHtml(deckDeadlineSummary(deck))}</span>
         <span class="deck-rule">Start: ${deck.sessionStartMode === "custom" && deck.sessionStartAt ? escapeHtml(fmtDateTime(new Date(deck.sessionStartAt).getTime())) : deck.sessionStartMode === "manual" ? "Manual" : "Now"}</span>
+        <span class="deck-rule">Learning: ${escapeHtml(deck.learningSteps)}</span>
       </div>
       <div class="deck-actions"></div>
       <div class="deck-mini-grid">
@@ -2269,12 +2370,13 @@ async function refreshDecksUI(){
     actions.appendChild(rename);
 
     const selectBtn = document.createElement("button");
-    selectBtn.className = `mini-btn deck-select-btn ${settings.selectedDeckId === deck.id ? "active" : ""}`; selectBtn.textContent = "Open in planner";
+    selectBtn.className = `mini-btn deck-select-btn ${settings.selectedDeckId === deck.id ? "active" : ""}`; selectBtn.textContent = settings.selectedDeckId === deck.id ? "Selected" : "Select";
     selectBtn.onclick = async ()=>{
       settings.selectedDeckId = deck.id;
       saveSettings();
       syncUI();
-      await refreshPlan();
+      await refreshEverything();
+      if(currentCard?.deck_id !== deck.id) await nextCard();
     };
     actions.appendChild(selectBtn);
 
@@ -2313,16 +2415,6 @@ async function refreshEverything(){
   await refreshProgress();
   await refreshPlan();
   await refreshDecksUI();
-  syncSessionUI();
-}
-
-function syncSessionUI(){
-  const text = activeSession ? (activeSession.source === "custom" ? "Custom" : "Recommended") : "Idle";
-  const sessionDeck = deckCache.find(deck=>deck.id === activeSession?.deck_id);
-  ui.sessionValue.textContent = text;
-  ui.sessionSub.textContent = activeSession
-    ? `${activeSession.source === "custom" ? "Studying beyond the recommended queue." : "Tracking a recommended study session."}${sessionDeck ? ` ${sessionDeck.name} is the active deck.` : ""}`
-    : "No session active.";
 }
 
 function exportCardsCsv(cards, filename="cards.csv"){
@@ -2346,7 +2438,7 @@ function exportCardsCsv(cards, filename="cards.csv"){
 }
 
 async function openManageCards(){
-  const cards = await getActiveCards();
+  const cards = await getSelectedDeckCards();
   ui.manageCardList.innerHTML = "";
   for(const card of cards){
     const row = document.createElement("div");
@@ -2504,7 +2596,7 @@ ui.btnExportCardsCsv.addEventListener("click", async ()=>{
     cards = await Promise.all(selected.map(id=>db.cards.get(id)));
     cards = cards.filter(Boolean);
   }else{
-    cards = await getActiveCards();
+    cards = await getSelectedDeckCards();
   }
   exportCardsCsv(cards, "flashflow-export.csv");
 });
