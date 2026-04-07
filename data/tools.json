@@ -3,7 +3,7 @@
     "title": "FlashFlow",
     "description": "Adaptive flashcards with typing mode, spaced repetition, deadline planning, and deck management for self-paced study.",
     "url": "./tool/flashflow/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/flashflow.png",
     "favicon": "./tool/flashflow/favicon.svg",
     "emoji": "⚡",
     "tags": [
