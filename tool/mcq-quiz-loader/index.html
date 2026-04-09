@@ -220,7 +220,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       overflow-x: auto;
       padding-bottom: 2px;
       scrollbar-width: thin;
@@ -259,7 +259,9 @@
       color: var(--text-2);
       transition: border-color 0.2s, background 0.2s, color 0.2s;
       white-space: nowrap;
-      flex-shrink: 0;
+      flex: 0 0 315px;
+      max-width: 315px;
+      min-width: 0;
     }
     .file-label:hover {
       border-color: var(--teal-dim);
@@ -274,6 +276,14 @@
       width: 100%;
     }
     .file-label svg { flex-shrink: 0; }
+    .file-label span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+      flex: 1 1 auto;
+    }
     #fileNameDisplay {
       font-size: 12px;
       color: var(--teal);
@@ -944,6 +954,10 @@
       .action-bar .btn,
       .action-bar .file-label {
         flex: 0 0 auto;
+      }
+      .file-label {
+        flex-basis: 280px;
+        max-width: 280px;
       }
       .settings-grid {
         grid-template-columns: 1fr;
