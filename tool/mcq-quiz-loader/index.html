@@ -196,6 +196,9 @@
       overflow: hidden;
       margin-bottom: 20px;
     }
+    .sticky-progress {
+      margin: 14px 0 0;
+    }
     .progress-fill {
       height: 100%;
       width: 0%;
@@ -1036,11 +1039,6 @@
       <div class="stat-pill" id="ansTag">0 answered</div>
     </div>
 
-    <!-- Progress Bar -->
-    <div class="progress-wrap">
-      <div class="progress-fill" id="pbar"></div>
-    </div>
-
     <!-- Settings -->
     <div class="settings-grid">
       <div class="setting-item">
@@ -1100,6 +1098,10 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
         Retry Wrong
       </button>
+      <button class="btn btn-ghost" id="downloadBtn" disabled>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Results
+      </button>
       <button class="btn btn-danger" id="resetBtn">Reset</button>
       <div class="review-filter-wrap hidden" id="reviewFilterWrap">
         <span class="review-filter-label">Show</span>
@@ -1110,6 +1112,9 @@
           <option value="unanswered">Missed / unanswered</option>
         </select>
       </div>
+    </div>
+    <div class="progress-wrap sticky-progress">
+      <div class="progress-fill" id="pbar"></div>
     </div>
   </div>
 
@@ -1486,6 +1491,7 @@ const UI = {
   loadBtn: document.getElementById('loadBtn'),
   submitBtn: document.getElementById('submitBtn'),
   retryBtn: document.getElementById('retryBtn'),
+  downloadBtn: document.getElementById('downloadBtn'),
   resetBtn: document.getElementById('resetBtn'),
   displayMode: document.getElementById('displayMode'),
   shuffleQ: document.getElementById('shuffleQ'),
@@ -1519,6 +1525,7 @@ let bank = [], pool = [], poolName = 'Full', cursor = 0;
 let submitted = false, wrongIDs = new Set();
 let answers = new Map(), choiceMaps = new Map();
 let toastTimer = null;
+let pdfLoader = null;
 
 // ── Toast ──
 function showToast(msg, type='') {
@@ -1613,6 +1620,25 @@ function ensureSheetJS(){
   });
 }
 
+function ensureJsPDF(){
+  if(window.jspdf?.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  if(pdfLoader) return pdfLoader;
+  pdfLoader = new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';
+    s.onload=()=>{
+      if(window.jspdf?.jsPDF) resolve(window.jspdf.jsPDF);
+      else reject(new Error('PDF library loaded but did not initialize.'));
+    };
+    s.onerror=()=>reject(new Error('Failed to load PDF exporter.'));
+    document.head.appendChild(s);
+  }).catch(err=>{
+    pdfLoader = null;
+    throw err;
+  });
+  return pdfLoader;
+}
+
 async function loadBankFromFile(file){
   const name=file.name.toLowerCase();
   if(name.endsWith('.csv')){
@@ -1666,6 +1692,149 @@ function getReviewState(q){
   return chosen===q.answer ? 'correct' : 'incorrect';
 }
 
+function getReviewCounts(){
+  return {
+    all: pool.length,
+    correct: pool.filter(q=>getReviewState(q)==='correct').length,
+    incorrect: pool.filter(q=>getReviewState(q)==='incorrect').length,
+    unanswered: pool.filter(q=>getReviewState(q)==='unanswered').length,
+  };
+}
+
+function getResultGroups(){
+  return {
+    correct: pool.filter(q=>getReviewState(q)==='correct'),
+    incorrect: pool.filter(q=>getReviewState(q)==='incorrect'),
+    unanswered: pool.filter(q=>getReviewState(q)==='unanswered'),
+  };
+}
+
+function answerTextFor(q, idx){
+  if(idx===undefined || idx===null || idx<0) return 'No answer selected';
+  return `${LETTERS[idx]}. ${String(q.choices[idx] ?? '').trim()}`;
+}
+
+function safeFilename(base){
+  return String(base || 'mcq-results')
+    .toLowerCase()
+    .replace(/\.[^.]+$/,'')
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'') || 'mcq-results';
+}
+
+async function downloadResultsPdf(){
+  if(!submitted || !pool.length){
+    showToast('Submit the quiz first before downloading results.','error');
+    return;
+  }
+  const originalLabel = UI.downloadBtn.innerHTML;
+  UI.downloadBtn.disabled = true;
+  UI.downloadBtn.textContent = 'Preparing PDF…';
+  try{
+    const jsPDF = await ensureJsPDF();
+    const doc = new jsPDF({unit:'pt', format:'a4'});
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 42;
+    const maxWidth = pageWidth - margin * 2;
+    const lineGap = 16;
+    const blockGap = 12;
+    let y = margin;
+
+    const colors = {
+      title:[14,29,46],
+      body:[46,69,92],
+      muted:[94,113,138],
+      teal:[24,140,126],
+      green:[38,166,91],
+      red:[220,80,86],
+      amber:[193,132,26]
+    };
+
+    function ensureSpace(heightNeeded=40){
+      if(y + heightNeeded <= pageHeight - margin) return;
+      doc.addPage();
+      y = margin;
+    }
+
+    function writeWrapped(text, opts={}){
+      const {
+        size=11,
+        color=colors.body,
+        style='normal',
+        gap=lineGap
+      } = opts;
+      doc.setFont('helvetica', style);
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(String(text || ''), maxWidth);
+      const height = Math.max(gap, lines.length * (size + 3));
+      ensureSpace(height + 4);
+      doc.text(lines, margin, y);
+      y += height;
+    }
+
+    function writeRule(){
+      ensureSpace(10);
+      doc.setDrawColor(220, 227, 236);
+      doc.setLineWidth(0.8);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 12;
+    }
+
+    const groups = getResultGroups();
+    const correctCount = groups.correct.length;
+    const incorrectCount = groups.incorrect.length;
+    const unansweredCount = groups.unanswered.length;
+    const pct = pool.length ? Math.round(100 * correctCount / pool.length) : 0;
+    const bankLabel = UI.bankTag.textContent.replace(/\s+/g,' ').trim() || 'MCQ Quiz Loader';
+
+    writeWrapped('MCQ Quiz Loader Results', {size:20, style:'bold', color:colors.title, gap:24});
+    writeWrapped(bankLabel, {size:11, color:colors.teal, style:'bold'});
+    writeWrapped(`Score: ${pct}% · ${correctCount} correct out of ${pool.length}`, {size:11, style:'bold'});
+    writeWrapped(`Correct: ${correctCount} · Incorrect: ${incorrectCount} · Missed / unanswered: ${unansweredCount}`, {size:10, color:colors.muted});
+    writeWrapped(`Generated: ${new Date().toLocaleString()}`, {size:10, color:colors.muted});
+    y += 4;
+    writeRule();
+
+    const sectionConfigs = [
+      ['Correct Answers', groups.correct, colors.green],
+      ['Incorrect Answers', groups.incorrect, colors.red],
+      ['Missed / Unanswered', groups.unanswered, colors.amber],
+    ];
+
+    sectionConfigs.forEach(([title, items, color])=>{
+      writeWrapped(`${title} (${items.length})`, {size:15, style:'bold', color, gap:20});
+      if(!items.length){
+        writeWrapped('None in this category.', {size:10, color:colors.muted});
+        y += 2;
+        return;
+      }
+      items.forEach((q, index)=>{
+        const chosen = answers.get(q.id);
+        writeWrapped(`${index + 1}. ${q.stem}`, {size:12, style:'bold', color:colors.title, gap:18});
+        writeWrapped(`Your answer: ${answerTextFor(q, chosen)}`, {size:10});
+        writeWrapped(`Correct answer: ${answerTextFor(q, q.answer)}`, {size:10, style:'bold'});
+        if(q.explanation){
+          writeWrapped(`Explanation: ${q.explanation}`, {size:10, color:colors.body});
+        }
+        y += 2;
+        writeRule();
+      });
+      y += blockGap;
+    });
+
+    doc.save(`${safeFilename(bankLabel)}-results.pdf`);
+    showToast('Results PDF downloaded.','success');
+  }catch(err){
+    console.error(err);
+    showToast('Could not generate the PDF right now.','error');
+  }finally{
+    UI.downloadBtn.innerHTML = originalLabel;
+    UI.downloadBtn.disabled = !submitted || !pool.length;
+  }
+}
+
 function getVisibleQuestions(){
   if(!submitted) return pool;
   const filter=UI.reviewFilter.value;
@@ -1677,6 +1846,15 @@ function updateReviewFilterUI(){
   const shouldShow=submitted && pool.length>0;
   UI.reviewFilterWrap.classList.toggle('hidden', !shouldShow);
   if(!shouldShow){
+    UI.reviewFilter.value='all';
+    return;
+  }
+  const counts=getReviewCounts();
+  [...UI.reviewFilter.options].forEach(option=>{
+    const count=counts[option.value] ?? 0;
+    option.disabled=option.value!=='all' && count===0;
+  });
+  if(UI.reviewFilter.value!=='all' && (counts[UI.reviewFilter.value] ?? 0)===0){
     UI.reviewFilter.value='all';
   }
 }
@@ -1719,13 +1897,30 @@ function renderQuestion(q, index, total, single){
     const checked=answers.get(q.id)===origIdx;
     if(checked) label.classList.add('selected');
     label.innerHTML = `
-      <input type="radio" name="${q.id}" id="${q.id}_${dispIdx}" value="${dispIdx}" ${checked?'checked':''}>
+      <input type="radio" name="${q.id}" id="${q.id}_${dispIdx}" value="${dispIdx}" ${checked?'checked':''} ${submitted?'disabled':''}>
       <div class="choice-letter">${LETTERS[dispIdx]}</div>
       <div class="choice-text">${escHtml(String(txt))}</div>`;
     choicesDiv.appendChild(label);
   });
 
+  choicesDiv.addEventListener('click',(e)=>{
+    if(submitted) return;
+    const label=e.target.closest('.choice-label');
+    if(!label) return;
+    const input=label.querySelector(`input[name="${q.id}"]`);
+    if(!input) return;
+    const dispIdx=parseInt(input.value,10);
+    const origIdx=map[dispIdx];
+    if(answers.get(q.id)!==origIdx) return;
+    e.preventDefault();
+    input.checked=false;
+    answers.delete(q.id);
+    card.querySelectorAll('.choice-label').forEach(l=>l.classList.remove('selected'));
+    updateTop();
+  });
+
   choicesDiv.addEventListener('change',()=>{
+    if(submitted) return;
     const sel=card.querySelector(`input[name="${q.id}"]:checked`);
     if(!sel) return;
     const dispIdx=parseInt(sel.value,10);
@@ -1785,6 +1980,7 @@ function escHtml(str){
 function render(){
   UI.quiz.innerHTML='';
   UI.results.style.display='none';
+  updateReviewFilterUI();
 
   if(!pool.length){
     UI.quiz.innerHTML = `
@@ -1798,6 +1994,7 @@ function render(){
         <p>Choose an XLSX or CSV file above and click <strong>Load Bank</strong> to begin.</p>
       </div>`;
     updateTop();
+    UI.downloadBtn.disabled = true;
     return;
   }
 
@@ -1815,7 +2012,6 @@ function render(){
         <p>${getFilteredEmptyMessage()}</p>
       </div>`;
     updateTop();
-    updateReviewFilterUI();
     if(submitted){
       showResults();
     }
@@ -1830,6 +2026,7 @@ function render(){
   }
 
   UI.submitBtn.disabled=false;
+  UI.downloadBtn.disabled=!submitted;
   updateTop();
   updateReviewFilterUI();
 
@@ -1916,6 +2113,7 @@ function showResults(){
     UI.retryBtn.disabled=true;
   }
 
+  UI.downloadBtn.disabled=false;
   UI.results.style.display='block';
   UI.results.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -1924,6 +2122,7 @@ function buildPool(fromWrong=false){
   submitted=false;
   UI.results.style.display='none';
   UI.reviewFilter.value='all';
+  UI.downloadBtn.disabled=true;
   poolName=fromWrong?'Wrong':'Full';
   let arr=fromWrong?bank.filter(q=>wrongIDs.has(q.id)):bank.slice();
   if(UI.shuffleQ.checked) shuffleArray(arr);
@@ -1978,13 +2177,14 @@ function onSubmit(){
   applyFeedback();
   showResults();
   updateReviewFilterUI();
+  render();
 }
 
 function onReset(){
   bank=[];pool=[];poolName='Full';cursor=0;submitted=false;
   wrongIDs=new Set();answers=new Map();choiceMaps=new Map();
   UI.bankTag.innerHTML=`<div class="dot"></div>No bank loaded`;
-  UI.submitBtn.disabled=true;UI.retryBtn.disabled=true;
+  UI.submitBtn.disabled=true;UI.retryBtn.disabled=true;UI.downloadBtn.disabled=true;
   UI.fileNameDisplay.style.display='none';
   UI.filePlaceholder.style.display='inline';
   UI.file.value='';
@@ -2029,9 +2229,18 @@ async function copyPrompt(targetId){
 UI.loadBtn.addEventListener('click',onLoad);
 UI.submitBtn.addEventListener('click',onSubmit);
 UI.retryBtn.addEventListener('click',()=>buildPool(true));
+UI.downloadBtn.addEventListener('click',downloadResultsPdf);
 UI.resetBtn.addEventListener('click',onReset);
 UI.displayMode.addEventListener('change',render);
-UI.reviewFilter.addEventListener('change',render);
+UI.reviewFilter.addEventListener('change',()=>{
+  const counts=getReviewCounts();
+  const selected=UI.reviewFilter.value;
+  if(submitted && selected!=='all' && (counts[selected] ?? 0)===0){
+    showToast(getFilteredEmptyMessage() + ' Showing all questions instead.','error');
+    UI.reviewFilter.value='all';
+  }
+  render();
+});
 UI.shuffleQ.addEventListener('change',()=>{ if(bank.length) buildPool(poolName==='Wrong'); });
 UI.shuffleC.addEventListener('change',()=>{ if(pool.length){ choiceMaps=new Map(); render(); } });
 UI.showExp.addEventListener('change',()=>{ if(pool.length) render(); });
