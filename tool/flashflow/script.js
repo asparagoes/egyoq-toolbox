@@ -1602,6 +1602,81 @@ async function saveCurrentCardEdits(){
   await refreshEverything();
 }
 
+// Add a small "Rerate" control to allow retroactive grading of the most recent review for the current card.
+(function(){
+  const qc = document.querySelector(".queue-controls");
+  if(qc && !document.getElementById("btnRerate")){
+    const rerateBtn = document.createElement("button");
+    rerateBtn.className = "history-btn";
+    rerateBtn.id = "btnRerate";
+    rerateBtn.type = "button";
+    rerateBtn.title = "Rerate last review";
+    rerateBtn.textContent = "⟳ Rerate";
+    qc.appendChild(rerateBtn);
+    rerateBtn.addEventListener("click", async ()=>{
+      if(!currentCard){ toast("No card to rerate"); return; }
+      try{ await openRerateLast(); }catch(err){ console.error(err); toast("Rerate failed"); }
+    });
+  }
+})();
+
+async function openRerateLast(){
+  if(!currentCard) return toast("No card to rerate");
+  const reviews = await db.reviews.where("card_id").equals(currentCard.id).sortBy("review_ms");
+  if(!reviews || !reviews.length) return toast("No reviews found for this card");
+  const last = reviews[reviews.length - 1];
+  const when = new Date(last.review_ms).toLocaleString();
+  const input = prompt(`Last review: rating ${last.rating} at ${when}.\nEnter new rating (1=Again,2=Hard,3=Good,4=Easy):`, String(last.rating));
+  if(input == null) return; // cancelled
+  const newRating = Number(input.trim());
+  if(![1,2,3,4].includes(newRating)) return toast("Invalid rating");
+  if(newRating === last.rating) return toast("Rating unchanged");
+  if(!confirm(`Apply rating ${newRating} to the review from ${when}? This will recompute the card schedule.`)) return;
+  await replayAndApply(currentCard.id, last.id, newRating);
+}
+
+async function replayAndApply(cardId, targetReviewId, newRatingInt){
+  // Reconstruct the FSRS state by replaying all reviews for the card in chronological order,
+  // but substitute the target review's rating with the newRatingInt. Then update the card and
+  // replace the target review's rating in the DB. Finally refresh UI and progress.
+  const card = await db.cards.get(cardId);
+  if(!card) return toast("Card not found");
+  const reviews = await db.reviews.where("card_id").equals(cardId).sortBy("review_ms");
+  if(!reviews.length) return toast("No reviews to replay");
+
+  const deck = decorateDeck(await db.decks.get(card.deck_id));
+  const scheduler = makeScheduler(deck);
+
+  let fsrs_card = createEmptyCard(new Date(card.created_ms));
+  let lastResult = null;
+
+  for(const r of reviews){
+    const useRatingInt = (r.id === targetReviewId) ? newRatingInt : r.rating;
+    const ratingEnum = useRatingInt === 1 ? Rating.Again : useRatingInt === 2 ? Rating.Hard : useRatingInt === 3 ? Rating.Good : Rating.Easy;
+    try{
+      lastResult = scheduler.next(fsrs_card, new Date(r.review_ms), ratingEnum);
+      fsrs_card = lastResult.card;
+    }catch(err){ console.error('Replay error', err); return toast('Replay failed'); }
+  }
+
+  if(!lastResult) return toast('Replay produced no result');
+  let dueMs = lastResult.card.due instanceof Date ? lastResult.card.due.getTime() : Date.parse(lastResult.card.due);
+  dueMs = capDueToDeadline(dueMs, deck);
+
+  try{
+    await db.transaction('rw', db.cards, db.reviews, async ()=>{
+      await db.cards.update(cardId, {fsrs_card, due_ms: dueMs, queue_bucket: bucketForGrade(newRatingInt)});
+      await db.reviews.update(targetReviewId, {rating: newRatingInt});
+    });
+  }catch(err){ console.error(err); return toast('Failed to save rerate'); }
+
+  toast('Rerate applied');
+  // If the currently visible card is the same card, refresh its view to reflect the new state.
+  const updated = await db.cards.get(cardId);
+  if(currentCard && currentCard.id === cardId) showQuestion(updated, true);
+  await refreshEverything();
+}
+
 ui.csvFile.addEventListener("change", async e=>{
   const file = e.target.files?.[0];
   if(!file) return;
@@ -1713,26 +1788,3 @@ ui.btnDeleteSelectedCards.addEventListener("click", async ()=>{
 });
 ui.btnCloseEditCard.addEventListener("click", ()=>ui.editCardDialog.close());
 ui.btnSaveEditCard.addEventListener("click", saveCurrentCardEdits);
-
-document.querySelectorAll(".collapse-btn").forEach(btn=>btn.addEventListener("click", ()=>{
-  const panel = btn.closest("[data-panel-id]");
-  const id = panel.dataset.panelId;
-  settings.collapsed[id] = !settings.collapsed[id];
-  saveSettings();
-  applyPanelLayout();
-}));
-
-bindSettings();
-loadSettings();
-capStudyWindowEnd();
-syncUI();
-applyPanelLayout();
-setupVoice();
-await refreshEverything();
-
-const existing = await db.cards.count();
-if(existing){
-  await nextCard();
-}else{
-  ui.inputRow.classList.toggle("hidden", !settings.typingMode);
-}
