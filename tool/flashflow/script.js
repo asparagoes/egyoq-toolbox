@@ -108,8 +108,8 @@ const DEFAULT_DECK_RULES = {
 };
 const DECK_COLORS = ["#8b5cf6","#22c55e","#3b82f6","#f97316","#ec4899","#14b8a6","#eab308","#f43f5e"];
 
-function escapeHtml(s){return String(s ?? "").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
-function uid(){return (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);}
+function escapeHtml(s){return String(s ?? "").replace(/[&<>\"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]));}
+function uid(){return (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);} 
 function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
 function splitStepList(raw){
   const tokens = String(raw || "").trim().split(/\s+/).filter(Boolean);
@@ -163,7 +163,7 @@ function dayKey(ms){
 function fmtShort(ms){return new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,month:"short",day:"numeric"}).format(new Date(ms));}
 function fmtTime(ms){return new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,hour:"numeric",minute:"2-digit"}).format(new Date(ms));}
 function fmtDateTime(ms){return new Intl.DateTimeFormat("en-US",{timeZone:settings.timezone,month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(ms));}
-function timeToMinutes(v){const [h,m]=String(v || "00:00").split(":").map(Number); return clamp((h||0)*60 + (m||0),0,1439);}
+function timeToMinutes(v){const [h,m]=String(v || "00:00").split(":").map(Number); return clamp((h||0)*60 + (m||0),0,1439);} 
 function toast(msg){
   ui.toast.textContent = msg;
   ui.toast.classList.add("show");
@@ -173,10 +173,7 @@ function setStatus(msg){ui.statusLine.textContent = msg || "";}
 function clearAutoAdvance(){ if(autoAdvanceTimer){ clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; } }
 
 function loadSettings(){
-  try{
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-    Object.assign(settings,saved);
-  }catch{}
+  try{ const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"); Object.assign(settings,saved); }catch{}
   if("deadlineEnabled" in settings && !("defaultDeadlineEnabled" in settings)) settings.defaultDeadlineEnabled = !!settings.deadlineEnabled;
   if("deadlineDateISO" in settings && !("defaultDeadlineDateISO" in settings)) settings.defaultDeadlineDateISO = settings.deadlineDateISO || "";
   if("deadlineTime" in settings && !("defaultDeadlineTime" in settings)) settings.defaultDeadlineTime = settings.deadlineTime || "09:00";
@@ -192,10 +189,7 @@ function loadSettings(){
   if(!settings.collapsed) settings.collapsed = {};
 }
 function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
-function syncToggleButton(btn, active){
-  if(!btn) return;
-  btn.setAttribute("aria-pressed", active ? "true" : "false");
-}
+function syncToggleButton(btn, active){ if(!btn) return; btn.setAttribute("aria-pressed", active ? "true" : "false"); }
 function renderDeckTabs(){
   if(!ui.subjectSwitcher || !ui.deckTabs) return;
   ui.subjectSwitcher.classList.toggle("hidden", deckCache.length === 0);
@@ -216,16 +210,9 @@ function renderDeckTabs(){
     ui.deckTabs.appendChild(btn);
   }
 }
-function selectedDeck(){
-  return deckCache.find(deck=>deck.id === settings.selectedDeckId) || null;
-}
-function selectedDeckRules(){
-  return selectedDeck() || deckRulesFromSettings();
-}
-function ensureSelectedDeck(){
-  if(settings.selectedDeckId && deckCache.some(deck=>deck.id === settings.selectedDeckId)) return;
-  settings.selectedDeckId = deckCache.find(deck=>deck.active !== false)?.id || deckCache[0]?.id || "";
-}
+function selectedDeck(){ return deckCache.find(deck=>deck.id === settings.selectedDeckId) || null; }
+function selectedDeckRules(){ return selectedDeck() || deckRulesFromSettings(); }
+function ensureSelectedDeck(){ if(settings.selectedDeckId && deckCache.some(deck=>deck.id === settings.selectedDeckId)) return; settings.selectedDeckId = deckCache.find(deck=>deck.active !== false)?.id || deckCache[0]?.id || ""; }
 function syncDeckSettingsFields(){
   const rules = selectedDeck();
   const deck = selectedDeck();
@@ -1135,28 +1122,9 @@ async function gradeCard(gradeInt, meta={}){
   await nextCard();
 }
 
-// Remove injected rerate UI and functions; implement retroactive grading on normal grade flow instead.
-
 async function undoLastReview(){
   const entry = reviewUndoStack.pop();
   if(!entry) return;
-  if(entry.type === 'update'){
-    // Restore previous card state and restore the previous review values
-    await db.transaction('rw', db.cards, db.reviews, async ()=>{
-      await db.cards.put(entry.beforeCard);
-      await db.reviews.update(entry.reviewId, entry.oldReview);
-    });
-    reviewRedoStack.push(entry);
-    currentCard = entry.beforeCard;
-    activeSession = activeSession || {source:"custom", session_key:`custom-${Date.now()}`, planned_ms:Date.now(), deck_id:entry.beforeCard.deck_id};
-    await buildQueue(activeSession?.source === "custom");
-    const bucket = bucketForCard(entry.beforeCard);
-    queueStats[bucket] = Math.max(0, (queueStats[bucket] || 0) - 1);
-    showQuestion(entry.beforeCard);
-    await refreshEverything();
-    return;
-  }
-
   await db.transaction("rw", db.cards, db.reviews, async ()=>{
     await db.cards.put(entry.beforeCard);
     if(entry.reviewId != null) await db.reviews.delete(entry.reviewId);
@@ -1174,17 +1142,6 @@ async function undoLastReview(){
 async function redoLastReview(){
   const entry = reviewRedoStack.pop();
   if(!entry) return;
-  if(entry.type === 'update'){
-    // Reapply the updated review & card state
-    await db.transaction('rw', db.cards, db.reviews, async ()=>{
-      await db.cards.put(entry.afterCard);
-      await db.reviews.update(entry.reviewId, {rating: entry.newMeta.rating, user_answer: entry.newMeta.user_answer || "", matched_answer: entry.newMeta.matched_answer || "", wrong_percent: entry.newMeta.wrong_percent ?? null});
-    });
-    reviewUndoStack.push(entry);
-    await nextCard();
-    return;
-  }
-
   let reviewId = null;
   await db.transaction("rw", db.cards, db.reviews, async ()=>{
     await db.cards.put(entry.afterCard);
@@ -1201,9 +1158,46 @@ async function redoLastReview(){
   await nextCard();
 }
 
+// Restore missing helpers: openEditCard, saveCurrentCardEdits, refreshEverything
+function openEditCard(){
+  if(!currentCard) return;
+  ui.editFront.value = currentCard.front_plain || "";
+  ui.editBack.value = currentCard.back_plain || "";
+  ui.editAccepted.value = (currentCard.accepted || []).join("; ");
+  ui.editExplanation.value = (currentCard.explanation_html || "").replace(/<[^>]+>/g,"");
+  ui.editCardDialog.showModal();
+}
+
+async function saveCurrentCardEdits(){
+  if(!currentCard) return;
+  const front = ui.editFront.value.trim();
+  const back = ui.editBack.value.trim();
+  const accepted = ui.editAccepted.value.split(";").map(s=>s.trim()).filter(Boolean);
+  const explanation = ui.editExplanation.value.trim();
+  await db.cards.update(currentCard.id, {
+    front_plain:front, front_html:escapeHtml(front), spoken_front:front,
+    back_plain:back, back_html:escapeHtml(back), accepted,
+    explanation_html:explanation ? escapeHtml(explanation) : ""
+  });
+  ui.editCardDialog.close();
+  const updated = await db.cards.get(currentCard.id);
+  if(updated) showQuestion(updated);
+  await refreshEverything();
+}
+
+async function refreshEverything(){
+  try{
+    deckCache = await getDecks();
+    syncUI();
+    if(typeof refreshStats === 'function') await refreshStats();
+    if(typeof refreshProgress === 'function') await refreshProgress();
+    if(typeof refreshPlan === 'function') await refreshPlan();
+    if(typeof refreshDecksUI === 'function') await refreshDecksUI();
+  }catch(err){ console.error('refreshEverything failed', err); }
+}
+
 // ...existing code...
 
-// Update keyboard handlers to call handleGrade instead of gradeCard directly
 window.addEventListener("keydown", async e=>{
   if(!currentCard || anyModalOpen()) return;
   if((e.key === " " || e.key === "Enter") && !isEditableShortcutTarget(e.target)){
@@ -1224,7 +1218,7 @@ window.addEventListener("keydown", async e=>{
 ui.csvFile.addEventListener("change", async e=>{
   const file = e.target.files?.[0];
   if(!file) return;
-  try{ await importCSV(file); } catch(err){ console.error(err); toast("Import failed."); }
+  try{ await importCSV(file); } catch(err){ console.error(err); toast(`Import failed: ${err && err.message ? err.message : String(err)}`); }
   finally{ ui.csvFile.value = ""; }
 });
 document.addEventListener("click", e=>{
@@ -1332,3 +1326,26 @@ ui.btnDeleteSelectedCards.addEventListener("click", async ()=>{
 });
 ui.btnCloseEditCard.addEventListener("click", ()=>ui.editCardDialog.close());
 ui.btnSaveEditCard.addEventListener("click", saveCurrentCardEdits);
+
+document.querySelectorAll(".collapse-btn").forEach(btn=>btn.addEventListener("click", ()=>{
+  const panel = btn.closest("[data-panel-id]");
+  const id = panel.dataset.panelId;
+  settings.collapsed[id] = !settings.collapsed[id];
+  saveSettings();
+  applyPanelLayout();
+}));
+
+bindSettings();
+loadSettings();
+capStudyWindowEnd();
+syncUI();
+applyPanelLayout();
+setupVoice();
+await refreshEverything();
+
+const existing = await db.cards.count();
+if(existing){
+  await nextCard();
+}else{
+  ui.inputRow.classList.toggle("hidden", !settings.typingMode);
+}
