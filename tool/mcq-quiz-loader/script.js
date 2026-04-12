@@ -90,14 +90,22 @@ function labelToIndex(label){
 }
 
 function getChoiceEntries(row){
-  return Object.entries(row || {})
-    .map(([key,value])=>({
-      label: String(key || '').trim().toUpperCase(),
-      value: String(value ?? '')
-    }))
-    .filter(entry=>labelToIndex(entry.label) !== null)
-    .sort((a,b)=>labelToIndex(a.label) - labelToIndex(b.label))
-    .filter(entry=>entry.value.trim() !== '');
+  const lookup = new Map(
+    Object.entries(row || {}).map(([key, value])=>[
+      String(key || '').trim().toUpperCase(),
+      String(value ?? '')
+    ])
+  );
+  const entries = [];
+  for(let i = 0; i < 702; i++){
+    const label = indexToLabel(i);
+    if(!lookup.has(label)) break;
+    const value = lookup.get(label);
+    if(String(value).trim() !== ''){
+      entries.push({label, value});
+    }
+  }
+  return entries;
 }
 
 function parseAnswer(val, choiceEntries=[]){
