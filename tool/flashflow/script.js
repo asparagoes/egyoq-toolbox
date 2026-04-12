@@ -934,7 +934,7 @@ function triggerRevealFromShortcut(){
   if(settings.typingMode && settings.autoRateTyping && info){
     const target = info.best || currentCard.accepted?.[0] || currentCard.back_plain || "";
     const wrong = wrongPercent(info.user, target);
-    scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong}, wrong);
+    scheduleAutoAdvance(autoGradeFromWrong(wrong), {user_answer:info.user, matched_answer:target, wrong_percent:wrong});
   }
 }
 
@@ -1135,9 +1135,28 @@ async function gradeCard(gradeInt, meta={}){
   await nextCard();
 }
 
+// Remove injected rerate UI and functions; implement retroactive grading on normal grade flow instead.
+
 async function undoLastReview(){
   const entry = reviewUndoStack.pop();
   if(!entry) return;
+  if(entry.type === 'update'){
+    // Restore previous card state and restore the previous review values
+    await db.transaction('rw', db.cards, db.reviews, async ()=>{
+      await db.cards.put(entry.beforeCard);
+      await db.reviews.update(entry.reviewId, entry.oldReview);
+    });
+    reviewRedoStack.push(entry);
+    currentCard = entry.beforeCard;
+    activeSession = activeSession || {source:"custom", session_key:`custom-${Date.now()}`, planned_ms:Date.now(), deck_id:entry.beforeCard.deck_id};
+    await buildQueue(activeSession?.source === "custom");
+    const bucket = bucketForCard(entry.beforeCard);
+    queueStats[bucket] = Math.max(0, (queueStats[bucket] || 0) - 1);
+    showQuestion(entry.beforeCard);
+    await refreshEverything();
+    return;
+  }
+
   await db.transaction("rw", db.cards, db.reviews, async ()=>{
     await db.cards.put(entry.beforeCard);
     if(entry.reviewId != null) await db.reviews.delete(entry.reviewId);
@@ -1155,6 +1174,17 @@ async function undoLastReview(){
 async function redoLastReview(){
   const entry = reviewRedoStack.pop();
   if(!entry) return;
+  if(entry.type === 'update'){
+    // Reapply the updated review & card state
+    await db.transaction('rw', db.cards, db.reviews, async ()=>{
+      await db.cards.put(entry.afterCard);
+      await db.reviews.update(entry.reviewId, {rating: entry.newMeta.rating, user_answer: entry.newMeta.user_answer || "", matched_answer: entry.newMeta.matched_answer || "", wrong_percent: entry.newMeta.wrong_percent ?? null});
+    });
+    reviewUndoStack.push(entry);
+    await nextCard();
+    return;
+  }
+
   let reviewId = null;
   await db.transaction("rw", db.cards, db.reviews, async ()=>{
     await db.cards.put(entry.afterCard);
@@ -1171,511 +1201,25 @@ async function redoLastReview(){
   await nextCard();
 }
 
-async function nextCard(customStart=false){
-  clearAutoAdvance();
-  if(customStart){
-    activeSession = {source:"custom", session_key:`custom-${Date.now()}`, planned_ms:Date.now(), deck_id:settings.selectedDeckId || ""};
-  }else if(!activeSession || activeSession.source !== "custom"){
-    activeSession = pickSession();
+// ...existing code...
+
+// Update keyboard handlers to call handleGrade instead of gradeCard directly
+window.addEventListener("keydown", async e=>{
+  if(!currentCard || anyModalOpen()) return;
+  if((e.key === " " || e.key === "Enter") && !isEditableShortcutTarget(e.target)){
+    e.preventDefault();
+    if(document.activeElement instanceof HTMLElement && document.activeElement.matches("button")) document.activeElement.blur();
+    triggerRevealFromShortcut();
   }
-  await buildQueue(activeSession?.source === "custom");
-  await refreshEverything();
-  if(!queue.length){
-    currentCard = null;
-    resetRevealUI();
-    renderMeta(null);
-    ui.inputRow.classList.add("hidden");
-    ui.btnShowAnswer.classList.add("hidden");
-    ui.btnEditCard.classList.add("hidden");
-    ui.btnDeleteCard.classList.add("hidden");
-    ui.question.innerHTML = `<div class="empty-card"><div class="big">${activeSession?.source === "custom" ? "✅" : "🌙"}</div><div class="title">${activeSession?.source === "custom" ? "Custom session complete" : "All caught up"}</div><div class="sub">${activeSession?.source === "custom" ? "No nearby cards left to review." : "No due cards right now. Come back at the next suggested session."}</div></div>`;
-    ui.sessionLine.textContent = "Session: —";
-    activeSession = null;
-    return;
+  if(e.key === "ArrowLeft" && !isEditableShortcutTarget(e.target)){ e.preventDefault(); await undoLastReview(); }
+  if(e.key === "ArrowRight" && !isEditableShortcutTarget(e.target)){ e.preventDefault(); await redoLastReview(); }
+  if(["1","2","3","4"].includes(e.key) && !ui.ratings.classList.contains("hidden") && !isEditableShortcutTarget(e.target)){
+    const user = settings.typingMode ? (ui.answerInput.value || "") : "";
+    const matched = bestMatch(user, currentCard.accepted || []);
+    const wrong = (settings.typingMode && user.trim()) ? wrongPercent(user, matched || currentCard.back_plain || "") : null;
+    await handleGrade(Number(e.key), {user_answer:user, matched_answer:matched, wrong_percent:wrong});
   }
-  const next = queue.shift();
-  const bucket = bucketForCard(next);
-  queueStats[bucket] = Math.max(0, (queueStats[bucket] || 0) - 1);
-  await refreshStats();
-  await refreshProgress();
-  showQuestion(next);
-}
-
-async function refreshStats(){
-  const activeDeckIds = await getActiveDeckIds();
-  lastDeckSignature = deckSignature(activeDeckIds);
-  const selected = selectedDeck();
-  const cards = await getSelectedDeckCards();
-  const due = cards.filter(c=>c.due_ms <= Date.now() || isNew(c)).length;
-  if(selected){
-    ui.statsText.textContent = `${selected.name} · ${cards.length} cards · ${due} due${selected.active === false ? " · inactive in calendar" : ""}`;
-  }else{
-    ui.statsText.textContent = cards.length ? `${activeDeckIds.length} active deck(s) · ${cards.length} cards · ${due} due` : "No active deck";
-  }
-  ui.queueLabel.innerHTML = `Queue:
-    <span class="queue-pill again">${queueStats.again || 0}</span>
-    <span class="queue-pill hard">${queueStats.hard || 0}</span>
-    <span class="queue-pill good">${queueStats.good || 0}</span>`;
-  ui.btnHistoryBack.disabled = reviewUndoStack.length === 0;
-  ui.btnHistoryForward.disabled = reviewRedoStack.length === 0;
-}
-
-async function refreshProgress(){
-  const total = (queueStats.again || 0) + (queueStats.hard || 0) + (queueStats.good || 0);
-  if(!total){
-    ui.progressText.textContent = "Learning lanes";
-    ui.progressPct.textContent = "0 total";
-    ui.progressFillAgain.style.width = "0%";
-    ui.progressFillHard.style.width = "0%";
-    ui.progressFillGood.style.width = "0%";
-    return;
-  }
-  ui.progressText.textContent = `Again ${queueStats.again || 0} • Hard ${queueStats.hard || 0} • Good ${queueStats.good || 0}`;
-  ui.progressPct.textContent = `${total} total`;
-  ui.progressFillAgain.style.width = `${((queueStats.again || 0) / total) * 100}%`;
-  ui.progressFillHard.style.width = `${((queueStats.hard || 0) / total) * 100}%`;
-  ui.progressFillGood.style.width = `${((queueStats.good || 0) / total) * 100}%`;
-}
-
-async function computePlan(){
-  const decks = (await getDecks()).filter(deck=>deck.active !== false);
-  const cards = await getActiveCards();
-  if(!cards.length) return [];
-  const now = Date.now();
-  const sessions = [];
-  for(const deck of decks){
-    const deckCards = cards.filter(card=>card.deck_id === deck.id);
-    if(!deckCards.length) continue;
-    if(deck.sessionStartMode === "manual") continue;
-    const rules = capDeckStudyWindowEnd(deck);
-    const dl = deadlineMs(rules);
-    const horizon = dl || (now + DAY_MS * 4);
-    const initialStartMs = deck.sessionStartMode === "custom" && deck.sessionStartAt
-      ? new Date(deck.sessionStartAt).getTime()
-      : now;
-    const startAnchor = Number.isFinite(initialStartMs) ? Math.max(now, initialStartMs) : now;
-    const startDay = new Date(startAnchor); startDay.setHours(0,0,0,0);
-    const endDay = new Date(horizon); endDay.setHours(0,0,0,0);
-    const startMin = timeToMinutes(rules.studyStartTime);
-    let endMin = Math.max(startMin + 60, timeToMinutes(rules.studyEndTime));
-    if(dl) endMin = Math.min(endMin, timeToMinutes(rules.deadlineTime));
-    for(let day = startDay.getTime(); day <= endDay.getTime(); day += DAY_MS){
-      const dayEnd = day + DAY_MS - 1;
-      const load = deckCards.filter(c => c.due_ms <= dayEnd || isNew(c));
-      if(!load.length) continue;
-      const count = dl ? clamp(Math.ceil(load.length / 18), 1, 4) : clamp(Math.ceil(Math.min(load.length, 40) / 20), 1, 2);
-      const expectedPer = clamp(Math.ceil(load.length / count), 10, 35);
-      const span = endMin - startMin;
-      for(let i=0;i<count;i++){
-        const minute = Math.round(startMin + (span * (i + 1) / (count + 1)));
-        const at = day + minute * 60000;
-        if(at < startAnchor - 3600000) continue;
-        if(dl && at > dl) continue;
-        sessions.push({
-          session_key:`rec-${deck.id}-${at}`,
-          time_ms:at,
-          source:"recommended",
-          expected_cards:expectedPer,
-          deck_id:deck.id,
-          deck_name:deck.name
-        });
-      }
-    }
-  }
-  return sessions.sort((a,b)=>a.time_ms - b.time_ms).slice(0, 12);
-}
-
-function pickSession(){
-  const selectedId = settings.selectedDeckId || "";
-  const sourcePlan = selectedId ? lastPlan.filter(item=>item.deck_id === selectedId) : lastPlan;
-  if(!sourcePlan.length) return {source:"recommended", session_key:`live-${Date.now()}`, planned_ms:Date.now(), deck_id:selectedId};
-  const now = Date.now();
-  const nearest = [...sourcePlan].sort((a,b)=>Math.abs(a.time_ms-now) - Math.abs(b.time_ms-now))[0];
-  return {source:"recommended", session_key:nearest.session_key, planned_ms:nearest.time_ms, deck_id:nearest.deck_id};
-}
-
-function renderCalendar(planItems, decks){
-  const cursor = new Date(calendarCursor);
-  cursor.setDate(1);
-  const monthLabel = new Intl.DateTimeFormat("en-US",{month:"long", year:"numeric"}).format(cursor);
-  ui.calendarTitle.textContent = monthLabel;
-  ui.calendarGrid.innerHTML = "";
-  const weekdayLabels = ["S","M","T","W","T","F","S"];
-  weekdayLabels.forEach(label=>{
-    const cell = document.createElement("div");
-    cell.className = "calendar-weekday";
-    cell.textContent = label;
-    ui.calendarGrid.appendChild(cell);
-  });
-  const firstWeekday = cursor.getDay();
-  const firstCell = new Date(cursor);
-  firstCell.setDate(1 - firstWeekday);
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  for(let i=0;i<42;i++){
-    const cellDate = new Date(firstCell);
-    cellDate.setDate(firstCell.getDate() + i);
-    const cell = document.createElement("div");
-    cell.className = "calendar-cell";
-    if(cellDate.getMonth() !== cursor.getMonth()) cell.classList.add("muted");
-    const compare = new Date(cellDate); compare.setHours(0,0,0,0);
-    if(compare.getTime() === today.getTime()) cell.classList.add("today");
-    const dotWrap = document.createElement("div");
-    dotWrap.className = "calendar-dots";
-    const matches = planItems.filter(item=>{
-      const d = new Date(item.time_ms);
-      return d.getFullYear() === cellDate.getFullYear() && d.getMonth() === cellDate.getMonth() && d.getDate() === cellDate.getDate();
-    });
-    const byDeck = new Map();
-    matches.forEach(item=>byDeck.set(item.deck_id, item));
-    [...byDeck.values()].slice(0,4).forEach(item=>{
-      const dot = document.createElement("span");
-      const deck = decks.find(entry=>entry.id === item.deck_id);
-      dot.style.background = deck?.color || DEFAULT_DECK_RULES.color;
-      dot.title = `${item.deck_name} · ${fmtShort(item.time_ms)} ${fmtTime(item.time_ms)}`;
-      dotWrap.appendChild(dot);
-    });
-    cell.innerHTML = `<div class="day-num">${cellDate.getDate()}</div>`;
-    cell.appendChild(dotWrap);
-    ui.calendarGrid.appendChild(cell);
-  }
-  const visibleDecks = decks.filter(deck=>deck.active !== false);
-  ui.calendarLegend.classList.toggle("hidden", visibleDecks.length <= 1);
-  ui.calendarLegend.innerHTML = visibleDecks.map(deck=>`
-    <div class="calendar-legend-item"><span style="background:${escapeHtml(deck.color)}"></span><div>${escapeHtml(deck.name)}</div></div>
-  `).join("");
-}
-
-async function refreshPlan(){
-  const activeDecks = (await getDecks()).filter(deck=>deck.active !== false);
-  const selected = selectedDeck();
-  lastPlan = await computePlan();
-  const deck = selected;
-  const selectedPlan = deck ? lastPlan.filter(item=>item.deck_id === deck.id) : [];
-  renderCalendar(lastPlan, activeDecks);
-
-  if(!deck){
-    ui.planSummary.textContent = "Select a deck to view its study plan.";
-    ui.sessionList.innerHTML = "";
-    ui.planGoalValue.textContent = "0 / 0";
-    ui.planGoalSub.textContent = "Recommended sessions completed over total recommended sessions.";
-    return;
-  }
-
-  ui.planSummary.innerHTML = `<strong>${escapeHtml(deck.name)}</strong> is the current study deck. The list below shows only this deck's recommended sessions.`;
-
-  const logs = (await db.sessions.toArray()).filter(x=>x.deck_scope === lastDeckSignature);
-  const completedKeys = new Set(logs.filter(x=>x.source === "recommended").map(x=>x.session_key));
-  const doneTotal = selectedPlan.filter(item=>completedKeys.has(item.session_key)).length;
-  ui.planGoalValue.textContent = `${doneTotal} / ${selectedPlan.length}`;
-  ui.planGoalSub.textContent = `${selectedPlan.length} recommended session(s) for ${deck.name}. Calendar dots still show all active decks.`;
-
-  ui.sessionList.innerHTML = "";
-  if(!selectedPlan.length){
-    ui.sessionList.innerHTML = `<div class="session-row"><div class="session-main">No sessions yet</div><div class="session-sub">Cards will show up once due.</div></div>`;
-    return;
-  }
-  for(const item of selectedPlan){
-    const log = logs.find(x=>x.session_key === item.session_key);
-    const row = document.createElement("div");
-    row.className = `session-row ${log ? "done" : item.time_ms < Date.now() ? "missed" : ""}`;
-    const day = new Intl.DateTimeFormat("en-US",{day:"2-digit"}).format(new Date(item.time_ms));
-    const month = new Intl.DateTimeFormat("en-US",{month:"short"}).format(new Date(item.time_ms));
-    const deckColor = activeDecks.find(entry=>entry.id === item.deck_id)?.color || DEFAULT_DECK_RULES.color;
-    row.innerHTML = `
-      <div class="session-date">
-        <div class="session-day">${day}</div>
-        <div class="session-month">${month}</div>
-      </div>
-      <div class="session-divider"></div>
-      <div class="session-copy">
-        <div class="session-line-main"><span>${new Intl.DateTimeFormat("en-US",{weekday:"short",hour:"numeric",minute:"2-digit"}).format(new Date(item.time_ms))}</span><span>~${item.expected_cards} cards</span></div>
-        <div class="session-line-sub"><span class="session-deck-dot" style="background:${escapeHtml(deckColor)}"></span> ${escapeHtml(item.deck_name || "Deck")}</div>
-      </div>
-      <div class="badge">${log ? `Done · ${log.cards_reviewed || 1}` : item.time_ms < Date.now() ? "Missed" : "Planned"}</div>`;
-    ui.sessionList.appendChild(row);
-  }
-}
-
-function deckDeadlineSummary(deck){
-  return deck.deadlineEnabled && deck.deadlineDateISO
-    ? `Deadline ${deck.deadlineDateISO} ${deck.deadlineTime}`
-    : "No deadline";
-}
-
-async function refreshDecksUI(){
-  const decks = await getDecks();
-  ui.decksSummary.textContent = decks.length ? `${decks.filter(d=>d.active !== false).length} active · ${decks.length} total deck(s)` : "No decks yet.";
-  ui.decksList.innerHTML = "";
-  for(const deck of decks){
-    const count = await db.cards.where("deck_id").equals(deck.id).count();
-    const row = document.createElement("div");
-    row.className = "deck-row";
-    row.classList.toggle("current", settings.selectedDeckId === deck.id);
-    row.classList.toggle("inactive", deck.active === false);
-    row.innerHTML = `
-      <div class="deck-top">
-        <div>
-          <div class="deck-name">${escapeHtml(deck.name)}</div>
-          <div class="deck-meta">${count} cards · ${deck.active !== false ? "Active in calendar" : "Hidden from calendar"}${settings.selectedDeckId === deck.id ? " · Selected" : ""}</div>
-        </div>
-        <input class="deck-color" data-role="deck-color" type="color" value="${escapeHtml(deck.color)}" title="Deck color">
-      </div>
-      <div class="deck-summary">
-        <span class="deck-rule">${escapeHtml(deckDeadlineSummary(deck))}</span>
-        <span class="deck-rule">Start: ${deck.sessionStartMode === "custom" && deck.sessionStartAt ? escapeHtml(fmtDateTime(new Date(deck.sessionStartAt).getTime())) : deck.sessionStartMode === "manual" ? "Manual" : "Now"}</span>
-        <span class="deck-rule">Learning: ${escapeHtml(deck.learningSteps)}</span>
-      </div>
-      <div class="deck-actions"></div>
-      <div class="deck-mini-grid">
-        <div class="field">
-          <label>First session</label>
-          <select data-role="session-start-mode">
-            <option value="now" ${deck.sessionStartMode === "now" ? "selected" : ""}>Immediately now</option>
-            <option value="custom" ${deck.sessionStartMode === "custom" ? "selected" : ""}>Custom time</option>
-            <option value="manual" ${deck.sessionStartMode === "manual" ? "selected" : ""}>Manual play only</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Custom time</label>
-          <input data-role="session-start-at" type="datetime-local" value="${escapeHtml(deck.sessionStartAt || "")}">
-        </div>
-      </div>`;
-    const actions = row.querySelector(".deck-actions");
-
-    const toggle = document.createElement("label");
-    toggle.className = "ck-line";
-    toggle.style.margin = "0";
-    toggle.innerHTML = `<input type="checkbox" ${deck.active !== false ? "checked" : ""}><span>Active</span>`;
-    toggle.querySelector("input").addEventListener("change", async e=>{
-      await db.decks.update(deck.id, {active:e.target.checked});
-      activeSession = null;
-      await refreshEverything();
-      await nextCard();
-    });
-    actions.appendChild(toggle);
-
-    const solo = document.createElement("button");
-    solo.className = "mini-btn"; solo.textContent = "Study this only";
-    solo.onclick = async ()=>{
-      await setOnlyDeck(deck.id);
-      settings.selectedDeckId = deck.id;
-      saveSettings();
-      activeSession = null;
-      await refreshEverything();
-      await nextCard();
-    };
-    actions.appendChild(solo);
-
-    const rename = document.createElement("button");
-    rename.className = "mini-btn"; rename.textContent = "Rename";
-    rename.onclick = async ()=>{ if(await renameDeck(deck)){ await refreshEverything(); await nextCard(); } };
-    actions.appendChild(rename);
-
-    const selectBtn = document.createElement("button");
-    selectBtn.className = `mini-btn deck-select-btn ${settings.selectedDeckId === deck.id ? "active" : ""}`; selectBtn.textContent = settings.selectedDeckId === deck.id ? "Selected" : "Select";
-    selectBtn.onclick = async ()=>{
-      settings.selectedDeckId = deck.id;
-      saveSettings();
-      syncUI();
-      await refreshEverything();
-      if(currentCard?.deck_id !== deck.id) await nextCard();
-    };
-    actions.appendChild(selectBtn);
-
-    const exportBtn = document.createElement("button");
-    exportBtn.className = "mini-btn"; exportBtn.textContent = "Export";
-    exportBtn.onclick = async ()=> exportCardsCsv((await db.cards.where("deck_id").equals(deck.id).toArray()), `${deck.name}.csv`);
-    actions.appendChild(exportBtn);
-
-    const del = document.createElement("button");
-    del.className = "mini-btn danger"; del.textContent = "Delete";
-    del.onclick = async ()=>{ if(await deleteDeck(deck)){ activeSession = null; await refreshEverything(); await nextCard(); } };
-    actions.appendChild(del);
-    row.querySelector('[data-role="deck-color"]').addEventListener("input", async e=>{
-      await db.decks.update(deck.id, {color:e.target.value});
-      await refreshEverything();
-    });
-    row.querySelector('[data-role="session-start-mode"]').addEventListener("change", async e=>{
-      await db.decks.update(deck.id, {sessionStartMode:e.target.value});
-      activeSession = null;
-      await refreshEverything();
-    });
-    row.querySelector('[data-role="session-start-at"]').addEventListener("change", async e=>{
-      await db.decks.update(deck.id, {sessionStartAt:e.target.value});
-      activeSession = null;
-      await refreshEverything();
-    });
-
-    ui.decksList.appendChild(row);
-  }
-}
-
-async function refreshEverything(){
-  deckCache = await getDecks();
-  syncUI();
-  await refreshStats();
-  await refreshProgress();
-  await refreshPlan();
-  await refreshDecksUI();
-}
-
-function exportCardsCsv(cards, filename="cards.csv"){
-  const rows = cards.map(c=>({
-    front:c.front_plain || "",
-    back:c.back_plain || "",
-    answers:(c.accepted || []).join("; "),
-    explanation:(c.explanation_html || "").replace(/<[^>]+>/g,""),
-    deck:c.deck_name || "",
-    topic:c.meta?.topic || "",
-    difficulty:c.meta?.difficulty || "",
-    id:c.meta?.id || ""
-  }));
-  const csv = Papa.unparse(rows);
-  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-}
-
-async function openManageCards(){
-  const cards = await getSelectedDeckCards();
-  ui.manageCardList.innerHTML = "";
-  for(const card of cards){
-    const row = document.createElement("div");
-    row.className = "manage-row";
-    row.innerHTML = `
-      <input type="checkbox" data-card-id="${card.id}">
-      <div>
-        <div style="font-weight:700">${escapeHtml((card.front_plain || "").slice(0, 140))}</div>
-        <div class="hint" style="margin-top:4px">${escapeHtml(card.deck_name || "")}</div>
-      </div>
-      <button class="mini-btn danger" data-delete="${card.id}">Delete</button>`;
-    row.querySelector("[data-delete]").addEventListener("click", async ()=>{
-      await deleteCards([card.id]);
-      await refreshEverything();
-      ui.manageDialog.close();
-      await openManageCards();
-    });
-    ui.manageCardList.appendChild(row);
-  }
-  ui.manageDialog.showModal();
-}
-
-async function deleteCards(ids){
-  if(!ids.length) return;
-  if(!confirm(`Delete ${ids.length} card(s)?`)) return;
-  await db.transaction("rw", db.cards, db.reviews, async ()=>{
-    for(const cid of ids){
-      const reviewIds = await db.reviews.where("card_id").equals(cid).primaryKeys();
-      if(reviewIds.length) await db.reviews.bulkDelete(reviewIds);
-      await db.cards.delete(cid);
-    }
-  });
-}
-
-function openEditCard(){
-  if(!currentCard) return;
-  ui.editFront.value = currentCard.front_plain || "";
-  ui.editBack.value = currentCard.back_plain || "";
-  ui.editAccepted.value = (currentCard.accepted || []).join("; ");
-  ui.editExplanation.value = (currentCard.explanation_html || "").replace(/<[^>]+>/g,"");
-  ui.editCardDialog.showModal();
-}
-
-async function saveCurrentCardEdits(){
-  if(!currentCard) return;
-  const front = ui.editFront.value.trim();
-  const back = ui.editBack.value.trim();
-  const accepted = ui.editAccepted.value.split(";").map(s=>s.trim()).filter(Boolean);
-  const explanation = ui.editExplanation.value.trim();
-  await db.cards.update(currentCard.id, {
-    front_plain:front, front_html:escapeHtml(front), spoken_front:front,
-    back_plain:back, back_html:escapeHtml(back), accepted,
-    explanation_html:explanation ? escapeHtml(explanation) : ""
-  });
-  ui.editCardDialog.close();
-  const updated = await db.cards.get(currentCard.id);
-  if(updated) showQuestion(updated);
-  await refreshEverything();
-}
-
-// Add a small "Rerate" control to allow retroactive grading of the most recent review for the current card.
-(function(){
-  const qc = document.querySelector(".queue-controls");
-  if(qc && !document.getElementById("btnRerate")){
-    const rerateBtn = document.createElement("button");
-    rerateBtn.className = "history-btn";
-    rerateBtn.id = "btnRerate";
-    rerateBtn.type = "button";
-    rerateBtn.title = "Rerate last review";
-    rerateBtn.textContent = "⟳ Rerate";
-    qc.appendChild(rerateBtn);
-    rerateBtn.addEventListener("click", async ()=>{
-      if(!currentCard){ toast("No card to rerate"); return; }
-      try{ await openRerateLast(); }catch(err){ console.error(err); toast("Rerate failed"); }
-    });
-  }
-})();
-
-async function openRerateLast(){
-  if(!currentCard) return toast("No card to rerate");
-  const reviews = await db.reviews.where("card_id").equals(currentCard.id).sortBy("review_ms");
-  if(!reviews || !reviews.length) return toast("No reviews found for this card");
-  const last = reviews[reviews.length - 1];
-  const when = new Date(last.review_ms).toLocaleString();
-  const input = prompt(`Last review: rating ${last.rating} at ${when}.\nEnter new rating (1=Again,2=Hard,3=Good,4=Easy):`, String(last.rating));
-  if(input == null) return; // cancelled
-  const newRating = Number(input.trim());
-  if(![1,2,3,4].includes(newRating)) return toast("Invalid rating");
-  if(newRating === last.rating) return toast("Rating unchanged");
-  if(!confirm(`Apply rating ${newRating} to the review from ${when}? This will recompute the card schedule.`)) return;
-  await replayAndApply(currentCard.id, last.id, newRating);
-}
-
-async function replayAndApply(cardId, targetReviewId, newRatingInt){
-  // Reconstruct the FSRS state by replaying all reviews for the card in chronological order,
-  // but substitute the target review's rating with the newRatingInt. Then update the card and
-  // replace the target review's rating in the DB. Finally refresh UI and progress.
-  const card = await db.cards.get(cardId);
-  if(!card) return toast("Card not found");
-  const reviews = await db.reviews.where("card_id").equals(cardId).sortBy("review_ms");
-  if(!reviews.length) return toast("No reviews to replay");
-
-  const deck = decorateDeck(await db.decks.get(card.deck_id));
-  const scheduler = makeScheduler(deck);
-
-  let fsrs_card = createEmptyCard(new Date(card.created_ms));
-  let lastResult = null;
-
-  for(const r of reviews){
-    const useRatingInt = (r.id === targetReviewId) ? newRatingInt : r.rating;
-    const ratingEnum = useRatingInt === 1 ? Rating.Again : useRatingInt === 2 ? Rating.Hard : useRatingInt === 3 ? Rating.Good : Rating.Easy;
-    try{
-      lastResult = scheduler.next(fsrs_card, new Date(r.review_ms), ratingEnum);
-      fsrs_card = lastResult.card;
-    }catch(err){ console.error('Replay error', err); return toast('Replay failed'); }
-  }
-
-  if(!lastResult) return toast('Replay produced no result');
-  let dueMs = lastResult.card.due instanceof Date ? lastResult.card.due.getTime() : Date.parse(lastResult.card.due);
-  dueMs = capDueToDeadline(dueMs, deck);
-
-  try{
-    await db.transaction('rw', db.cards, db.reviews, async ()=>{
-      await db.cards.update(cardId, {fsrs_card, due_ms: dueMs, queue_bucket: bucketForGrade(newRatingInt)});
-      await db.reviews.update(targetReviewId, {rating: newRatingInt});
-    });
-  }catch(err){ console.error(err); return toast('Failed to save rerate'); }
-
-  toast('Rerate applied');
-  // If the currently visible card is the same card, refresh its view to reflect the new state.
-  const updated = await db.cards.get(cardId);
-  if(currentCard && currentCard.id === cardId) showQuestion(updated, true);
-  await refreshEverything();
-}
+});
 
 ui.csvFile.addEventListener("change", async e=>{
   const file = e.target.files?.[0];
@@ -1737,7 +1281,7 @@ ui.ratings.addEventListener("click", async e=>{
   const user = settings.typingMode ? (ui.answerInput.value || "") : "";
   const matched = bestMatch(user, currentCard.accepted || []);
   const wrong = (settings.typingMode && user.trim()) ? wrongPercent(user, matched || currentCard.back_plain || "") : null;
-  await gradeCard(Number(btn.dataset.grade), {user_answer:user, matched_answer:matched, wrong_percent:wrong});
+  await handleGrade(Number(btn.dataset.grade), {user_answer:user, matched_answer:matched, wrong_percent:wrong});
 });
 
 ui.answerInput.addEventListener("keydown", e=>{
@@ -1759,7 +1303,7 @@ window.addEventListener("keydown", async e=>{
     const user = settings.typingMode ? (ui.answerInput.value || "") : "";
     const matched = bestMatch(user, currentCard.accepted || []);
     const wrong = (settings.typingMode && user.trim()) ? wrongPercent(user, matched || currentCard.back_plain || "") : null;
-    await gradeCard(Number(e.key), {user_answer:user, matched_answer:matched, wrong_percent:wrong});
+    await handleGrade(Number(e.key), {user_answer:user, matched_answer:matched, wrong_percent:wrong});
   }
 });
 
