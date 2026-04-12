@@ -131,10 +131,11 @@ function normalizeRow(r,idx){
   const stem=(r.Stem??r.stem??'').toString().trim();
   const choiceEntries=getChoiceEntries(r);
   const choices=choiceEntries.map(entry=>entry.value);
+  const choiceLabels=choiceEntries.map(entry=>entry.label);
   const ans=parseAnswer(r.Answer??r.answer??r.Correct??r.correct, choiceEntries);
   const explanation=(r.Explanation??r.explanation??'').toString();
   if(!stem||choices.length<1||ans===null) return null;
-  return {id,topic,diff,stem,choices,answer:ans,explanation};
+  return {id,topic,diff,stem,choices,choiceLabels,answer:ans,explanation};
 }
 
 function simpleCSVParse(text){
@@ -263,7 +264,8 @@ function getResultGroups(){
 
 function answerTextFor(q, idx){
   if(idx===undefined || idx===null || idx<0) return 'No answer selected';
-  return `${indexToLabel(idx)}. ${String(q.choices[idx] ?? '').trim()}`;
+  const label = q.choiceLabels?.[idx] || indexToLabel(idx);
+  return `${label}. ${String(q.choices[idx] ?? '').trim()}`;
 }
 
 function safeFilename(base){

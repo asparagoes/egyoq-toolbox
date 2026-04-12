@@ -84,7 +84,7 @@
 
     <!-- Schema note -->
     <div class="schema-note" style="margin-top:12px;">
-      <b>Required columns:</b> <code>ID</code> <code>Topic</code> <code>Difficulty</code> <code>Stem</code> choice columns like <code>A</code> <code>B</code> <code>C</code> … <code>Answer</code> <code>Explanation</code> — one or more choices are allowed. If XLSX fails offline, save as CSV instead.
+      <b>Required columns:</b> <code>ID</code> <code>Topic</code> <code>Difficulty</code> <code>Stem</code> choice columns like <code>A</code> <code>B</code> <code>C</code> … <code>Answer</code> <code>Explanation</code> — one or more choices are allowed, and later choice columns can be left blank per question. If XLSX fails offline, save as CSV instead.
     </div>
   </div>
 
@@ -181,7 +181,7 @@
       </div>
       <div class="modal-card">
         <h3><span class="help-chip warn">Required</span> Match the expected columns</h3>
-        <p>The safest format is <span class="help-mark">ID, Topic, Difficulty, Stem, A, B, C...</span> plus <span class="help-mark">Answer</span> and <span class="help-mark">Explanation</span>. The loader now accepts <span class="help-mark">one or more choice columns</span>, and <span class="help-mark">Answer</span> should point to the matching choice label like <span class="help-mark">A</span>, <span class="help-mark">B</span>, <span class="help-mark">C</span>, and so on.</p>
+        <p>The safest format is <span class="help-mark">ID, Topic, Difficulty, Stem, A, B, C...</span> plus <span class="help-mark">Answer</span> and <span class="help-mark">Explanation</span>. The loader accepts <span class="help-mark">one or more choice columns per question</span>, so one item can have 5 choices while another has 4, as long as the later unused choice cells are just left blank.</p>
       </div>
       <div class="modal-card">
         <h3><span class="help-chip">Default</span> Review all questions at once</h3>
