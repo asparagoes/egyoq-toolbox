@@ -70,6 +70,7 @@ function defaultUnitState() {
   return {
     submitted: false,
     wrongIDs: [],
+    retrySourceIDs: [],
     reviewFilter: 'all',
     retryMode: false,
     cursor: 0,
@@ -80,6 +81,7 @@ function normalizeUnitState(raw = {}) {
   return {
     submitted: !!raw.submitted,
     wrongIDs: Array.isArray(raw.wrongIDs) ? [...new Set(raw.wrongIDs.map(String))] : [],
+    retrySourceIDs: Array.isArray(raw.retrySourceIDs) ? [...new Set(raw.retrySourceIDs.map(String))] : [],
     reviewFilter: ['all', 'correct', 'incorrect', 'unanswered'].includes(raw.reviewFilter) ? raw.reviewFilter : 'all',
     retryMode: !!raw.retryMode,
     cursor: Number.isInteger(raw.cursor) && raw.cursor >= 0 ? raw.cursor : 0,
@@ -93,6 +95,20 @@ function showToast(msg, type = '') {
   toastTimer = setTimeout(() => {
     UI.toast.className = 'toast';
   }, 3000);
+}
+
+function scrollToTopAnchor() {
+  const target = document.querySelector('.sticky-panel') || document.querySelector('.wrap');
+  if (!target) return;
+  requestAnimationFrame(() => {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function scrollToResults() {
+  requestAnimationFrame(() => {
+    UI.results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
 function updateFileNameDisplay(name = '') {
@@ -356,7 +372,8 @@ function getUnitItems(unit) {
   if (!unit) return [];
   const state = getUnitState(unit.key);
   if (!state.retryMode) return unit.items;
-  return unit.items.filter(q => state.wrongIDs.includes(q.id));
+  const retryIDs = state.retrySourceIDs.length ? state.retrySourceIDs : state.wrongIDs;
+  return unit.items.filter(q => retryIDs.includes(q.id));
 }
 
 function getCurrentPool() {
@@ -1140,17 +1157,19 @@ function onSubmit() {
   const state = getCurrentUnitState();
   state.submitted = true;
   state.reviewFilter = 'all';
-  applyFeedback();
-  showResults();
   render();
+  scrollToResults();
 }
 
 function toggleRetryMode() {
   const state = getCurrentUnitState();
   if (state.retryMode) {
     state.retryMode = false;
+    state.retrySourceIDs = [];
+    state.reviewFilter = 'all';
     state.cursor = 0;
     render();
+    scrollToTopAnchor();
     return;
   }
   if (!state.wrongIDs.length) {
@@ -1158,10 +1177,12 @@ function toggleRetryMode() {
     return;
   }
   state.retryMode = true;
+  state.retrySourceIDs = [...state.wrongIDs];
   state.submitted = false;
   state.reviewFilter = 'all';
   state.cursor = 0;
   render();
+  scrollToTopAnchor();
 }
 
 function reshuffleBank() {
@@ -1283,18 +1304,22 @@ UI.splitBySet.addEventListener('change', () => {
   currentSetIndex = 0;
   resetStructuralState({ preserveAnswers: true });
   render();
+  scrollToTopAnchor();
 });
 UI.setSelect.addEventListener('change', () => {
   currentSetIndex = clamp(parseInt(UI.setSelect.value, 10) || 0, 0, Math.max(0, sets.length - 1));
   render();
+  scrollToTopAnchor();
 });
 UI.prevSetBtn.addEventListener('click', () => {
   currentSetIndex = clamp(currentSetIndex - 1, 0, Math.max(0, sets.length - 1));
   render();
+  scrollToTopAnchor();
 });
 UI.nextSetBtn.addEventListener('click', () => {
   currentSetIndex = clamp(currentSetIndex + 1, 0, Math.max(0, sets.length - 1));
   render();
+  scrollToTopAnchor();
 });
 UI.exportScope.addEventListener('change', saveSession);
 UI.exportScope.addEventListener('change', () => {
