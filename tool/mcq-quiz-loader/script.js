@@ -10,7 +10,6 @@ const UI = {
   reshuffleBtn: document.getElementById('reshuffleBtn'),
   prevSetBtn: document.getElementById('prevSetBtn'),
   nextSetBtn: document.getElementById('nextSetBtn'),
-  continueSetBtn: document.getElementById('continueSetBtn'),
   setSelect: document.getElementById('setSelect'),
   setSummary: document.getElementById('setSummary'),
   setControls: document.getElementById('setControls'),
@@ -458,7 +457,10 @@ function updateTop() {
 function updateSetControlsUI() {
   const show = UI.splitBySet.checked && sets.length > 0;
   UI.setControls.classList.toggle('hidden', !show);
-  if (!show) return;
+  if (!show) {
+    UI.nextSetBtn.classList.remove('btn-advance-ready');
+    return;
+  }
 
   UI.setSelect.innerHTML = '';
   sets.forEach((unit, idx) => {
@@ -473,7 +475,7 @@ function updateSetControlsUI() {
   const state = getCurrentUnitState();
   UI.prevSetBtn.disabled = currentSetIndex <= 0;
   UI.nextSetBtn.disabled = currentSetIndex >= sets.length - 1;
-  UI.continueSetBtn.classList.toggle('hidden', !(state.submitted && currentSetIndex < sets.length - 1));
+  UI.nextSetBtn.classList.toggle('btn-advance-ready', state.submitted && currentSetIndex < sets.length - 1);
   UI.setSummary.textContent = unit ? `${unit.title} · Questions ${unit.start + 1}–${unit.end + 1}` : 'Set 1 of 1';
 }
 
@@ -488,6 +490,12 @@ function updateRetryButtonUI() {
 
 function updateReshuffleButtonUI() {
   UI.reshuffleBtn.disabled = !bank.length || !UI.shuffleQ.checked;
+}
+
+function updatePrimaryActionUI() {
+  const state = getCurrentUnitState();
+  const shouldHighlightSubmit = bank.length > 0 && pool.length > 0 && !state.submitted && !state.retryMode;
+  UI.submitBtn.classList.toggle('btn-submit-ready', shouldHighlightSubmit);
 }
 
 function updateBankTag() {
@@ -787,6 +795,7 @@ function render() {
   updateReviewFilterUI();
   updateRetryButtonUI();
   updateReshuffleButtonUI();
+  updatePrimaryActionUI();
 
   if (!bank.length) {
     UI.quiz.innerHTML = `
@@ -1193,11 +1202,6 @@ UI.prevSetBtn.addEventListener('click', () => {
 });
 UI.nextSetBtn.addEventListener('click', () => {
   currentSetIndex = clamp(currentSetIndex + 1, 0, Math.max(0, sets.length - 1));
-  render();
-});
-UI.continueSetBtn.addEventListener('click', () => {
-  currentSetIndex = clamp(currentSetIndex + 1, 0, Math.max(0, sets.length - 1));
-  if (!UI.exportFilename.value.trim()) UI.exportFilename.value = getDefaultExportFilename();
   render();
 });
 UI.exportScope.addEventListener('change', saveSession);
