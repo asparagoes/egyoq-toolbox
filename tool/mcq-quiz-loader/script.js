@@ -14,6 +14,9 @@ const UI = {
   setSummary: document.getElementById('setSummary'),
   setControls: document.getElementById('setControls'),
   exportScope: document.getElementById('exportScope'),
+  exportRangeWrap: document.getElementById('exportRangeWrap'),
+  exportSetStart: document.getElementById('exportSetStart'),
+  exportSetEnd: document.getElementById('exportSetEnd'),
   exportFilename: document.getElementById('exportFilename'),
   downloadModal: document.getElementById('downloadModal'),
   displayMode: document.getElementById('displayMode'),
@@ -412,6 +415,7 @@ function getFilteredEmptyMessage() {
 function updateProgressBar() {
   const answered = bank.filter(q => answers.has(q.id)).length;
   const pct = bank.length ? Math.round((100 * answered) / bank.length) : 0;
+  UI.pbar.style.left = '0%';
   UI.pbar.style.width = `${pct}%`;
 
   const unit = getCurrentUnit();
@@ -432,8 +436,14 @@ function updateProgressBar() {
     UI.pBoundaries.appendChild(marker);
   }
   UI.pActiveSet.classList.remove('hidden');
-  UI.pActiveSet.style.left = `${(unit.start / bank.length) * 100}%`;
-  UI.pActiveSet.style.width = `${((unit.end - unit.start + 1) / bank.length) * 100}%`;
+  const unitLeft = (unit.start / bank.length) * 100;
+  const unitWidth = ((unit.end - unit.start + 1) / bank.length) * 100;
+  const answeredInUnit = unit.items.filter(q => answers.has(q.id)).length;
+  const fillRatio = unit.items.length ? answeredInUnit / unit.items.length : 0;
+  UI.pActiveSet.style.left = `${unitLeft}%`;
+  UI.pActiveSet.style.width = `${unitWidth}%`;
+  UI.pbar.style.left = `${unitLeft}%`;
+  UI.pbar.style.width = `${unitWidth * fillRatio}%`;
 }
 
 function updateTop() {
@@ -520,6 +530,8 @@ function serializeSession() {
       splitBySet: UI.splitBySet.checked,
       currentSetIndex,
       exportScope: UI.exportScope.value,
+      exportSetStart: UI.exportSetStart.value,
+      exportSetEnd: UI.exportSetEnd.value,
       exportFilename: UI.exportFilename.value,
     },
     answers: Array.from(answers.entries()),
@@ -550,7 +562,9 @@ function restoreSession() {
     UI.requireAll.checked = !!data.settings?.requireAll;
     UI.splitBySet.checked = !!data.settings?.splitBySet;
     UI.limit.value = String(data.settings?.limit || (bank.length || 50));
-    UI.exportScope.value = ['current', 'full'].includes(data.settings?.exportScope) ? data.settings.exportScope : 'current';
+    UI.exportScope.value = ['current', 'full', 'range'].includes(data.settings?.exportScope) ? data.settings.exportScope : 'current';
+    UI.exportSetStart.value = String(data.settings?.exportSetStart || '');
+    UI.exportSetEnd.value = String(data.settings?.exportSetEnd || '');
     UI.exportFilename.value = String(data.settings?.exportFilename || '');
     currentSetIndex = Number.isInteger(data.settings?.currentSetIndex) ? data.settings.currentSetIndex : 0;
     answers = new Map(Array.isArray(data.answers) ? data.answers : []);
@@ -856,15 +870,60 @@ function render() {
 }
 function getExportUnits() {
   if (UI.splitBySet.checked && UI.exportScope.value === 'full') return sets;
+  if (UI.splitBySet.checked && UI.exportScope.value === 'range') {
+    const start = clamp(parseInt(UI.exportSetStart.value, 10) || 0, 0, Math.max(0, sets.length - 1));
+    const end = clamp(parseInt(UI.exportSetEnd.value, 10) || start, start, Math.max(0, sets.length - 1));
+    return sets.slice(start, end + 1);
+  }
   const current = getCurrentUnit();
   return current ? [current] : [];
 }
 
 function getDefaultExportFilename() {
   const base = safeFilename(bankLabel || 'mcq-results');
-  if (!UI.splitBySet.checked || UI.exportScope.value !== 'current') return base;
+  if (!UI.splitBySet.checked || UI.exportScope.value === 'full') return base;
   const unit = getCurrentUnit();
+  if (UI.exportScope.value === 'range') {
+    const start = clamp(parseInt(UI.exportSetStart.value, 10) || 0, 0, Math.max(0, sets.length - 1));
+    const end = clamp(parseInt(UI.exportSetEnd.value, 10) || start, start, Math.max(0, sets.length - 1));
+    return `${base}-set-${start + 1}-to-${end + 1}`;
+  }
   return unit ? `${base}-${safeFilename(unit.shortTitle || 'current-set')}` : base;
+}
+
+function updateDownloadModalUI() {
+  const splitEnabled = UI.splitBySet.checked && sets.length > 1;
+  const rangeOption = [...UI.exportScope.options].find(option => option.value === 'range');
+  if (rangeOption) rangeOption.disabled = !splitEnabled;
+  if (!splitEnabled && UI.exportScope.value === 'range') {
+    UI.exportScope.value = 'current';
+  }
+
+  UI.exportRangeWrap.classList.toggle('hidden', !(splitEnabled && UI.exportScope.value === 'range'));
+  if (!splitEnabled) return;
+
+  const startIndex = clamp(parseInt(UI.exportSetStart.value, 10) || currentSetIndex, 0, Math.max(0, sets.length - 1));
+  const endIndex = clamp(parseInt(UI.exportSetEnd.value, 10) || startIndex, startIndex, Math.max(0, sets.length - 1));
+
+  UI.exportSetStart.innerHTML = '';
+  UI.exportSetEnd.innerHTML = '';
+  sets.forEach((unit, idx) => {
+    const startOption = document.createElement('option');
+    startOption.value = String(idx);
+    startOption.textContent = unit.shortTitle;
+    if (idx === startIndex) startOption.selected = true;
+    UI.exportSetStart.appendChild(startOption);
+
+    const endOption = document.createElement('option');
+    endOption.value = String(idx);
+    endOption.textContent = unit.shortTitle;
+    if (idx === endIndex) endOption.selected = true;
+    UI.exportSetEnd.appendChild(endOption);
+  });
+
+  if (parseInt(UI.exportSetEnd.value, 10) < parseInt(UI.exportSetStart.value, 10)) {
+    UI.exportSetEnd.value = UI.exportSetStart.value;
+  }
 }
 
 function openDownloadModal() {
@@ -873,6 +932,7 @@ function openDownloadModal() {
     showToast('Submit the current bank or set first before downloading results.', 'error');
     return;
   }
+  updateDownloadModalUI();
   if (!UI.exportFilename.value.trim()) {
     UI.exportFilename.value = getDefaultExportFilename();
   }
@@ -889,6 +949,8 @@ async function downloadResultsPdf() {
     showToast('Submit the current bank or set first before downloading results.', 'error');
     return;
   }
+  const previewWindow = window.open('', '_blank');
+  if (previewWindow) previewWindow.opener = null;
   const originalLabel = UI.downloadBtn.innerHTML;
   UI.downloadBtn.disabled = true;
   UI.downloadBtn.textContent = 'Preparing PDF…';
@@ -945,6 +1007,12 @@ async function downloadResultsPdf() {
     const incorrectCount = allItems.filter(q => getReviewState(q) === 'incorrect').length;
     const unansweredCount = allItems.filter(q => getReviewState(q) === 'unanswered').length;
     const pct = allItems.length ? Math.round((100 * correctCount) / allItems.length) : 0;
+    const exportName = safeFilename(UI.exportFilename.value.trim() || getDefaultExportFilename());
+
+    doc.setProperties({
+      title: `${exportName}-results`,
+      subject: 'MCQ Quiz Loader Results',
+    });
 
     writeWrapped('MCQ Quiz Loader Results', { size: 20, style: 'bold', color: colors.title, gap: 24 });
     writeWrapped(bankLabel || 'Loaded bank', { size: 11, color: colors.teal, style: 'bold' });
@@ -987,10 +1055,15 @@ async function downloadResultsPdf() {
       y += blockGap;
     }
 
-    const exportName = safeFilename(UI.exportFilename.value.trim() || getDefaultExportFilename());
-    doc.save(`${exportName}-results.pdf`);
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    if (previewWindow) {
+      previewWindow.location.href = pdfUrl;
+    } else {
+      window.open(pdfUrl, '_blank');
+    }
     closeModal('downloadModal');
-    showToast('Results PDF downloaded.', 'success');
+    showToast('Results PDF opened in a new tab.', 'success');
   } catch (err) {
     console.error(err);
     showToast('Could not generate the PDF right now.', 'error');
@@ -1121,6 +1194,8 @@ function onReset() {
   UI.showExp.checked = true;
   UI.requireAll.checked = false;
   UI.exportScope.value = 'current';
+  UI.exportSetStart.value = '';
+  UI.exportSetEnd.value = '';
   UI.exportFilename.value = '';
   UI.limit.value = '50';
   UI.limit.max = '500';
@@ -1206,7 +1281,26 @@ UI.nextSetBtn.addEventListener('click', () => {
 });
 UI.exportScope.addEventListener('change', saveSession);
 UI.exportScope.addEventListener('change', () => {
+  updateDownloadModalUI();
   if (!UI.exportFilename.value.trim() || UI.exportFilename.value === getDefaultExportFilename()) {
+    UI.exportFilename.value = getDefaultExportFilename();
+  }
+  saveSession();
+});
+UI.exportSetStart.addEventListener('change', () => {
+  if (parseInt(UI.exportSetEnd.value, 10) < parseInt(UI.exportSetStart.value, 10)) {
+    UI.exportSetEnd.value = UI.exportSetStart.value;
+  }
+  if (!UI.exportFilename.value.trim()) {
+    UI.exportFilename.value = getDefaultExportFilename();
+  }
+  saveSession();
+});
+UI.exportSetEnd.addEventListener('change', () => {
+  if (parseInt(UI.exportSetEnd.value, 10) < parseInt(UI.exportSetStart.value, 10)) {
+    UI.exportSetStart.value = UI.exportSetEnd.value;
+  }
+  if (!UI.exportFilename.value.trim()) {
     UI.exportFilename.value = getDefaultExportFilename();
   }
   saveSession();

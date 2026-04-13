@@ -196,12 +196,14 @@
   border-radius: 999px;
 }
 .progress-fill {
-  position: relative;
+  position: absolute;
+  left: 0;
+  top: 0;
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, var(--teal-dim), var(--teal));
   border-radius: 999px;
-  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  transition: left 0.4s cubic-bezier(0.4,0,0.2,1), width 0.4s cubic-bezier(0.4,0,0.2,1);
       box-shadow: 0 0 8px var(--teal-glow);
     }
 
@@ -890,6 +892,11 @@
       display: grid;
       gap: 14px;
     }
+    .modal-inline-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
     .modal-field {
       display: grid;
       gap: 8px;
@@ -912,6 +919,16 @@
       border-radius: 10px;
       font-size: 13px;
       outline: none;
+    }
+    .modal-field select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 38px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238fa8c4' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 14px 14px;
     }
     .modal-actions {
       display: flex;
@@ -1073,6 +1090,9 @@
       .modal-body {
         padding-left: 14px;
         padding-right: 14px;
+      }
+      .modal-inline-fields {
+        grid-template-columns: 1fr;
       }
       .prompt-block {
         min-height: 240px;

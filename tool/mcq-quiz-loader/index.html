@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=20260413b" />
+  <link rel="stylesheet" href="./style.css?v=20260413c" />
 </head>
 <body>
 
@@ -202,8 +202,19 @@
             <select id="exportScope">
               <option value="current">Current set</option>
               <option value="full">Full bank</option>
+              <option value="range">Custom set range</option>
             </select>
           </label>
+          <div class="modal-inline-fields hidden" id="exportRangeWrap">
+            <label class="modal-field">
+              <span class="modal-field-label">From set</span>
+              <select id="exportSetStart"></select>
+            </label>
+            <label class="modal-field">
+              <span class="modal-field-label">To set</span>
+              <select id="exportSetEnd"></select>
+            </label>
+          </div>
           <label class="modal-field">
             <span class="modal-field-label">File name</span>
             <input id="exportFilename" type="text" maxlength="120" placeholder="mcq-results" />
@@ -552,7 +563,7 @@ Now begin.</textarea>
   </div>
 </div>
 
-<script src="./script.js?v=20260413b"></script>
+<script src="./script.js?v=20260413c"></script>
 <script type="module" src="../../assets/js/emoji-replacer.js"></script>
 </body>
 </html>
