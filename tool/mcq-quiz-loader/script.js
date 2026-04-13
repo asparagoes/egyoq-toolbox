@@ -15,9 +15,11 @@ const UI = {
   setSummary: document.getElementById('setSummary'),
   setControls: document.getElementById('setControls'),
   exportScope: document.getElementById('exportScope'),
-  exportScopeWrap: document.getElementById('exportScopeWrap'),
+  exportFilename: document.getElementById('exportFilename'),
+  downloadModal: document.getElementById('downloadModal'),
   displayMode: document.getElementById('displayMode'),
   splitBySet: document.getElementById('splitBySet'),
+  shuffleQ: document.getElementById('shuffleQ'),
   shuffleC: document.getElementById('shuffleC'),
   showExp: document.getElementById('showExp'),
   requireAll: document.getElementById('requireAll'),
@@ -42,6 +44,9 @@ const UI = {
   filePlaceholder: document.getElementById('filePlaceholder'),
   reviewFilter: document.getElementById('reviewFilter'),
   reviewFilterWrap: document.getElementById('reviewFilterWrap'),
+  btnCloseDownload: document.getElementById('btnCloseDownload'),
+  btnCancelDownload: document.getElementById('btnCancelDownload'),
+  btnConfirmDownload: document.getElementById('btnConfirmDownload'),
   helpModal: document.getElementById('helpModal'),
   guideModal: document.getElementById('guideModal'),
 };
@@ -453,7 +458,6 @@ function updateTop() {
 function updateSetControlsUI() {
   const show = UI.splitBySet.checked && sets.length > 0;
   UI.setControls.classList.toggle('hidden', !show);
-  UI.exportScopeWrap.classList.toggle('hidden', !show);
   if (!show) return;
 
   UI.setSelect.innerHTML = '';
@@ -482,6 +486,10 @@ function updateRetryButtonUI() {
     : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Retry Wrong`;
 }
 
+function updateReshuffleButtonUI() {
+  UI.reshuffleBtn.disabled = !bank.length || !UI.shuffleQ.checked;
+}
+
 function updateBankTag() {
   if (!bank.length) {
     UI.bankTag.innerHTML = '<div class="dot"></div>No bank loaded';
@@ -496,6 +504,7 @@ function serializeSession() {
     bankLabel,
     settings: {
       displayMode: UI.displayMode.value,
+      shuffleQ: UI.shuffleQ.checked,
       shuffleC: UI.shuffleC.checked,
       showExp: UI.showExp.checked,
       requireAll: UI.requireAll.checked,
@@ -503,6 +512,7 @@ function serializeSession() {
       splitBySet: UI.splitBySet.checked,
       currentSetIndex,
       exportScope: UI.exportScope.value,
+      exportFilename: UI.exportFilename.value,
     },
     answers: Array.from(answers.entries()),
     choiceMaps: Array.from(choiceMaps.entries()),
@@ -526,12 +536,14 @@ function restoreSession() {
     bank = Array.isArray(data.bank) ? data.bank : [];
     bankLabel = String(data.bankLabel || '');
     UI.displayMode.value = ['all', 'one'].includes(data.settings?.displayMode) ? data.settings.displayMode : 'all';
+    UI.shuffleQ.checked = !!data.settings?.shuffleQ;
     UI.shuffleC.checked = data.settings?.shuffleC !== false;
     UI.showExp.checked = data.settings?.showExp !== false;
     UI.requireAll.checked = !!data.settings?.requireAll;
     UI.splitBySet.checked = !!data.settings?.splitBySet;
     UI.limit.value = String(data.settings?.limit || (bank.length || 50));
     UI.exportScope.value = ['current', 'full'].includes(data.settings?.exportScope) ? data.settings.exportScope : 'current';
+    UI.exportFilename.value = String(data.settings?.exportFilename || '');
     currentSetIndex = Number.isInteger(data.settings?.currentSetIndex) ? data.settings.currentSetIndex : 0;
     answers = new Map(Array.isArray(data.answers) ? data.answers : []);
     choiceMaps = new Map(Array.isArray(data.choiceMaps) ? data.choiceMaps : []);
@@ -774,6 +786,7 @@ function render() {
   updateSetControlsUI();
   updateReviewFilterUI();
   updateRetryButtonUI();
+  updateReshuffleButtonUI();
 
   if (!bank.length) {
     UI.quiz.innerHTML = `
@@ -836,6 +849,29 @@ function getExportUnits() {
   if (UI.splitBySet.checked && UI.exportScope.value === 'full') return sets;
   const current = getCurrentUnit();
   return current ? [current] : [];
+}
+
+function getDefaultExportFilename() {
+  const base = safeFilename(bankLabel || 'mcq-results');
+  if (!UI.splitBySet.checked || UI.exportScope.value !== 'current') return base;
+  const unit = getCurrentUnit();
+  return unit ? `${base}-${safeFilename(unit.shortTitle || 'current-set')}` : base;
+}
+
+function openDownloadModal() {
+  const currentState = getCurrentUnitState();
+  if (!bank.length || !currentState.submitted) {
+    showToast('Submit the current bank or set first before downloading results.', 'error');
+    return;
+  }
+  if (!UI.exportFilename.value.trim()) {
+    UI.exportFilename.value = getDefaultExportFilename();
+  }
+  openModal('downloadModal');
+  requestAnimationFrame(() => {
+    UI.exportFilename.focus();
+    UI.exportFilename.select();
+  });
 }
 
 async function downloadResultsPdf() {
@@ -942,7 +978,9 @@ async function downloadResultsPdf() {
       y += blockGap;
     }
 
-    doc.save(`${safeFilename(bankLabel || 'mcq-results')}-results.pdf`);
+    const exportName = safeFilename(UI.exportFilename.value.trim() || getDefaultExportFilename());
+    doc.save(`${exportName}-results.pdf`);
+    closeModal('downloadModal');
     showToast('Results PDF downloaded.', 'success');
   } catch (err) {
     console.error(err);
@@ -1032,6 +1070,10 @@ function reshuffleBank() {
     showToast('Load a bank first before reshuffling.', 'error');
     return;
   }
+  if (!UI.shuffleQ.checked) {
+    showToast('Turn on Shuffle questions first.', 'error');
+    return;
+  }
   if (UI.splitBySet.checked) {
     const unit = getCurrentUnit();
     if (!unit || !unit.items.length) {
@@ -1065,10 +1107,12 @@ function onReset() {
   cursor = 0;
   UI.displayMode.value = 'all';
   UI.splitBySet.checked = false;
+  UI.shuffleQ.checked = false;
   UI.shuffleC.checked = true;
   UI.showExp.checked = true;
   UI.requireAll.checked = false;
   UI.exportScope.value = 'current';
+  UI.exportFilename.value = '';
   UI.limit.value = '50';
   UI.limit.max = '500';
   UI.reviewFilter.value = 'all';
@@ -1114,11 +1158,15 @@ async function copyPrompt(targetId) {
 UI.loadBtn.addEventListener('click', onLoad);
 UI.submitBtn.addEventListener('click', onSubmit);
 UI.retryBtn.addEventListener('click', toggleRetryMode);
-UI.downloadBtn.addEventListener('click', downloadResultsPdf);
+UI.downloadBtn.addEventListener('click', openDownloadModal);
 UI.resetBtn.addEventListener('click', onReset);
 UI.reshuffleBtn.addEventListener('click', reshuffleBank);
 
 UI.displayMode.addEventListener('change', render);
+UI.shuffleQ.addEventListener('change', () => {
+  updateReshuffleButtonUI();
+  saveSession();
+});
 UI.shuffleC.addEventListener('change', () => {
   choiceMaps = new Map();
   render();
@@ -1149,9 +1197,17 @@ UI.nextSetBtn.addEventListener('click', () => {
 });
 UI.continueSetBtn.addEventListener('click', () => {
   currentSetIndex = clamp(currentSetIndex + 1, 0, Math.max(0, sets.length - 1));
+  if (!UI.exportFilename.value.trim()) UI.exportFilename.value = getDefaultExportFilename();
   render();
 });
 UI.exportScope.addEventListener('change', saveSession);
+UI.exportScope.addEventListener('change', () => {
+  if (!UI.exportFilename.value.trim() || UI.exportFilename.value === getDefaultExportFilename()) {
+    UI.exportFilename.value = getDefaultExportFilename();
+  }
+  saveSession();
+});
+UI.exportFilename.addEventListener('input', saveSession);
 
 UI.reviewFilter.addEventListener('change', () => {
   const state = getCurrentUnitState();
@@ -1169,6 +1225,9 @@ UI.reviewFilter.addEventListener('change', () => {
 
 document.getElementById('btnHelp').addEventListener('click', () => openModal('helpModal'));
 document.getElementById('btnGuide').addEventListener('click', () => openModal('guideModal'));
+UI.btnConfirmDownload.addEventListener('click', downloadResultsPdf);
+UI.btnCloseDownload.addEventListener('click', () => closeModal('downloadModal'));
+UI.btnCancelDownload.addEventListener('click', () => closeModal('downloadModal'));
 document.getElementById('btnCloseHelp').addEventListener('click', () => closeModal('helpModal'));
 document.getElementById('btnCloseGuide').addEventListener('click', () => closeModal('guideModal'));
 document.querySelectorAll('[data-close-modal]').forEach(node => {
@@ -1179,6 +1238,7 @@ document.querySelectorAll('.copy-btn').forEach(btn => {
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
+  closeModal('downloadModal');
   closeModal('helpModal');
   closeModal('guideModal');
 });
