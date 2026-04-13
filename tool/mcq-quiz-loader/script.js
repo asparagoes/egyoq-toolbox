@@ -32,6 +32,7 @@ const UI = {
   countTag: document.getElementById('countTag'),
   ansTag: document.getElementById('ansTag'),
   pbar: document.getElementById('pbar'),
+  pSegments: document.getElementById('pSegments'),
   pBoundaries: document.getElementById('pBoundaries'),
   pActiveSet: document.getElementById('pActiveSet'),
   quiz: document.getElementById('quiz'),
@@ -420,6 +421,8 @@ function updateProgressBar() {
 
   const unit = getCurrentUnit();
   if (!UI.splitBySet.checked || sets.length <= 1 || !bank.length || !unit) {
+    UI.pSegments.classList.add('hidden');
+    UI.pSegments.innerHTML = '';
     UI.pBoundaries.classList.add('hidden');
     UI.pBoundaries.innerHTML = '';
     UI.pActiveSet.classList.add('hidden');
@@ -427,6 +430,20 @@ function updateProgressBar() {
     UI.pActiveSet.style.width = '0%';
     return;
   }
+
+  UI.pSegments.classList.remove('hidden');
+  UI.pSegments.innerHTML = '';
+  sets.forEach(setUnit => {
+    const answeredInSet = setUnit.items.filter(q => answers.has(q.id)).length;
+    if (!answeredInSet) return;
+    const setLeft = (setUnit.start / bank.length) * 100;
+    const setWidth = ((setUnit.end - setUnit.start + 1) / bank.length) * 100;
+    const fillWidth = setUnit.items.length ? setWidth * (answeredInSet / setUnit.items.length) : 0;
+    const fill = document.createElement('span');
+    fill.style.left = `${setLeft}%`;
+    fill.style.width = `${fillWidth}%`;
+    UI.pSegments.appendChild(fill);
+  });
 
   UI.pBoundaries.classList.remove('hidden');
   UI.pBoundaries.innerHTML = '';

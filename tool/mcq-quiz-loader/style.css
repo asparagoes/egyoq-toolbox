@@ -179,10 +179,19 @@
   margin: 14px 0 0;
 }
 .progress-boundaries,
+.progress-segments,
 .progress-set-highlight {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+.progress-segments span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--teal-dim), var(--teal));
+  box-shadow: 0 0 8px var(--teal-glow);
 }
 .progress-boundaries span {
   position: absolute;
