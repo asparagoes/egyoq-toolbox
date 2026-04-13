@@ -65,6 +65,8 @@ let currentSetIndex = 0;
 let cursor = 0;
 let toastTimer = null;
 let pdfLoader = null;
+let settingsDirty = false;
+let fileDirty = false;
 
 function defaultUnitState() {
   return {
@@ -97,6 +99,22 @@ function showToast(msg, type = '') {
   }, 3000);
 }
 
+function loadButtonMarkup(label = 'Load Bank') {
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg> ${label}`;
+}
+
+function updateLoadButtonLabel() {
+  if (UI.loadBtn.disabled) return;
+  const hasBank = bank.length > 0;
+  const label = hasBank ? 'Refresh Bank' : 'Load Bank';
+  UI.loadBtn.innerHTML = loadButtonMarkup(label);
+}
+
+function markSettingsDirty() {
+  settingsDirty = true;
+  updateLoadButtonLabel();
+}
+
 function scrollToTopAnchor() {
   const target = document.querySelector('.sticky-panel') || document.querySelector('.wrap');
   if (!target) return;
@@ -124,6 +142,8 @@ function updateFileNameDisplay(name = '') {
 
 UI.file.addEventListener('change', () => {
   updateFileNameDisplay(UI.file.files[0]?.name || '');
+  fileDirty = !!UI.file.files[0];
+  updateLoadButtonLabel();
 });
 
 function shuffleArray(arr) {
@@ -1114,34 +1134,49 @@ function buildBankSession({ resetStates = false } = {}) {
 
 async function onLoad() {
   const file = UI.file.files[0];
-  if (!file) {
+  if (!bank.length && !file) {
     showToast('Choose a .xlsx or .csv file first.', 'error');
     return;
   }
   UI.loadBtn.disabled = true;
   UI.loadBtn.textContent = 'Loading…';
   try {
-    const loaded = await loadBankFromFile(file);
-    if (!loaded.length) {
-      showToast('No valid questions found — check column names.', 'error');
-      return;
+    const hadBank = bank.length > 0;
+
+    if (fileDirty && file) {
+      const loaded = await loadBankFromFile(file);
+      if (!loaded.length) {
+        showToast('No valid questions found — check column names.', 'error');
+        return;
+      }
+      bank = loaded;
+      bankLabel = file.name;
+      updateFileNameDisplay(bankLabel);
+      UI.limit.max = String(Math.max(1, loaded.length));
+      if (!hadBank) {
+        UI.limit.value = String(Math.max(1, loaded.length));
+      }
+      currentSetIndex = 0;
+      answers = new Map();
+      choiceMaps = new Map();
+      unitStates = new Map();
+      buildBankSession({ resetStates: true });
+      fileDirty = false;
+      settingsDirty = false;
+      showToast(`Loaded ${loaded.length} questions successfully.`, 'success');
+    } else {
+      choiceMaps = new Map();
+      resetStructuralState({ preserveAnswers: true });
+      render();
+      settingsDirty = false;
+      showToast('Question layout refreshed.', 'success');
     }
-    bank = loaded;
-    bankLabel = file.name;
-    updateFileNameDisplay(bankLabel);
-    UI.limit.max = String(Math.max(1, loaded.length));
-    UI.limit.value = String(Math.max(1, loaded.length));
-    currentSetIndex = 0;
-    answers = new Map();
-    choiceMaps = new Map();
-    buildBankSession({ resetStates: true });
-    showToast(`Loaded ${loaded.length} questions successfully.`, 'success');
   } catch (err) {
     console.error(err);
     showToast(err.message, 'error');
   } finally {
     UI.loadBtn.disabled = false;
-    UI.loadBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg> Load Bank`;
+    updateLoadButtonLabel();
   }
 }
 
@@ -1225,6 +1260,8 @@ function onReset() {
   unitStates = new Map();
   currentSetIndex = 0;
   cursor = 0;
+  settingsDirty = false;
+  fileDirty = false;
   UI.displayMode.value = 'all';
   UI.splitBySet.checked = false;
   UI.shuffleQ.checked = false;
@@ -1290,21 +1327,20 @@ UI.shuffleQ.addEventListener('change', () => {
   saveSession();
 });
 UI.shuffleC.addEventListener('change', () => {
-  choiceMaps = new Map();
-  render();
+  markSettingsDirty();
+  saveSession();
 });
 UI.showExp.addEventListener('change', render);
 UI.requireAll.addEventListener('change', saveSession);
 UI.limit.addEventListener('change', () => {
   if (!bank.length) return;
-  resetStructuralState({ preserveAnswers: true });
-  render();
+  markSettingsDirty();
+  saveSession();
 });
 UI.splitBySet.addEventListener('change', () => {
-  currentSetIndex = 0;
-  resetStructuralState({ preserveAnswers: true });
-  render();
-  scrollToTopAnchor();
+  if (!bank.length) return;
+  markSettingsDirty();
+  saveSession();
 });
 UI.setSelect.addEventListener('change', () => {
   currentSetIndex = clamp(parseInt(UI.setSelect.value, 10) || 0, 0, Math.max(0, sets.length - 1));
@@ -1385,3 +1421,4 @@ document.addEventListener('keydown', e => {
 
 restoreSession();
 render();
+updateLoadButtonLabel();
