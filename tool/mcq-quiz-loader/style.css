@@ -167,22 +167,41 @@
     }
 
     /* ── Progress Bar ── */
-    .progress-wrap {
-      height: 4px;
-      background: var(--surface2);
-      border-radius: 999px;
-      overflow: hidden;
-      margin-bottom: 20px;
-    }
-    .sticky-progress {
-      margin: 14px 0 0;
-    }
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--teal-dim), var(--teal));
-      border-radius: 999px;
-      transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+.progress-wrap {
+  position: relative;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.sticky-progress {
+  margin: 14px 0 0;
+}
+.progress-boundaries,
+.progress-set-highlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.progress-boundaries span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(226,232,240,0.28);
+}
+.progress-set-highlight {
+  background: rgba(45,212,191,0.1);
+  border-radius: 999px;
+}
+.progress-fill {
+  position: relative;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--teal-dim), var(--teal));
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
       box-shadow: 0 0 8px var(--teal-glow);
     }
 
@@ -219,9 +238,28 @@
       font-weight: 600;
       color: var(--text-2);
     }
-    .review-filter-wrap select {
-      min-width: 156px;
-    }
+.review-filter-wrap select {
+  min-width: 156px;
+}
+.sub-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.sub-action-bar select {
+  min-width: 150px;
+}
+.set-summary {
+  font-size: 12px;
+  color: var(--text-2);
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
 
     .file-label {
       position: relative;
@@ -341,22 +379,25 @@
       gap: 10px;
       margin-top: 4px;
     }
-    .setting-item {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
+.setting-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 8px;
       transition: border-color 0.2s;
-    }
-    .setting-item:hover { border-color: var(--border-bright); }
-    .setting-label {
-      font-size: 12px;
-      color: var(--text-2);
-      font-weight: 500;
+}
+.setting-item:hover { border-color: var(--border-bright); }
+.setting-item .btn.small {
+  flex-shrink: 0;
+}
+.setting-label {
+  font-size: 12px;
+  color: var(--text-2);
+  font-weight: 500;
     }
 
     select {
@@ -926,20 +967,28 @@
       .sticky-panel {
         top: 10px;
       }
-      .action-bar {
-        flex-wrap: nowrap;
-      }
-      .action-bar .btn,
-      .action-bar .file-label {
-        flex: 0 0 auto;
-      }
-      .file-label {
-        flex-basis: 200px;
-        max-width: 200px;
-      }
-      .settings-grid {
-        grid-template-columns: 1fr;
-      }
+  .action-bar {
+    flex-wrap: nowrap;
+  }
+  .action-bar .btn,
+  .action-bar .file-label {
+    flex: 0 0 auto;
+  }
+  .file-label {
+    flex-basis: 200px;
+    max-width: 200px;
+  }
+  .sub-action-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .sub-action-bar > * {
+    flex: 0 0 auto;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
       .score-ring-wrap {
         gap: 14px;
       }
