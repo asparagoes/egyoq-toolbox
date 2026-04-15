@@ -5,6 +5,7 @@ const UI = {
   loadBtn: document.getElementById('loadBtn'),
   submitBtn: document.getElementById('submitBtn'),
   retryBtn: document.getElementById('retryBtn'),
+  returnSetBtn: document.getElementById('returnSetBtn'),
   downloadBtn: document.getElementById('downloadBtn'),
   resetBtn: document.getElementById('resetBtn'),
   reshuffleBtn: document.getElementById('reshuffleBtn'),
@@ -65,7 +66,6 @@ let currentSetIndex = 0;
 let cursor = 0;
 let toastTimer = null;
 let pdfLoader = null;
-let settingsDirty = false;
 let fileDirty = false;
 
 function defaultUnitState() {
@@ -105,18 +105,12 @@ function loadButtonMarkup(label = 'Load Bank') {
 
 function updateLoadButtonLabel() {
   if (UI.loadBtn.disabled) return;
-  const hasBank = bank.length > 0;
-  const label = hasBank ? 'Refresh Bank' : 'Load Bank';
+  const label = fileDirty || !bank.length ? 'Load Bank' : 'Refresh Bank';
   UI.loadBtn.innerHTML = loadButtonMarkup(label);
 }
 
-function markSettingsDirty() {
-  settingsDirty = true;
-  updateLoadButtonLabel();
-}
-
 function scrollToTopAnchor() {
-  const target = document.querySelector('.sticky-panel') || document.querySelector('.wrap');
+  const target = UI.quiz.firstElementChild || UI.quiz || document.querySelector('.sticky-panel');
   if (!target) return;
   requestAnimationFrame(() => {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -546,10 +540,10 @@ function updateSetControlsUI() {
 function updateRetryButtonUI() {
   const state = getCurrentUnitState();
   const hasWrong = state.wrongIDs.length > 0;
-  UI.retryBtn.disabled = !bank.length || (!state.retryMode && !hasWrong);
-  UI.retryBtn.innerHTML = state.retryMode
-    ? 'Return to set'
-    : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Retry Wrong`;
+  UI.retryBtn.disabled = !bank.length || !hasWrong;
+  UI.retryBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Retry Wrong`;
+  UI.returnSetBtn.classList.toggle('hidden', !state.retryMode);
+  UI.returnSetBtn.disabled = !state.retryMode;
 }
 
 function updateReshuffleButtonUI() {
@@ -1141,8 +1135,6 @@ async function onLoad() {
   UI.loadBtn.disabled = true;
   UI.loadBtn.textContent = 'Loading…';
   try {
-    const hadBank = bank.length > 0;
-
     if (fileDirty && file) {
       const loaded = await loadBankFromFile(file);
       if (!loaded.length) {
@@ -1153,22 +1145,18 @@ async function onLoad() {
       bankLabel = file.name;
       updateFileNameDisplay(bankLabel);
       UI.limit.max = String(Math.max(1, loaded.length));
-      if (!hadBank) {
-        UI.limit.value = String(Math.max(1, loaded.length));
-      }
+      getQuestionLimit();
       currentSetIndex = 0;
       answers = new Map();
       choiceMaps = new Map();
       unitStates = new Map();
       buildBankSession({ resetStates: true });
       fileDirty = false;
-      settingsDirty = false;
       showToast(`Loaded ${loaded.length} questions successfully.`, 'success');
     } else {
       choiceMaps = new Map();
       resetStructuralState({ preserveAnswers: true });
       render();
-      settingsDirty = false;
       showToast('Question layout refreshed.', 'success');
     }
   } catch (err) {
@@ -1196,17 +1184,18 @@ function onSubmit() {
   scrollToResults();
 }
 
+function exitRetryMode() {
+  const state = getCurrentUnitState();
+  state.retryMode = false;
+  state.retrySourceIDs = [];
+  state.reviewFilter = 'all';
+  state.cursor = 0;
+  render();
+  scrollToTopAnchor();
+}
+
 function toggleRetryMode() {
   const state = getCurrentUnitState();
-  if (state.retryMode) {
-    state.retryMode = false;
-    state.retrySourceIDs = [];
-    state.reviewFilter = 'all';
-    state.cursor = 0;
-    render();
-    scrollToTopAnchor();
-    return;
-  }
   if (!state.wrongIDs.length) {
     showToast('No missed questions to retry in this bank or set.', 'error');
     return;
@@ -1260,7 +1249,6 @@ function onReset() {
   unitStates = new Map();
   currentSetIndex = 0;
   cursor = 0;
-  settingsDirty = false;
   fileDirty = false;
   UI.displayMode.value = 'all';
   UI.splitBySet.checked = false;
@@ -1317,6 +1305,7 @@ async function copyPrompt(targetId) {
 UI.loadBtn.addEventListener('click', onLoad);
 UI.submitBtn.addEventListener('click', onSubmit);
 UI.retryBtn.addEventListener('click', toggleRetryMode);
+UI.returnSetBtn.addEventListener('click', exitRetryMode);
 UI.downloadBtn.addEventListener('click', openDownloadModal);
 UI.resetBtn.addEventListener('click', onReset);
 UI.reshuffleBtn.addEventListener('click', reshuffleBank);
@@ -1327,20 +1316,22 @@ UI.shuffleQ.addEventListener('change', () => {
   saveSession();
 });
 UI.shuffleC.addEventListener('change', () => {
-  markSettingsDirty();
-  saveSession();
+  choiceMaps = new Map();
+  render();
 });
 UI.showExp.addEventListener('change', render);
 UI.requireAll.addEventListener('change', saveSession);
 UI.limit.addEventListener('change', () => {
   if (!bank.length) return;
-  markSettingsDirty();
-  saveSession();
+  resetStructuralState({ preserveAnswers: true });
+  render();
 });
 UI.splitBySet.addEventListener('change', () => {
   if (!bank.length) return;
-  markSettingsDirty();
-  saveSession();
+  currentSetIndex = 0;
+  resetStructuralState({ preserveAnswers: true });
+  render();
+  scrollToTopAnchor();
 });
 UI.setSelect.addEventListener('change', () => {
   currentSetIndex = clamp(parseInt(UI.setSelect.value, 10) || 0, 0, Math.max(0, sets.length - 1));

@@ -244,6 +244,11 @@
       background: var(--surface2);
       flex-shrink: 0;
     }
+    .filter-row {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 12px;
+    }
     .review-filter-label {
       font-size: 12px;
       font-weight: 600;
@@ -1080,7 +1085,14 @@
     overflow-x: auto;
     padding-bottom: 2px;
   }
+  .filter-row {
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
   .sub-action-bar > * {
+    flex: 0 0 auto;
+  }
+  .filter-row > * {
     flex: 0 0 auto;
   }
   .settings-grid {
