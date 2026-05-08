@@ -31,6 +31,22 @@
     ]
   },
   {
+    "title": "Hangman Quiz — Christianity Perspectives",
+    "description": "Team-based Hangman quiz for classroom teaching about Christian perspectives on the human person.",
+    "url": "./tool/hangman/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "./tool/hangman/favicon.svg",
+    "emoji": "🪓",
+    "tags": [
+      "quiz",
+      "hangman",
+      "education",
+      "christianity",
+      "classroom",
+      "team game"
+    ]
+  },
+  {
     "title": "MCQ Quiz Loader",
     "description": "Load XLSX or CSV question banks for any subject and turn them into a self-graded MCQ quiz with explanations.",
     "url": "./tool/mcq-quiz-loader/",
