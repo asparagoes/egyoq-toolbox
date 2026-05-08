@@ -1,0 +1,27 @@
+# Asset files (too large for git)
+assets/audio/*.mp3
+assets/images/*.mp4
+assets/images/*.png
+assets/images/*.jpg
+
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*

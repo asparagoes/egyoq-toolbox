@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hangman Quiz — Christianity Perspectives</title>
+
+  <meta name="description" content="Team-based Hangman quiz on Christian perspectives about the human person — 20 questions, team scoring, bonus questions, and classroom-friendly UI." />
+  <meta name="tool:description" content="Team-based Hangman quiz for classroom teaching about Christian perspectives on the human person." />
+  <meta name="tool:tags" content="quiz,hangman,education,christianity,classroom,team game" />
+  <meta name="tool:emoji" content="🪓" />
+  <meta name="theme-color" content="#0b1220" />
+
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cause&family=Special+Elite&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body>
+  <div class="opening-screen" id="openingScreen">
+    <div class="opening-card">
+      <button class="btn title-fullscreen" id="titleFullscreenBtn" title="Fullscreen" aria-label="Fullscreen"><span class="icon icon-fullscreen" aria-hidden="true"></span></button>
+      <h1>THEOLOGY QUIZ</h1>
+      <p>Christianity Perspectives About the Human Person</p>
+      <button class="btn primary" id="openingStartBtn"><span class="icon icon-play" aria-hidden="true"></span><span>Begin</span></button>
+    </div>
+  </div>
+
+  <div class="start-overlay" id="startOverlay">
+    <div class="real-start-card">
+      <h2>Ready?</h2>
+      <p>Click the button below to start the roulette and begin Question 1.</p>
+      <button class="btn primary real-start-btn" id="realStartBtn"><span class="icon icon-play" aria-hidden="true"></span><span>Start Game</span></button>
+    </div>
+  </div>
+
+  <aside class="settings-panel" id="settingsPanel">
+    <h3>Settings</h3>
+    <button class="btn" id="closeSettingsBtn">Close</button>
+    <label>Music volume <input type="range" id="musicVolume" min="0" max="1" step="0.05" value="0.65"></label>
+    <label>SFX volume <input type="range" id="sfxVolume" min="0" max="1" step="0.05" value="0.45"></label>
+    <button class="btn music-toggle" id="musicToggleBtn"><span class="icon icon-music" aria-hidden="true"></span><span>Play Music</span></button>
+    <p class="settings-note" id="musicStatus">Music is ready.</p>
+    <p class="settings-note">Background music: <b>Kevin MacLeod - Rollin at 5</b></p>
+  </aside>
+
+  <div class="page">
+    <section class="stats-bar">
+      <div class="stat-group">
+        <div class="stat-item">
+          <span class="meta-label">Round</span>
+          <span class="meta-value" id="roundLabel">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="meta-label">Question</span>
+          <span class="meta-value" id="questionLabel">0 / 20</span>
+        </div>
+      </div>
+
+      <div class="turn-center">
+        <div class="turn-heading">Current Turn</div>
+        <div id="turnLabel">Press Begin</div>
+        <div id="statusText">Welcome to the game!</div>
+      </div>
+
+      <div class="stat-group right">
+        <div class="stat-item">
+          <span class="meta-label">Category</span>
+          <span class="meta-value" id="categoryLabel">---</span>
+        </div>
+        <div class="stat-item">
+          <span class="meta-label">Lives</span>
+          <span class="meta-value" id="livesLabel">6</span>
+        </div>
+        <button class="settings-btn" id="settingsBtn">⚙</button>
+      </div>
+    </section>
+
+    <section class="score-strip">
+      <div class="team-readout">
+        <div class="team-badge left" id="leftBadge">L</div>
+        <div>
+          <div class="team-name">Left Team</div>
+          <div class="score-num" id="leftScore">0</div>
+          <div class="turn-pill" id="leftTurnBadge">Your Turn ✦</div>
+        </div>
+      </div>
+      <div class="vs-center">VS</div>
+      <div class="team-readout right">
+        <div>
+          <div class="team-name">Right Team</div>
+          <div class="score-num" id="rightScore">0</div>
+          <div class="turn-pill" id="rightTurnBadge">Your Turn ✦</div>
+        </div>
+        <div class="team-badge right" id="rightBadge">R</div>
+      </div>
+    </section>
+
+    <main class="main">
+      <section class="panel illustration-panel" id="figurePanel">
+        <div class="illustration-wrap">
+          <canvas id="gameCanvas" width="640" height="620"></canvas>
+          <div class="lives-row" id="livesRow"></div>
+        </div>
+        <div class="log-row">
+          <div class="mini-card">❌ <span id="wrongLetters">None</span></div>
+          <div class="mini-card">✅ <span id="correctLetters">None</span></div>
+        </div>
+      </section>
+
+      <section class="right-panel">
+        <section class="panel">
+          <h2 class="section-title">Clue</h2>
+          <div class="clue-text" id="clueText">Press Begin to start.</div>
+        </section>
+
+        <section class="panel word-panel">
+          <h2 class="section-title">Word / Phrase</h2>
+          <div class="word-display" id="wordDisplay"></div>
+        </section>
+
+        <section class="panel letters-panel">
+          <h2 class="section-title">Letters</h2>
+          <div class="keyboard" id="keyboard"></div>
+        </section>
+
+        <section class="panel controls-panel">
+          <div class="control-panel">
+            <button class="btn gold" id="bonusBtn" disabled><span class="icon icon-star" aria-hidden="true"></span><span>Bonus</span></button>
+            <button class="btn primary" id="startBtn" title="Start" aria-label="Start"><span class="icon icon-play" aria-hidden="true"></span></button>
+            <button class="btn" id="nextBtn" title="Next" aria-label="Next"><span class="icon icon-next" aria-hidden="true"></span></button>
+            <button class="btn danger" id="revealBtn" title="Reveal" aria-label="Reveal"><span class="icon icon-eye" aria-hidden="true"></span></button>
+            <button class="btn" id="solveBtn" title="Solve" aria-label="Solve"><span class="icon icon-solve" aria-hidden="true"></span></button>
+            <button class="btn gold" id="fullscreenBtn" title="Fullscreen" aria-label="Fullscreen"><span class="icon icon-fullscreen" aria-hidden="true"></span></button>
+            <button class="btn" id="helpBtn" title="How to Play" aria-label="How to Play"><span class="icon icon-help" aria-hidden="true"></span></button>
+            <button class="btn" id="shortcutsBtn" title="Keyboard Shortcuts" aria-label="Keyboard Shortcuts"><span class="icon icon-keyboard" aria-hidden="true"></span></button>
+            <button class="btn" id="returnBtn" title="Return Question" aria-label="Return Question"><span class="icon icon-return" aria-hidden="true"></span></button>
+            <button class="btn" id="resetBtn" title="Reset" aria-label="Reset"><span class="icon icon-reset" aria-hidden="true"></span></button>
+          </div>
+          <div class="winner-banner" id="winnerBanner"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-wrap" id="helpModal">
+    <div class="modal">
+      <h2>How to Play</h2>
+      <div class="instruction-step active"><p><b>1. Teams</b></p><p>The class is split into <b>Left Team</b> and <b>Right Team</b>.</p></div>
+      <div class="instruction-step"><p><b>2. Starting Team</b></p><p>The roulette appears only on Question 1. If there is a tie at the end, it appears again for the tie-breaker.</p></div>
+      <div class="instruction-step"><p><b>3. Alternating Questions</b></p><p>After the roulette result, questions alternate by team.</p></div>
+      <div class="instruction-step"><p><b>4. Guessing and Solving</b></p><p>A correct letter gives <b>+1 point</b>. A wrong letter removes one heart and switches the turn. <b>Solve</b> is only available at the start of a question. It is disabled after any letter is entered, after any wrong letter is guessed, or after one solve attempt. A correct Solve gives <b>+1 point for each unique letter</b> in the answer and completes the question. A wrong Solve removes one heart and switches the turn.</p></div>
+      <div class="instruction-step"><p><b>5. Lives</b></p><p>You have <b>6 red hearts</b>: head, left arm, right arm, body, left foot, then right foot.</p></div>
+      <div class="instruction-step"><p><b>6. Bonus</b></p><p>When a question is solved or revealed, the <b>Bonus</b> button glows. The game master may award <b>+3 points</b>.</p></div>
+      <div class="instruction-nav">
+        <button class="btn" id="prevHelpBtn">Previous</button>
+        <div class="step-counter" id="helpStepCounter">1 / 6</div>
+        <button class="btn gold" id="nextHelpBtn">Next</button>
+      </div>
+      <button class="btn primary" id="closeHelpBtn">Start Game</button>
+    </div>
+  </div>
+
+  <div class="modal-wrap" id="shortcutsModal">
+    <div class="modal shortcuts-modal">
+      <h2>Keyboard Shortcuts</h2>
+      <div class="shortcut-list">
+        <div><b>A-Z</b><span>Guess a letter</span></div>
+        <div><b>/</b><span>Open Solve before any letter is entered</span></div>
+        <div><b>Alt + B</b><span>Open Bonus when available</span></div>
+        <div><b>Alt + H</b><span>Open How to Play</span></div>
+        <div><b>Alt + K</b><span>Open this shortcuts panel</span></div>
+        <div><b>Alt + Q</b><span>Return question state</span></div>
+        <div><b>Alt + N</b><span>Next question</span></div>
+        <div><b>Alt + R</b><span>Reveal answer</span></div>
+        <div><b>Alt + M</b><span>Play or pause music</span></div>
+        <div><b>Esc</b><span>Close open modal</span></div>
+      </div>
+      <button class="btn primary" id="closeShortcutsBtn">Close</button>
+    </div>
+  </div>
+
+  <div class="modal-wrap" id="bonusModal">
+    <div class="modal">
+      <h2>Bonus Question!</h2>
+      <p id="bonusText">Explain the answer in relation to Christianity's view of the human person.</p>
+      <div class="modal-actions">
+        <button class="btn bonus-left" id="bonusLeftBtn">+3 Left Team</button>
+        <button class="btn bonus-right" id="bonusRightBtn">+3 Right Team</button>
+        <button class="btn" id="closeBonusBtn">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-wrap" id="solveModal">
+    <div class="modal solve-modal">
+      <h2>Solve Answer</h2>
+      <p>Enter the full word or phrase before any letter has been guessed.</p>
+      <form class="solve-form" id="solveForm">
+        <input id="solveInput" type="text" autocomplete="off" spellcheck="false" placeholder="Your answer" />
+        <div class="modal-actions">
+          <button class="btn primary" type="submit">Submit</button>
+          <button class="btn" type="button" id="closeSolveBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-wrap" id="tieModal">
+    <div class="modal">
+      <h2>Tie-Breaker!</h2>
+      <p>The scores are tied. One final challenge will decide the winner.</p>
+      <button class="btn primary" id="startTieBtn">Start Tie-Breaker</button>
+    </div>
+  </div>
+
+  <div class="modal-wrap" id="winnerModal">
+    <div class="modal">
+      <h2>Game Complete!</h2>
+      <div class="winner-big" id="winnerModalText">Winner</div>
+      <p id="winnerModalScore">Final score</p>
+      <button class="btn primary" id="closeWinnerBtn">Close</button>
+    </div>
+  </div>
+
+  <div class="roulette-wrap" id="rouletteWrap">
+    <div class="roulette-stage">
+      <div class="roulette-shell">
+        <div class="roulette-pointer"></div>
+        <div class="roulette" id="rouletteWheel"></div>
+        <div class="roulette-label"><div class="roulette-label-inner" id="rouletteText">Choosing...</div></div>
+      </div>
+      <button class="roulette-close" id="rouletteCloseBtn">Close</button>
+    </div>
+  </div>
+
+  <audio id="backgroundAudio" src="./assets/audio/background-music.mp3" loop preload="auto"></audio>
+
+  <script src="./js/game.js"></script>
+</body>
+</html>
