@@ -70,7 +70,9 @@ function hasLettersEntered(){
   return guessedLetters.size > 0 || wrongLetters.size > 0;
 }
 function canSolveNow(){
-  return gameStarted && currentQuestion && !roundSolved && !gameFinished && !hasLettersEntered() && !solveAttempted;
+  // Solve is allowed while the game is started, a question is active, the round isn't solved,
+  // the game isn't finished, and there have been no letters entered yet.
+  return gameStarted && currentQuestion && !roundSolved && !gameFinished && !hasLettersEntered();
 }
 function updateSolveAvailability(){
   const btn = $("solveBtn");
@@ -406,7 +408,7 @@ function solveAnswer(rawAnswer){
   }
 
   const beforeSolve = captureQuestionState();
-  solveAttempted = true;
+  // do not mark solveAttempted here — allow repeated solve attempts as long as no letters have been guessed
   updateSolveAvailability();
 
   if(submitted === norm(currentQuestion.answer)){
