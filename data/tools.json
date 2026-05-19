@@ -1,7 +1,7 @@
 [
   {
     "title": "FlashFlow",
-    "description": "Adaptive flashcards with typing mode, spaced repetition, deadline planning, and deck management for self-paced study.",
+    "description": "Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management.",
     "url": "./tool/flashflow/",
     "thumbnail": "./assets/thumbs/flashflow.png",
     "favicon": "./tool/flashflow/favicon.svg",
@@ -9,8 +9,9 @@
     "tags": [
       "study",
       "flashcards",
-      "spaced repetition",
-      "adaptive learning",
+      "csv",
+      "cloze",
+      "typing",
       "review",
       "memorization"
     ]

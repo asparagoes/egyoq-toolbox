@@ -1,370 +1,299 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>FlashFlow</title>
-<meta
-  name="description"
-  content="Adaptive flashcards with typing mode, spaced repetition, deadline planning, and deck management for self-paced study."
-/>
-<meta
-  name="tool:description"
-  content="Adaptive flashcards with typing mode, spaced repetition, deadline planning, and deck management for self-paced study."
-/>
-<meta name="tool:tags" content="study,flashcards,spaced repetition,adaptive learning,review,memorization" />
-<meta name="tool:emoji" content="⚡" />
-<meta name="theme-color" content="#0c111b" />
-<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FlashFlow</title>
+  <meta
+    name="description"
+    content="Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management."
+  >
+  <meta
+    name="tool:description"
+    content="Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management."
+  >
+  <meta name="tool:tags" content="study,flashcards,csv,cloze,typing,review,memorization">
+  <meta name="tool:emoji" content="⚡">
+  <meta name="theme-color" content="#ebebeb">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100,0,0" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
 </head>
-<body data-theme="dark">
-<div class="topbar">
-  <div class="brand">⚡ FlashFlow</div>
-  <div class="divider"></div>
-  <div class="tb-tools">
-    <label class="btn primary" style="cursor:pointer">📥 Import CSV<input id="csvFile" type="file" accept=".csv,text/csv" hidden></label>
-    <div class="dd-wrap settings-only">
-      <button id="btnOptions" class="btn">⚙ Options</button>
-      <div id="optionsPanel" class="dd-panel hidden">
-        <div class="dd-group">
-          <div class="dd-title">Appearance</div>
-          <div class="field"><label for="optTheme">Theme</label><select id="optTheme"><option value="dark">Dark</option><option value="light">Light</option></select></div>
-          <label class="ck-line"><input type="checkbox" id="optCardOnly"><span>Focus mode (hide side panels)</span></label>
-          <label class="ck-line"><input type="checkbox" id="optHideLabels"><span>Hide card labels</span></label>
-          <label class="ck-line"><input type="checkbox" id="optSwapPanels"><span>Swap side columns</span></label>
-          <label class="ck-line"><input type="checkbox" id="optHoverPanels"><span>Hover-expand collapsed panels</span></label>
-        </div>
-        <div class="dd-group">
-          <div class="dd-title">Review</div>
-          <label class="ck-line"><input type="checkbox" id="optReverse"><span>Create reverse cards on import</span></label>
-          <label class="ck-line"><input type="checkbox" id="optAutoRate"><span>Auto-rate typed answers</span></label>
-          <label class="ck-line"><input type="checkbox" id="optRandomize"><span>Randomize card order</span></label>
-          <div class="grid2">
-            <div class="field"><label for="optDelay">Auto-advance delay (sec)</label><input id="optDelay" type="number" min="0" max="60" step="1"></div>
-            <div class="field"><label for="optQuestionLimit">Question time limit (sec)</label><input id="optQuestionLimit" type="number" min="0" max="600" step="5"></div>
-          </div>
-        </div>
-        <div class="dd-group">
-          <div class="dd-title">Voice</div>
-          <label class="ck-line"><input type="checkbox" id="optVoice"><span>Enable voice input</span></label>
-          <label class="ck-line"><input type="checkbox" id="optTts"><span>Read question aloud</span></label>
-        </div>
-        <div class="dd-group">
-          <div class="dd-title">New Deck Defaults</div>
-          <div class="grid2">
-            <div class="field"><label for="optDefaultLearningSteps">Learning steps</label><input id="optDefaultLearningSteps" type="text" placeholder="1m 10m 1d"></div>
-            <div class="field"><label for="optDefaultRelearningSteps">Relearning steps</label><input id="optDefaultRelearningSteps" type="text" placeholder="10m"></div>
-            <div class="field"><label for="optDefaultDeadlineDate">Deadline date</label><input id="optDefaultDeadlineDate" type="date"></div>
-            <div class="field"><label for="optDefaultDeadlineTime">Deadline time</label><input id="optDefaultDeadlineTime" type="time"></div>
-            <div class="field"><label for="optDefaultStudyStart">Study window start</label><input id="optDefaultStudyStart" type="time"></div>
-            <div class="field"><label for="optDefaultStudyEnd">Study window end</label><input id="optDefaultStudyEnd" type="time"></div>
-          </div>
-          <label class="ck-line"><input type="checkbox" id="optDefaultDeadline"><span>Give new decks a target deadline</span></label>
-        </div>
+<body>
+  <div class="app-shell" id="appShell">
+    <header class="topbar chrome" aria-label="application controls">
+      <h1 class="brand">flashflow</h1>
+      <div class="top-actions">
+        <button class="icon-button" id="infoBtn" type="button" aria-label="about flashflow">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+        </button>
+        <button class="text-button" id="minimalBtn" type="button">
+          <span class="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
+          <span>minimal</span>
+        </button>
+        <button class="icon-button" id="fullscreenBtn" type="button" aria-label="toggle fullscreen">
+          <span class="material-symbols-outlined" aria-hidden="true">fullscreen</span>
+        </button>
       </div>
-    </div>
-    <button id="btnManageCards" class="btn settings-only">🗂 Cards</button>
-    <button id="btnHelp" class="btn settings-only">❓ Help</button>
-    <button id="btnReset" class="btn danger settings-only">🗑 Reset</button>
-  </div>
-  <div class="tb-right">
-    <button id="btnThemeQuick" class="btn settings-only">🌙 Theme</button>
-    <div id="statsText" class="stats-pill">No deck loaded</div>
-  </div>
-</div>
+    </header>
 
-<button id="btnShowPanels" class="btn primary float-restore">◀ Show side panels</button>
-<div id="toast" class="toast"></div>
+    <button class="icon-button restore-mini" id="restoreBtn" type="button" aria-label="exit minimal mode">
+      <span class="material-symbols-outlined" aria-hidden="true">close_fullscreen</span>
+    </button>
+    <div class="progress-mini" id="minimalProgress" aria-live="polite"></div>
 
-<div class="page">
-  <div class="workspace">
-    <div class="left-col side-stack" id="leftStack">
-      <section class="panel settings-only" data-side="left" data-panel-id="studyPlan">
-        <div class="panel-head">
-          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="2"></rect><path d="M5 2.5v3M11 2.5v3M2.5 6.5h11"></path></svg></span>Study Plan</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
-        </div>
-        <div class="panel-body">
-          <div class="plan-summary">
-            <div class="plan-goal">
-              <div>
-                <div class="plan-goal-label">Progress</div>
-                <strong id="planGoalValue">0 / 0</strong>
-              </div>
-              <button id="btnCustomSession" class="btn cyan" type="button">▶ Start custom session</button>
+    <main class="study-layout">
+      <section class="study-zone" aria-label="study">
+        <div class="status-strip" id="statusStrip" aria-live="polite"></div>
+        <div class="flashcard-frame">
+          <article class="flashcard tone-new" id="flashcard" tabindex="0" role="button" aria-label="reveal card">
+            <div class="flashcard-category" id="cardCategory">category</div>
+            <div class="card-face" id="cardFace">
+              <div class="card-copy" id="cardCopy">import a bank to begin</div>
             </div>
-            <div id="planSummary" class="hint">Import a deck to see recommended study sessions.</div>
-            <div id="planGoalSub" class="hint">Recommended sessions completed over total recommended sessions.</div>
-          </div>
-          <div id="sessionList" class="session-list" style="margin-top:10px"></div>
-          <div class="hint" style="margin-top:10px">Tip: drag panels with the four-dot handle to sort them, or hover collapsed panels to peek inside.</div>
-        </div>
-      </section>
-
-      <section class="panel settings-only" data-side="left" data-panel-id="calendar">
-        <div class="panel-head">
-          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="2"></rect><path d="M5 2.5v3M11 2.5v3M2.5 6.5h11"></path></svg></span>Calendar</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
-        </div>
-        <div class="panel-body">
-          <div class="calendar-panel">
-            <div class="calendar-top">
-              <div id="calendarTitle" class="calendar-title">April</div>
-              <div class="calendar-nav">
-                <button id="btnCalendarPrev" class="icon-btn" type="button" aria-label="Previous month">‹</button>
-                <button id="btnCalendarNext" class="icon-btn" type="button" aria-label="Next month">›</button>
-              </div>
+            <div class="decorative-lines" id="decorativeLines" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
-            <div id="calendarGrid" class="calendar-grid"></div>
-            <div id="calendarLegend" class="calendar-legend"></div>
+          </article>
+        </div>
+
+        <div class="typing-panel" id="typingPanel">
+          <label class="field-label" for="typingAnswer">type answer</label>
+          <div class="typing-row">
+            <input id="typingAnswer" type="text" autocomplete="off" spellcheck="false" placeholder="answer">
+            <button class="text-button" id="submitTypingBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">keyboard_return</span>
+              <span>enter</span>
+            </button>
           </div>
+          <div class="typing-feedback" id="typingFeedback" aria-live="polite"></div>
+        </div>
+
+        <div class="study-controls">
+          <button class="text-button" id="shuffleBankBtn" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">shuffle</span>
+            <span>shuffle</span>
+          </button>
+          <button class="text-button" id="previousBtn" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            <span>review</span>
+          </button>
+          <button class="text-button" id="revealBtn" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+            <span>reveal</span>
+          </button>
+          <button class="text-button" id="skipBtn" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">skip_next</span>
+            <span>skip</span>
+          </button>
+          <button class="text-button" id="resetBankBtn" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+            <span>reset</span>
+          </button>
+        </div>
+
+        <div class="rating-controls" id="ratingControls" aria-label="rating controls">
+          <button class="rating-button" type="button" data-rating="1">1 again</button>
+          <button class="rating-button" type="button" data-rating="2">2 hard</button>
+          <button class="rating-button" type="button" data-rating="3">3 good</button>
+          <button class="rating-button" type="button" data-rating="4">4 easy</button>
         </div>
       </section>
 
-      <section class="panel settings-only" data-side="left" data-panel-id="decks">
-        <div class="panel-head">
-          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 3.5h6a2 2 0 0 1 2 2v7h-6a2 2 0 0 0-2 2z"></path><path d="M5.5 3.5h6a1 1 0 0 1 1 1v8"></path></svg></span>Deck Manager</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
+      <aside class="manager-panel chrome" id="managerPanel" aria-label="bank manager">
+        <div class="manager-head">
+          <h2 class="section-title">manager</h2>
+          <button class="text-button" id="advancedToggleBtn" type="button" aria-pressed="false">
+            <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+            <span>advanced</span>
+          </button>
         </div>
-        <div class="panel-body">
-          <div id="decksSummary" class="hint">No decks yet.</div>
-          <div id="decksList" class="deck-list" style="margin-top:10px"></div>
-        </div>
-      </section>
-    </div>
-
-    <div class="center-col">
-      <div id="subjectSwitcher" class="subject-switcher settings-only hidden">
-        <div class="subject-topline">
-          <div class="subject-label">Decks</div>
-          <div class="hint">Switch decks like subjects.</div>
-        </div>
-        <div id="deckTabs" class="subject-tabs"></div>
-      </div>
-      <div class="card-shell">
-        <div class="card-corner-tools">
-          <button id="btnEditCard" class="icon-btn hidden" type="button" title="Edit current card" aria-label="Edit current card">✎</button>
-          <button id="btnDeleteCard" class="icon-btn danger hidden" type="button" title="Delete current card" aria-label="Delete current card">🗑</button>
-        </div>
-        <div id="timerWrap" class="timer-wrap hidden">
-          <div class="timer-top"><span style="display:inline-flex;align-items:center;gap:6px"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="9" r="4.5"></circle><path d="M8 9V6.8M8 9l2 1.4M6.5 2.5h3M11.5 4l1.2-1.2"></path></svg></span>Per-question timer</span><span id="timerVal">—</span></div>
-          <div class="timer-track"><div id="timerFill" class="timer-fill"></div></div>
-        </div>
-
-        <div id="metaRow" class="meta-row"></div>
-        <div class="queue-line">
-          <div class="queue-primary">
-            <span id="queueLabel">Queue: 0 • 0 • 0</span>
-            <span class="queue-sep">|</span>
-            <span id="sessionLine">Session: —</span>
+        <section class="manager-section">
+          <h2 class="section-title">banks</h2>
+          <div class="field">
+            <label for="bankSelect">current bank</label>
+            <select id="bankSelect"></select>
           </div>
-          <div class="queue-controls">
-            <button id="btnHistoryBack" class="history-btn" type="button" title="Return to previous card" aria-label="Return to previous card">‹</button>
-            <button id="btnHistoryForward" class="history-btn" type="button" title="Go forward again" aria-label="Go forward again">›</button>
+          <div class="form-grid manager-advanced">
+            <input id="bankNameInput" type="text" placeholder="bank name" aria-label="bank name">
+            <button class="text-button" id="renameBankBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+              <span>rename</span>
+            </button>
+            <button class="text-button danger-button" id="deleteBankBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+              <span>delete</span>
+            </button>
           </div>
-        </div>
+        </section>
 
-        <div id="question" class="question">
-          <div class="empty-card">
-            <div class="big">📭</div>
-            <div class="title">No cards loaded</div>
-            <div class="sub">Import a CSV file to start studying.</div>
+        <section class="manager-section">
+          <h2 class="section-title">import</h2>
+          <div class="manager-actions">
+            <label class="file-button">
+              <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+              <span>import csv</span>
+              <input id="csvFileInput" type="file" accept=".csv,text/csv">
+            </label>
+            <button class="text-button" id="loadSampleBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+              <span>load sample</span>
+            </button>
           </div>
-        </div>
-
-        <div id="inputRow" class="input-row hidden">
-          <input id="answerInput" class="answer-input" type="text" placeholder="Type your answer, then press Enter to reveal">
-          <button id="btnMic" class="mic-btn hidden" title="Voice input">🎤</button>
-        </div>
-
-        <div class="show-row">
-          <button id="btnShowAnswer" class="show-btn hidden">Show Answer</button>
-        </div>
-
-        <div class="controls">
-          <button id="btnEditAnswer" class="btn hidden">Edit answer</button>
-        </div>
-
-        <div id="statusLine" class="status-line"></div>
-        <div id="diffBox" class="diff-box hidden"></div>
-
-        <div id="revealBox" class="reveal-box hidden">
-          <div class="sec-label">Expected answer</div>
-          <div id="answer" class="answer-text"></div>
-          <div id="explanationSection" class="hidden" style="margin-top:12px">
-            <div class="sec-label">Explanation</div>
-            <div id="explanation" class="expl-text"></div>
+          <div class="field manager-advanced" style="margin-top: 12px;">
+            <label for="pasteNameInput">paste bank name</label>
+            <input id="pasteNameInput" type="text" placeholder="pasted bank">
           </div>
-          <div style="margin-top:12px">
-            <div class="sec-label">Accepted answers</div>
-            <div id="acceptedList" class="accepted-wrap"></div>
+          <div class="field manager-advanced">
+            <label for="pasteArea">paste csv</label>
+            <textarea id="pasteArea" placeholder="front,back,tag"></textarea>
           </div>
-        </div>
+          <button class="text-button manager-advanced" id="pasteImportBtn" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">content_paste</span>
+            <span>import paste</span>
+          </button>
+          <p class="microcopy manager-advanced">accepted fields: front/back, q/a/tag, stem/answer/explanation, accepted/answers, or text with [[cloze]].</p>
+        </section>
 
-        <div id="ratings" class="ratings hidden">
-          <button class="rate-btn again" data-grade="1">Again<small>Forgot</small><span class="key">1</span></button>
-          <button class="rate-btn hard" data-grade="2">Hard<small>Barely</small><span class="key">2</span></button>
-          <button class="rate-btn good" data-grade="3">Good<small>Got it</small><span class="key">3</span></button>
-          <button class="rate-btn easy" data-grade="4">Easy<small>Clear</small><span class="key">4</span></button>
-        </div>
+        <section class="manager-section">
+          <h2 class="section-title">typing</h2>
+          <label class="switch-line">
+            <input id="typingToggle" type="checkbox">
+            <span>typing mode</span>
+          </label>
+          <label class="switch-line">
+            <input id="autoRatingToggle" type="checkbox">
+            <span>auto-rating proposal</span>
+          </label>
+          <label class="switch-line">
+            <input id="caseSensitiveToggle" type="checkbox">
+            <span>case sensitive answers</span>
+          </label>
+          <label class="switch-line">
+            <input id="sfxToggle" type="checkbox">
+            <span>sound effects</span>
+          </label>
+        </section>
 
-        <div class="progress-wrap">
-          <div class="progress-head"><span id="progressText">Learning lanes</span><span id="progressPct">0 total</span></div>
-          <div class="progress-bar">
-            <div id="progressFillAgain" class="progress-fill again"></div>
-            <div id="progressFillHard" class="progress-fill hard"></div>
-            <div id="progressFillGood" class="progress-fill good"></div>
+        <section class="manager-section">
+          <h2 class="section-title">cards</h2>
+          <div class="field">
+            <label for="cardSearchInput">search</label>
+            <input id="cardSearchInput" type="search" placeholder="search cards">
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="right-col side-stack" id="rightStack">
-      <section class="panel settings-only" data-side="right" data-panel-id="reviewBehavior">
-        <div class="panel-head">
-          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 5h10M5 8h6M4 11h8"></path><circle cx="5" cy="5" r="1"></circle><circle cx="9" cy="8" r="1"></circle><circle cx="7" cy="11" r="1"></circle></svg></span>Review Behavior</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
-        </div>
-        <div class="panel-body">
-          <div class="review-grid">
-            <button id="reviewTyping" class="toggle-tile" type="button" aria-pressed="false"><strong>Typing mode</strong><span>Type first, then reveal.</span></button>
-            <button id="reviewAutoRate" class="toggle-tile" type="button" aria-pressed="false"><strong>Auto-rate typing</strong><span>Estimate the grade from answer closeness.</span></button>
-            <button id="reviewRandomize" class="toggle-tile" type="button" aria-pressed="false"><strong>Randomize order</strong><span>Shuffle the review queue.</span></button>
-            <button id="reviewVoice" class="toggle-tile" type="button" aria-pressed="false"><strong>Voice input</strong><span>Use your microphone while typing.</span></button>
-            <button id="reviewTts" class="toggle-tile" type="button" aria-pressed="false"><strong>Read aloud</strong><span>Speak the prompt before you answer.</span></button>
-            <button id="reviewHideLabels" class="toggle-tile" type="button" aria-pressed="false"><strong>Hide card labels</strong><span>Keep metadata chips out of the way.</span></button>
-            <button id="reviewCardOnly" class="toggle-tile" type="button" aria-pressed="false"><strong>Focus mode</strong><span>Hide both side panels.</span></button>
+          <div class="bulk-toolbar">
+            <button class="text-button" id="selectCardsBtn" type="button" aria-pressed="false">
+              <span class="material-symbols-outlined" aria-hidden="true">checklist</span>
+              <span>select</span>
+            </button>
+            <span class="selection-count" id="selectionCount">0 selected</span>
           </div>
-          <div class="grid2" style="margin-top:8px">
-            <div class="field"><label for="reviewDelay">Auto-advance delay (sec)</label><input id="reviewDelay" type="number" min="0" max="60" step="1"></div>
-            <div class="field"><label for="reviewTimeLimit">Question time limit (sec)</label><input id="reviewTimeLimit" type="number" min="0" max="600" step="5"></div>
+          <div class="bulk-controls hidden" id="bulkControls">
+            <button class="text-button danger-button" id="bulkDeleteBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+              <span>delete selected</span>
+            </button>
+            <button class="text-button" id="clearSelectionBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              <span>clear</span>
+            </button>
           </div>
-          <div class="hint" style="margin-top:8px">Tip: drag these panels with the four-dot handle. Timer expiry reveals the answer automatically; rating still happens after you review it.</div>
-        </div>
-      </section>
-
-      <section class="panel settings-only" data-side="right" data-panel-id="mode">
-        <div class="panel-head">
-          <div class="panel-title"><span class="icon-inline" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.8"></circle><circle cx="8" cy="8" r="1.2"></circle><path d="M8 3.2v1.2M8 11.6v1.2M3.2 8h1.2M11.6 8h1.2"></path></svg></span>Deck Settings</div>
-          <div class="stack-tools"><button class="icon-btn drag-handle" type="button" aria-label="Drag to sort this panel" title="Drag to sort this panel"><span class="drag-dots"><span></span><span></span><span></span><span></span></span></button><button class="icon-btn collapse-btn" type="button">−</button></div>
-        </div>
-        <div class="panel-body">
-          <div id="modeValue" class="big-val" style="font-size:24px">Deck</div>
-          <div id="modeSub" class="hint" style="margin-top:6px">The selected deck behaves like the current subject. These settings affect only that deck.</div>
-          <div class="grid2" style="margin-top:10px">
-            <div class="field"><label for="deckLearningSteps">Learning steps</label><input id="deckLearningSteps" type="text" placeholder="1m 10m 1d"></div>
-            <div class="field"><label for="deckRelearningSteps">Relearning steps</label><input id="deckRelearningSteps" type="text" placeholder="10m"></div>
-          </div>
-          <div class="field" style="margin-top:10px"><label for="optTimezone">Timezone</label>
-            <select id="optTimezone">
-              <option value="Asia/Manila">Asia/Manila (default)</option>
-              <option value="UTC">UTC</option>
-              <option value="Asia/Tokyo">Asia/Tokyo</option>
-              <option value="Europe/London">Europe/London</option>
-              <option value="America/New_York">America/New_York</option>
-              <option value="America/Los_Angeles">America/Los_Angeles</option>
-              <option value="Australia/Sydney">Australia/Sydney</option>
-            </select>
-          </div>
-          <label class="ck-line"><input type="checkbox" id="deckDeadline"><span>Use target deadline</span></label>
-          <div class="grid2">
-            <div class="field"><label for="deckDeadlineDate">Deadline date</label><input id="deckDeadlineDate" type="date"></div>
-            <div class="field"><label for="deckDeadlineTime">Deadline time</label><input id="deckDeadlineTime" type="time"></div>
-            <div class="field"><label for="deckStudyStart">Study window start</label><input id="deckStudyStart" type="time"></div>
-            <div class="field"><label for="deckStudyEnd">Study window end</label><input id="deckStudyEnd" type="time"></div>
-          </div>
-          <div class="scheduler-note">
-            <strong>Learning path:</strong> New cards stay in <strong>learning</strong> until they finish the steps above, then they <strong>graduate into review cards</strong>. If a review card gets an <strong>Again</strong>, it drops into <strong>relearning</strong> and follows the relearning steps before returning to review.
-            <div class="scheduler-steps">
-              <span class="step-chip">Again: back to step 1</span>
-              <span class="step-chip">Hard: repeat / midpoint delay</span>
-              <span class="step-chip">Good: next step</span>
-              <span class="step-chip">Easy: graduate now</span>
+          <div class="card-list" id="cardList"></div>
+          <div class="manager-advanced card-editor">
+            <div class="field" style="margin-top: 14px;">
+              <label for="cardFrontInput">front or stem</label>
+              <textarea id="cardFrontInput" placeholder="question"></textarea>
+            </div>
+            <div class="field">
+              <label for="cardBackInput">back or answer</label>
+              <textarea id="cardBackInput" placeholder="answer"></textarea>
+            </div>
+            <div class="field">
+              <label for="cardTextInput">cloze text</label>
+              <textarea id="cardTextInput" placeholder="the [[answer]] appears as a blank"></textarea>
+            </div>
+            <div class="field">
+              <label for="cardAcceptedInput">accepted answers</label>
+              <input id="cardAcceptedInput" type="text" placeholder="answer one | answer two">
+            </div>
+            <div class="field">
+              <label for="cardExplanationInput">explanation</label>
+              <textarea id="cardExplanationInput" placeholder="short note"></textarea>
+            </div>
+            <div class="field">
+              <label for="cardTagInput">tag</label>
+              <input id="cardTagInput" type="text" placeholder="category">
+            </div>
+            <div class="manager-actions">
+              <button class="text-button" id="addCardBtn" type="button">
+                <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                <span>add</span>
+              </button>
+              <button class="text-button" id="saveCardBtn" type="button">
+                <span class="material-symbols-outlined" aria-hidden="true">save</span>
+                <span>save</span>
+              </button>
+              <button class="text-button" id="clearEditorBtn" type="button">
+                <span class="material-symbols-outlined" aria-hidden="true">backspace</span>
+                <span>clear</span>
+              </button>
             </div>
           </div>
-          <div class="algo-grid">
-            <div class="algo-card"><strong>Learning</strong><span>Uses your learning steps exactly like Anki-style learning repetitions.</span></div>
-            <div class="algo-card"><strong>Graduation</strong><span>Finishing the last learning step converts the card into a normal review card.</span></div>
-            <div class="algo-card"><strong>Relearning</strong><span>Again on a review card sends it through relearning steps before it re-enters review.</span></div>
-            <div class="algo-card"><strong>FSRS review</strong><span>Once graduated, FSRS adjusts stability and difficulty to schedule the next review.</span></div>
+        </section>
+
+        <section class="manager-section">
+          <h2 class="section-title">export</h2>
+          <div class="manager-actions">
+            <button class="text-button" id="exportCsvBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">download</span>
+              <span>cards csv</span>
+            </button>
+            <button class="text-button" id="exportProgressBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">archive</span>
+              <span>progress json</span>
+            </button>
+            <label class="file-button">
+              <span class="material-symbols-outlined" aria-hidden="true">restore_page</span>
+              <span>restore json</span>
+              <input id="restoreInput" type="file" accept=".json,application/json">
+            </label>
+            <button class="text-button danger-button" id="resetStateBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+              <span>clear state</span>
+            </button>
           </div>
-          <div class="hint" style="margin-top:8px">Study window end is capped to the deadline time. Session start mode/time and deck color stay in Deck Manager.</div>
-        </div>
-      </section>
-    </div>
+        </section>
+      </aside>
+    </main>
   </div>
-</div>
 
-<dialog id="helpDialog">
-  <div class="modal-head">How FlashFlow works</div>
-  <div class="modal-body">
-    <div class="help-stack">
-      <div class="help-lead"><strong>FlashFlow is built for fast, adaptive study.</strong> Import a deck, choose how strict or minimal you want the review experience to feel, and let the spacing system keep surfacing the cards that need more attention.</div>
-      <div class="help-grid">
-        <section class="help-card">
-          <div class="help-kicker">Import</div>
-          <h3>Bring in almost any flashcard sheet</h3>
-          <p>One CSV becomes one deck. FlashFlow accepts simple <code>front/back</code> rows, question-bank style <code>Stem/Answer/Explanation</code>, and cloze-style <code>[[answer]]</code> markers inside plain text.</p>
-        </section>
-        <section class="help-card">
-          <div class="help-kicker">Review</div>
-          <h3>Reveal, judge, and move on</h3>
-          <p>Study one card at a time. Reveal the answer, compare it honestly, then rate it with <strong>Again / Hard / Good / Easy</strong>. Those ratings shape when the card returns.</p>
-        </section>
-        <section class="help-card">
-          <div class="help-kicker">Learning Steps</div>
-          <h3>New cards learn before they review</h3>
-          <p><strong>New cards</strong> follow your learning steps, <strong>Good</strong> moves them forward, <strong>Again</strong> sends them back to step one, and finishing the last step makes them a <strong>review card</strong>. Review cards that lapse go into <strong>relearning</strong>.</p>
-        </section>
-        <section class="help-card">
-          <div class="help-kicker">Typing</div>
-          <h3>Use typing only when you need it</h3>
-          <p>Typing mode is great for recall-heavy subjects. You can keep manual grading, or switch on <strong>Auto-rate typing</strong> if you want FlashFlow to estimate the result from answer closeness.</p>
-        </section>
-        <section class="help-card">
-          <div class="help-kicker">Panels</div>
-          <h3>Make the workspace fit you</h3>
-          <p>Use the <strong>four-dot handles</strong> to sort the side panels. The <strong>pin</strong> keeps a panel open; the hollow state lets it auto-collapse and open on hover.</p>
-        </section>
+  <div class="modal-layer" id="infoModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <div class="modal-head">
+        <h2 class="section-title" id="infoTitle">about flashflow</h2>
+        <button class="icon-button" id="closeInfoBtn" type="button" aria-label="close about">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
       </div>
-      <div class="help-note"><strong>Useful shortcuts:</strong> <code>Enter</code> or <code>Space</code> reveals the answer, <code>1 / 2 / 3 / 4</code> rates the current card after reveal, and <code>← / →</code> steps backward or forward through recent reviews so you can fix a rating. Active decks appear in the calendar with their own colors.</div>
+      <div class="guide-list">
+        <div class="guide-item"><strong>import or paste a bank</strong><span>use csv fields like front/back, q/a/tag, stem/answer/explanation, accepted/answers, or text with [[cloze]].</span></div>
+        <div class="guide-item"><strong>reveal and rate cards</strong><span>click, tap, or press space to reveal. choose 1 again, 2 hard, 3 good, or 4 easy.</span></div>
+        <div class="guide-item"><strong>typing mode</strong><span>type an answer and press enter. manual mode waits for your rating. auto-rating proposes a rating that you can correct.</span></div>
+        <div class="guide-item"><strong>swipe behavior</strong><span>swipe left to skip and unrate. swipe right to return to the previous card or reopen its rating review.</span></div>
+        <div class="guide-item"><strong>keyboard shortcuts</strong><span>space reveals, enter submits typing, 1/2/3/4 rate, arrow left skips, and arrow right reviews.</span></div>
+        <div class="guide-item"><strong>minimal and fullscreen</strong><span>minimal mode hides manager chrome and persists after reload. fullscreen starts only from your click or tap.</span></div>
+        <div class="guide-item"><strong>export cards vs progress</strong><span>cards csv exports the active bank. progress json saves banks, settings, ratings, queue, skipped state, and history for restore.</span></div>
+        <div class="guide-item"><strong>cloze syntax</strong><span>write the [[answer]] inside text. the front shows a blank line, and reveal shows the hidden answer.</span></div>
+      </div>
     </div>
   </div>
-  <div class="modal-foot"><button id="btnCloseHelp" class="btn">Close</button></div>
-</dialog>
 
-<dialog id="manageDialog">
-  <div class="modal-head">Manage Cards</div>
-  <div class="modal-body">
-    <div class="controls" style="margin-bottom:12px">
-      <button id="btnSelectAllCards" class="btn">Select all</button>
-      <button id="btnClearCardSelection" class="btn">Clear</button>
-      <button id="btnExportCardsCsv" class="btn">Export CSV</button>
-      <button id="btnDeleteSelectedCards" class="btn danger">Delete selected</button>
-    </div>
-    <div id="manageCardList" class="manage-list"></div>
-  </div>
-  <div class="modal-foot"><button id="btnCloseManage" class="btn">Close</button></div>
-</dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<footer class="tool-footer">
-  <div>Made with <span aria-hidden="true">🧡</span> by <a href="../../">egyoq</a>.</div>
-  <a class="footer-home" href="../../">_(: 」∠)_</a>
-</footer>
-
-<dialog id="editCardDialog">
-  <div class="modal-head">Edit Current Card</div>
-  <div class="modal-body">
-    <div class="field"><label for="editFront">Question</label><textarea id="editFront"></textarea></div>
-    <div class="field" style="margin-top:10px"><label for="editBack">Answer</label><textarea id="editBack"></textarea></div>
-    <div class="field" style="margin-top:10px"><label for="editAccepted">Accepted answers (semicolon separated)</label><input id="editAccepted" type="text"></div>
-    <div class="field" style="margin-top:10px"><label for="editExplanation">Explanation</label><textarea id="editExplanation"></textarea></div>
-  </div>
-  <div class="modal-foot"><button id="btnCloseEditCard" class="btn">Cancel</button><button id="btnSaveEditCard" class="btn primary">Save</button></div>
-</dialog>
-
-<script type="module" src="./script.js"></script>
+  <script src="./script.js" defer></script>
 </body>
 </html>
