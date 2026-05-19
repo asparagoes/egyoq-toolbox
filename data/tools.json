@@ -35,7 +35,7 @@
     "title": "Hangman Quiz — Christianity Perspectives",
     "description": "Team-based Hangman quiz for classroom teaching about Christian perspectives on the human person.",
     "url": "./tool/hangman/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/hangman.png",
     "favicon": "./tool/hangman/favicon.svg",
     "emoji": "🪓",
     "tags": [
