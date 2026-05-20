@@ -1,11 +1,11 @@
 [
   {
-    "title": "FlashFlow",
+    "title": "ꜰʟᴀꜱʜꜰʟᴏᴡ",
     "description": "Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management.",
     "url": "./tool/flashflow/",
     "thumbnail": "./assets/thumbs/default.png",
     "favicon": "./tool/flashflow/favicon.svg",
-    "emoji": "⚡",
+    "emoji": "🪷",
     "tags": [
       "study",
       "flashcards",
