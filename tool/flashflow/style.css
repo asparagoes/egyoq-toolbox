@@ -384,6 +384,13 @@ button:disabled {
   color: var(--tone);
 }
 
+.tone-complete {
+  --tone: var(--new);
+  --tone-light: var(--new-light);
+  --tone-text: var(--new-text);
+  color: var(--tone);
+}
+
 .tone-new .card-face {
   background: var(--tone);
 }
@@ -404,11 +411,16 @@ button:disabled {
   background: var(--tone);
 }
 
+.tone-complete .card-face {
+  background: var(--tone);
+}
+
 .tone-new.flashcard.is-revealed .card-face,
 .tone-1.flashcard.is-revealed .card-face,
 .tone-2.flashcard.is-revealed .card-face,
 .tone-3.flashcard.is-revealed .card-face,
-.tone-4.flashcard.is-revealed .card-face {
+.tone-4.flashcard.is-revealed .card-face,
+.tone-complete.flashcard.is-revealed .card-face {
   background: var(--tone-light);
   color: var(--tone-text);
 }

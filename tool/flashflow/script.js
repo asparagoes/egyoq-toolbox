@@ -340,7 +340,7 @@
   function renderCard(card, bank) {
     refs.flashcard.className = "flashcard";
     if (isBankComplete(bank)) {
-      refs.flashcard.classList.add("tone-4", "is-revealed", "is-complete");
+      refs.flashcard.classList.add("tone-complete", "is-revealed", "is-complete");
       refs.cardCategory.textContent = "learned";
       refs.flashcard.setAttribute("aria-label", "bank complete");
       refs.cardCopy.innerHTML = '<div class="complete-copy">bank complete</div>';
