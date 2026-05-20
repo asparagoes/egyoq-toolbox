@@ -1,6 +1,9 @@
 :root {
   --paper: #ebebeb;
-  --shell: #f8edd9;
+  --shell: #f7f1e7;
+  --shell-rgb: 247, 241, 231;
+  --panel-shell: #f4ecde;
+  --panel-shell-rgb: 244, 236, 222;
   --answer: #f6f0f0;
   --answer-soft: #fef6f6;
   --new: #a2afbc;
@@ -30,7 +33,7 @@
 
 * {
   box-sizing: border-box;
-  scrollbar-color: rgba(173, 157, 143, 0.72) rgba(248, 237, 217, 0.44);
+  scrollbar-color: rgba(173, 157, 143, 0.72) rgba(var(--panel-shell-rgb), 0.58);
   scrollbar-width: thin;
 }
 
@@ -40,13 +43,13 @@
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(248, 237, 217, 0.52);
+  background: rgba(var(--panel-shell-rgb), 0.72);
   border-radius: 999px;
 }
 
 *::-webkit-scrollbar-thumb {
   background: rgba(173, 157, 143, 0.70);
-  border: 2px solid rgba(248, 237, 217, 0.76);
+  border: 2px solid rgba(var(--panel-shell-rgb), 0.88);
   border-radius: 999px;
 }
 
@@ -62,12 +65,14 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
-  background: var(--paper);
+  background: linear-gradient(135deg, var(--paper), #eeeeee 42%, #e6e6e6 100%);
+  background-size: 160% 160%;
   color: var(--taupe);
   font-family: "Arial Nova", ArialNova, Arial, sans-serif;
   font-weight: 300;
   letter-spacing: 0;
   text-rendering: geometricPrecision;
+  animation: ambient-paper 20s ease-in-out infinite alternate;
 }
 
 button,
@@ -239,6 +244,7 @@ button:disabled {
   outline: 0;
   padding: 14px;
   position: relative;
+  transform-origin: center;
   transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
   user-select: none;
   width: min(84vw, 410px);
@@ -250,6 +256,22 @@ button:disabled {
 
 .flashcard.is-dragging {
   transition: none;
+}
+
+.flashcard.motion-flip .card-face {
+  animation: card-flip 360ms ease both;
+}
+
+.flashcard.motion-forward {
+  animation: card-forward 320ms ease both;
+}
+
+.flashcard.motion-skip {
+  animation: card-skip 320ms ease both;
+}
+
+.flashcard.motion-shuffle {
+  animation: card-shuffle 380ms ease both;
 }
 
 .flashcard-category {
@@ -276,7 +298,8 @@ button:disabled {
   overflow: hidden;
   padding: 24px 18px;
   text-align: center;
-  transition: background 220ms ease, color 220ms ease;
+  transform-origin: center;
+  transition: background 220ms ease, color 220ms ease, transform 220ms ease, opacity 220ms ease;
 }
 
 .card-copy {
@@ -328,16 +351,24 @@ button:disabled {
   display: flex;
   flex-direction: column;
   justify-content: end;
+  height: 44px;
   min-height: 44px;
-  padding-bottom: 8px;
+  overflow: hidden;
+  padding: 0 0 8px;
+  width: 100%;
 }
 
 .decorative-lines span {
+  align-self: center;
   background: currentColor;
+  box-sizing: border-box;
   display: block;
+  flex: 0 0 auto;
   height: 4px;
+  max-width: calc(100% - 2px);
   opacity: 0.58;
-  width: 50%;
+  transform: translateZ(0);
+  width: min(50%, 220px);
 }
 
 .decorative-lines span:not(:nth-child(2)) {
@@ -346,7 +377,7 @@ button:disabled {
 
 .decorative-lines span:nth-child(2) {
   opacity: 0.58;
-  width: 50%;
+  width: min(50%, 220px);
 }
 
 .tone-new {
@@ -545,7 +576,7 @@ button:disabled {
 
 .manager-panel,
 .modal-card {
-  background: rgba(248, 237, 217, 0.72);
+  background: var(--panel-shell);
   border: 1px solid rgba(173, 157, 143, 0.20);
   border-radius: var(--radius);
   box-shadow: 0 10px 34px rgba(145, 134, 124, 0.10);
@@ -758,7 +789,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .card-row.is-selected {
-  background: rgba(248, 237, 217, 0.92);
+  background: rgba(var(--shell-rgb), 0.96);
   border-color: rgba(145, 134, 124, 0.36);
   box-shadow: 0 0 0 2px rgba(145, 134, 124, 0.10);
 }
@@ -1003,6 +1034,69 @@ input[type="checkbox"]:focus-visible {
   display: none !important;
 }
 
+@keyframes ambient-paper {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes card-flip {
+  0% {
+    opacity: 0.72;
+    transform: rotateY(-8deg) scale(0.992);
+  }
+
+  48% {
+    opacity: 0.92;
+    transform: rotateY(5deg) scale(1.004);
+  }
+
+  100% {
+    opacity: 1;
+    transform: rotateY(0) scale(1);
+  }
+}
+
+@keyframes card-forward {
+  0% {
+    opacity: 0.68;
+    transform: translateX(16px) scale(0.992);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes card-skip {
+  0% {
+    opacity: 0.68;
+    transform: translateX(-16px) scale(0.992);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes card-shuffle {
+  0% {
+    opacity: 0.72;
+    transform: translateY(8px) scale(0.992);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 920px) {
   .study-layout {
     grid-template-columns: 1fr;
@@ -1043,7 +1137,41 @@ input[type="checkbox"]:focus-visible {
     padding: 20px 14px;
   }
 
-  .study-controls,
+  .study-controls {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-left: auto;
+    margin-right: auto;
+    max-width: min(100%, 390px);
+    width: 100%;
+  }
+
+  .study-controls .text-button {
+    aspect-ratio: 1;
+    gap: 0;
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  .study-controls .material-symbols-outlined {
+    font-size: 21px;
+  }
+
+  .study-controls .text-button span:not(.material-symbols-outlined) {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
   .rating-controls,
   .manager-actions {
     align-items: stretch;

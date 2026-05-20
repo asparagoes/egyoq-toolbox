@@ -2,6 +2,7 @@
   "use strict";
 
   const STORE_KEY = "flashflow.revamped.v1";
+  const SHEETJS_SRC = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
   const RATING_LABELS = {
     1: "again",
     2: "hard",
@@ -102,6 +103,10 @@
   let toastTimer = 0;
   let pointerStart = null;
   let audioContext = null;
+  let audioUnlockPromise = null;
+  let cardMotion = null;
+  let cardMotionTimer = 0;
+  let xlsxLoadPromise = null;
 
   function loadState() {
     try {
@@ -339,6 +344,9 @@
 
   function renderCard(card, bank) {
     refs.flashcard.className = "flashcard";
+    if (cardMotion) {
+      refs.flashcard.classList.add(`motion-${cardMotion}`);
+    }
     if (isBankComplete(bank)) {
       refs.flashcard.classList.add("tone-complete", "is-revealed", "is-complete");
       refs.cardCategory.textContent = "learned";
@@ -441,12 +449,27 @@
     });
   }
 
+  function prefersReducedMotion() {
+    return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  function setCardMotion(kind) {
+    clearTimeout(cardMotionTimer);
+    cardMotion = prefersReducedMotion() ? null : kind;
+    if (!cardMotion) return;
+    cardMotionTimer = setTimeout(() => {
+      cardMotion = null;
+      render();
+    }, 420);
+  }
+
   function revealCard() {
     if (isBankComplete(activeBank())) return;
     const card = currentCard();
     if (!card) return;
     state.study.revealed = true;
     state.study.selectedRating = null;
+    setCardMotion("flip");
     playSfx("reveal");
     saveState();
     render();
@@ -459,6 +482,7 @@
     state.study.typedAnswer = typed;
     state.study.revealed = true;
     state.study.selectedRating = null;
+    setCardMotion("flip");
     playSfx("reveal");
     if (state.settings.autoRating) {
       const proposed = proposeRating(card, typed);
@@ -495,7 +519,7 @@
     });
     const complete = isBankComplete(bank);
     state.study.selectedRating = null;
-    advanceCard(bank);
+    advanceCard(bank, "forward");
     toast(complete ? "bank complete" : `${rating} ${RATING_LABELS[rating]}`, complete ? "complete" : "rate");
   }
 
@@ -516,7 +540,7 @@
       index: bank.currentIndex,
       at: new Date().toISOString()
     });
-    advanceCard(bank);
+    advanceCard(bank, "skip");
     toast("skipped", "skip");
   }
 
@@ -541,7 +565,7 @@
       index: bank.currentIndex,
       at: new Date().toISOString()
     });
-    advanceCard(bank);
+    advanceCard(bank, "forward");
     toast("forward", "forward");
   }
 
@@ -570,6 +594,7 @@
     selectedCardIds.clear();
     selectionMode = false;
     saveState();
+    setCardMotion("shuffle");
     render();
     toast("bank shuffled", "toggle");
   }
@@ -594,7 +619,7 @@
     toast("bank reset", "reset");
   }
 
-  function advanceCard(bank) {
+  function advanceCard(bank, motion = "forward") {
     ensureQueue(bank);
     if (bank.queue.length) {
       bank.currentIndex = (bank.currentIndex + 1) % bank.queue.length;
@@ -604,6 +629,7 @@
     state.study.proposedRating = null;
     state.study.selectedRating = null;
     refs.typingFeedback.textContent = "";
+    setCardMotion(motion);
     saveState();
     render();
   }
@@ -687,6 +713,93 @@
     render();
     toast(`imported ${cards.length} cards`, "import");
     return bank;
+  }
+
+  function importCardsAsBank(cards, name) {
+    if (!cards.length) return null;
+    const bank = normalizeBank({
+      id: uid("bank"),
+      name: name || `bank ${state.banks.length + 1}`,
+      cards,
+      queue: cards.map((card) => card.id),
+      currentIndex: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    state.banks.push(bank);
+    return bank;
+  }
+
+  async function importFile(file) {
+    const baseName = file.name.replace(/\.(csv|xlsx)$/i, "");
+    if (/\.xlsx$/i.test(file.name)) {
+      await importXlsxFile(file, baseName);
+      return;
+    }
+    if (!/\.csv$/i.test(file.name)) {
+      toast("use csv or xlsx", "error");
+      return;
+    }
+    const text = await file.text();
+    importCsvText(text, baseName);
+  }
+
+  function ensureSheetJs() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (xlsxLoadPromise) return xlsxLoadPromise;
+    xlsxLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = SHEETJS_SRC;
+      script.async = true;
+      script.onload = () => {
+        if (window.XLSX) {
+          resolve(window.XLSX);
+          return;
+        }
+        xlsxLoadPromise = null;
+        reject(new Error("xlsx parser unavailable"));
+      };
+      script.onerror = () => {
+        xlsxLoadPromise = null;
+        reject(new Error("xlsx parser failed"));
+      };
+      document.head.append(script);
+    });
+    return xlsxLoadPromise;
+  }
+
+  async function importXlsxFile(file, baseName) {
+    try {
+      const XLSX = await ensureSheetJs();
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const imported = [];
+      workbook.SheetNames.forEach((sheetName) => {
+        const sheet = workbook.Sheets[sheetName];
+        if (!sheet) return;
+        const csv = XLSX.utils.sheet_to_csv(sheet);
+        const cards = parseCardsFromCsv(csv);
+        if (!cards.length) return;
+        const bank = importCardsAsBank(cards, `${baseName} - ${sheetName}`);
+        if (bank) imported.push(bank);
+      });
+      if (!imported.length) {
+        toast("no valid sheets found", "error");
+        return;
+      }
+      state.activeBankId = imported[0].id;
+      state.study.revealed = false;
+      state.study.typedAnswer = "";
+      state.study.proposedRating = null;
+      state.study.selectedRating = null;
+      selectedCardId = null;
+      selectedCardIds.clear();
+      selectionMode = false;
+      saveState();
+      render();
+      toast(`imported ${imported.length} bank${imported.length === 1 ? "" : "s"}`, "import");
+    } catch {
+      toast("xlsx import failed", "error");
+    }
   }
 
   function parseCardsFromCsv(text) {
@@ -997,16 +1110,42 @@
     refs.fullscreenBtn.querySelector(".material-symbols-outlined").textContent = document.fullscreenElement ? "fullscreen_exit" : "fullscreen";
   }
 
-  function playSfx(kind = "tap") {
-    if (!state.settings.sfx) return;
+  async function unlockAudio() {
     const AudioCtor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtor) return;
-    try {
-      audioContext = audioContext || new AudioCtor();
+    if (!AudioCtor) return null;
+    if (!audioContext) {
+      audioContext = new AudioCtor();
+    }
+    if (audioUnlockPromise && audioContext.state === "running") {
+      return audioUnlockPromise;
+    }
+    audioUnlockPromise = (async () => {
       if (audioContext.state === "suspended") {
-        audioContext.resume();
+        await audioContext.resume();
       }
-      const now = audioContext.currentTime;
+      const gain = audioContext.createGain();
+      gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+      gain.connect(audioContext.destination);
+      const oscillator = audioContext.createOscillator();
+      oscillator.frequency.setValueAtTime(1, audioContext.currentTime);
+      oscillator.connect(gain);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.01);
+      return audioContext;
+    })().catch(() => {
+      audioContext = null;
+      audioUnlockPromise = null;
+      return null;
+    });
+    return audioUnlockPromise;
+  }
+
+  async function playSfx(kind = "tap") {
+    if (!state.settings.sfx) return;
+    try {
+      const context = await unlockAudio();
+      if (!context || context.state !== "running") return;
+      const now = context.currentTime;
       const notes = {
         reveal: [392, 523],
         rate: [440, 660],
@@ -1023,15 +1162,15 @@
         tap: [330]
       }[kind] || [330];
       notes.forEach((frequency, index) => {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
         oscillator.type = "sine";
         oscillator.frequency.setValueAtTime(frequency, now + index * 0.055);
         gain.gain.setValueAtTime(0.0001, now + index * 0.055);
         gain.gain.exponentialRampToValueAtTime(0.035, now + index * 0.055 + 0.012);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.055 + 0.13);
         oscillator.connect(gain);
-        gain.connect(audioContext.destination);
+        gain.connect(context.destination);
         oscillator.start(now + index * 0.055);
         oscillator.stop(now + index * 0.055 + 0.14);
       });
@@ -1057,6 +1196,12 @@
       "'": "&#39;"
     }[char]));
   }
+
+  ["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {
+    document.addEventListener(eventName, () => {
+      if (state.settings.sfx) unlockAudio();
+    }, { capture: true, passive: true });
+  });
 
   refs.flashcard.addEventListener("click", (event) => {
     if (event.target.closest("button,input,textarea,select")) return;
@@ -1205,8 +1350,7 @@
   refs.csvFileInput.addEventListener("change", async () => {
     const file = refs.csvFileInput.files[0];
     if (!file) return;
-    const text = await file.text();
-    importCsvText(text, file.name.replace(/\.csv$/i, ""));
+    await importFile(file);
     refs.csvFileInput.value = "";
   });
 
@@ -1320,6 +1464,8 @@
 
   window.flashflowApp = {
     importCsvText,
+    importFile,
+    importXlsxFile,
     parseCardsFromCsv,
     getState: () => JSON.parse(JSON.stringify(state)),
     reset: () => {

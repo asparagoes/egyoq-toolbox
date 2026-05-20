@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ꜰʟᴀꜱʜꜰʟᴏᴡ</title>
+  <title>flashflow</title>
   <meta
     name="description"
     content="Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management."
@@ -13,7 +13,7 @@
     content="Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management."
   >
   <meta name="tool:tags" content="study,flashcards,csv,cloze,typing,review,memorization">
-  <meta name="tool:emoji" content="🪷">
+  <meta name="tool:emoji" content="🦦">
   <meta name="theme-color" content="#ebebeb">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +24,7 @@
 <body>
   <div class="app-shell" id="appShell">
     <header class="topbar chrome" aria-label="application controls">
-      <h1 class="brand">ꜰʟᴀꜱʜꜰʟᴏᴡ</h1>
+      <h1 class="brand">flashflow</h1>
       <div class="top-actions">
         <button class="icon-button" id="infoBtn" type="button" aria-label="about flashflow">
           <span class="material-symbols-outlined" aria-hidden="true">info</span>
@@ -74,23 +74,23 @@
         </div>
 
         <div class="study-controls">
-          <button class="text-button" id="shuffleBankBtn" type="button">
+          <button class="text-button" id="shuffleBankBtn" type="button" aria-label="shuffle bank">
             <span class="material-symbols-outlined" aria-hidden="true">shuffle</span>
             <span>shuffle</span>
           </button>
-          <button class="text-button" id="previousBtn" type="button">
+          <button class="text-button" id="previousBtn" type="button" aria-label="review previous card">
             <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
             <span>review</span>
           </button>
-          <button class="text-button" id="revealBtn" type="button">
+          <button class="text-button" id="revealBtn" type="button" aria-label="reveal answer">
             <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
             <span>reveal</span>
           </button>
-          <button class="text-button" id="skipBtn" type="button">
+          <button class="text-button" id="skipBtn" type="button" aria-label="skip card">
             <span class="material-symbols-outlined" aria-hidden="true">skip_next</span>
             <span>skip</span>
           </button>
-          <button class="text-button" id="resetBankBtn" type="button">
+          <button class="text-button" id="resetBankBtn" type="button" aria-label="reset bank">
             <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
             <span>reset</span>
           </button>
@@ -136,8 +136,8 @@
           <div class="manager-actions">
             <label class="file-button">
               <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
-              <span>import csv</span>
-              <input id="csvFileInput" type="file" accept=".csv,text/csv">
+              <span>import csv/xlsx</span>
+              <input id="csvFileInput" type="file" accept=".csv,.xlsx,text/csv">
             </label>
             <button class="text-button" id="loadSampleBtn" type="button">
               <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
