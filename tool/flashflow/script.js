@@ -44,11 +44,24 @@
     pasteNameInput: $("pasteNameInput"),
     pasteArea: $("pasteArea"),
     pasteImportBtn: $("pasteImportBtn"),
+    settingsTabs: $("settingsTabs"),
     typingToggle: $("typingToggle"),
+    autoRatingLine: $("autoRatingLine"),
     autoRatingToggle: $("autoRatingToggle"),
     caseSensitiveToggle: $("caseSensitiveToggle"),
     sfxToggle: $("sfxToggle"),
+    copyButtonsToggle: $("copyButtonsToggle"),
+    adaptiveQuizToggle: $("adaptiveQuizToggle"),
+    shuffleChoicesToggle: $("shuffleChoicesToggle"),
+    timedReviewToggle: $("timedReviewToggle"),
+    stepSettings: $("stepSettings"),
+    stepAgainInput: $("stepAgainInput"),
+    stepHardInput: $("stepHardInput"),
+    stepGoodInput: $("stepGoodInput"),
+    stepEasyInput: $("stepEasyInput"),
+    masteryInput: $("masteryInput"),
     cardSearchInput: $("cardSearchInput"),
+    cardFilterSelect: $("cardFilterSelect"),
     cardList: $("cardList"),
     selectCardsBtn: $("selectCardsBtn"),
     bulkControls: $("bulkControls"),
@@ -70,6 +83,15 @@
     resetStateBtn: $("resetStateBtn"),
     infoModal: $("infoModal"),
     closeInfoBtn: $("closeInfoBtn"),
+    cardEditModal: $("cardEditModal"),
+    closeCardEditBtn: $("closeCardEditBtn"),
+    modalFrontInput: $("modalFrontInput"),
+    modalBackInput: $("modalBackInput"),
+    modalChoicesInput: $("modalChoicesInput"),
+    modalAnswerInput: $("modalAnswerInput"),
+    modalExplanationInput: $("modalExplanationInput"),
+    modalTagInput: $("modalTagInput"),
+    saveModalCardBtn: $("saveModalCardBtn"),
     toast: $("toast")
   };
 
@@ -83,13 +105,28 @@
       caseSensitive: false,
       minimal: false,
       advancedManager: false,
-      sfx: true
+      sfx: true,
+      copyButtons: false,
+      adaptiveQuiz: false,
+      shuffleChoices: false,
+      timedReview: false,
+      reviewSteps: { 1: 1, 2: 5, 3: 7, 4: 10 },
+      masteryEasyCount: 3,
+      reviewFilter: "all"
     },
     study: {
+      cardId: null,
       revealed: false,
+      previewingQuestion: false,
+      toolsOpen: false,
       typedAnswer: "",
       proposedRating: null,
-      selectedRating: null
+      selectedRating: null,
+      quizStartedAt: null,
+      quizChoice: null,
+      quizCorrect: null,
+      choiceOrderCardId: null,
+      choiceOrder: []
     },
     reviewHistory: [],
     statusCounts: {},
@@ -107,6 +144,7 @@
   let cardMotion = null;
   let cardMotionTimer = 0;
   let xlsxLoadPromise = null;
+  let activeSettingsPanel = "typing";
 
   function loadState() {
     try {
@@ -120,6 +158,14 @@
         settings: { ...createState().settings, ...(saved.settings || {}) },
         study: { ...createState().study, ...(saved.study || {}) }
       };
+      merged.settings.reviewSteps = normalizeReviewSteps(merged.settings.reviewSteps);
+      merged.settings.masteryEasyCount = Math.max(1, Number(merged.settings.masteryEasyCount) || 3);
+      if (!["all", "new", "again", "hard", "good", "easy", "skipped", "learned", "repeating"].includes(merged.settings.reviewFilter)) {
+        merged.settings.reviewFilter = "all";
+      }
+      if (!merged.settings.typing) {
+        merged.settings.autoRating = false;
+      }
       merged.banks = Array.isArray(merged.banks) ? merged.banks.map(normalizeBank) : [];
       if (!merged.activeBankId && merged.banks[0]) {
         merged.activeBankId = merged.banks[0].id;
@@ -147,8 +193,15 @@
   function normalizeCard(card) {
     const text = String(card.text || "");
     const clozeAnswers = extractClozeAnswers(text);
+    const choices = Array.isArray(card.choices) ? card.choices.map((choice) => String(choice || "").trim()).filter(Boolean) : [];
+    const choiceLabels = Array.isArray(card.choiceLabels) ? card.choiceLabels.map((label) => String(label || "").trim()).filter(Boolean) : [];
+    const answerIndex = Number.isFinite(Number(card.answerIndex)) ? Number(card.answerIndex) : null;
+    const type = card.type === "quiz" && choices.length && answerIndex !== null && answerIndex >= 0 && answerIndex < choices.length ? "quiz" : "card";
     return {
       id: card.id || uid("card"),
+      type,
+      sourceId: String(card.sourceId || ""),
+      difficulty: String(card.difficulty || ""),
       front: String(card.front || ""),
       back: String(card.back || ""),
       tag: String(card.tag || "category"),
@@ -157,9 +210,24 @@
       text,
       isCloze: Boolean(card.isCloze || clozeAnswers.length),
       clozeAnswers,
+      choices,
+      choiceLabels: choices.map((_, index) => choiceLabels[index] || indexToLabel(index)),
+      answerIndex,
       rating: Number(card.rating) || null,
       skipped: Boolean(card.skipped),
+      dueAt: card.dueAt || null,
+      easyStreak: Math.max(0, Number(card.easyStreak) || 0),
+      learned: Boolean(card.learned),
       lastReviewedAt: card.lastReviewedAt || null
+    };
+  }
+
+  function normalizeReviewSteps(steps) {
+    return {
+      1: Math.max(0, Number(steps && steps[1]) || 1),
+      2: Math.max(0, Number(steps && steps[2]) || 5),
+      3: Math.max(0, Number(steps && steps[3]) || 7),
+      4: Math.max(0, Number(steps && steps[4]) || 10)
     };
   }
 
@@ -183,12 +251,21 @@
       return null;
     }
     ensureQueue(bank);
-    const queueId = bank.queue[bank.currentIndex % bank.queue.length];
-    return bank.cards.find((card) => card.id === queueId) || bank.cards[0] || null;
+    const dueIds = eligibleCardIds(bank);
+    if (!dueIds.length) return null;
+    for (let offset = 0; offset < bank.queue.length; offset += 1) {
+      const index = (bank.currentIndex + offset) % bank.queue.length;
+      const queueId = bank.queue[index];
+      if (dueIds.indexOf(queueId) >= 0) {
+        bank.currentIndex = index;
+        return bank.cards.find((card) => card.id === queueId) || null;
+      }
+    }
+    return null;
   }
 
   function isBankComplete(bank) {
-    return Boolean(bank && bank.cards.length && bank.cards.every((card) => card.rating === 4));
+    return Boolean(bank && bank.cards.length && bank.cards.every((card) => card.learned));
   }
 
   function ensureQueue(bank) {
@@ -204,6 +281,52 @@
     } else if (bank.currentIndex >= bank.queue.length || bank.currentIndex < 0) {
       bank.currentIndex = 0;
     }
+  }
+
+  function eligibleCardIds(bank) {
+    if (!bank) return [];
+    const dueIds = [];
+    const fallbackIds = [];
+    bank.queue.forEach((id) => {
+      const card = bank.cards.find((item) => item.id === id);
+      if (!card || !cardMatchesReviewFilter(card) || card.learned) return;
+      fallbackIds.push(id);
+      if (cardIsDue(card)) dueIds.push(id);
+    });
+    return dueIds.length ? dueIds : fallbackIds;
+  }
+
+  function cardMatchesReviewFilter(card) {
+    const filter = state.settings.reviewFilter || "all";
+    if (filter === "all") return true;
+    if (filter === "new") return !card.rating && !card.skipped && !card.learned;
+    if (filter === "skipped") return Boolean(card.skipped);
+    if (filter === "learned") return Boolean(card.learned);
+    if (filter === "repeating") return !card.learned;
+    if (filter === "again") return card.rating === 1;
+    if (filter === "hard") return card.rating === 2;
+    if (filter === "good") return card.rating === 3;
+    if (filter === "easy") return card.rating === 4;
+    return true;
+  }
+
+  function cardIsDue(card) {
+    if (!state.settings.timedReview) return true;
+    if (card.learned) return false;
+    if (!card.dueAt) return true;
+    return Date.parse(card.dueAt) <= Date.now();
+  }
+
+  function nextDueAt(bank) {
+    if (!bank || !state.settings.timedReview) return null;
+    let next = null;
+    bank.cards.forEach((card) => {
+      if (card.learned || !cardMatchesReviewFilter(card) || !card.dueAt) return;
+      const due = Date.parse(card.dueAt);
+      if (!Number.isFinite(due) || due <= Date.now()) return;
+      if (next === null || due < next) next = due;
+    });
+    return next;
   }
 
   function updateStatusCounts() {
@@ -223,7 +346,7 @@
         if (card.rating) {
           counts.ratings[card.rating] += 1;
         }
-        if (card.rating === 4) {
+        if (card.learned) {
           counts.learned += 1;
         } else {
           counts.repeating += 1;
@@ -237,24 +360,45 @@
     const bank = activeBank();
     const card = currentCard();
     const complete = isBankComplete(bank);
+    syncStudyCard(card);
     document.body.classList.toggle("app-minimal", state.settings.minimal);
     refs.managerPanel.classList.toggle("is-advanced", state.settings.advancedManager);
     refs.advancedToggleBtn.dataset.active = String(state.settings.advancedManager);
     refs.advancedToggleBtn.setAttribute("aria-pressed", String(state.settings.advancedManager));
     refs.advancedToggleBtn.querySelector("span:last-child").textContent = state.settings.advancedManager ? "compact" : "advanced";
-    refs.typingToggle.checked = state.settings.typing;
-    refs.autoRatingToggle.checked = state.settings.autoRating;
+    const typingEnabled = Boolean(state.settings.typing);
+    const timedReviewEnabled = Boolean(state.settings.timedReview);
+    refs.typingToggle.checked = typingEnabled;
+    refs.autoRatingToggle.checked = typingEnabled && state.settings.autoRating;
+    refs.autoRatingToggle.disabled = !typingEnabled;
+    refs.autoRatingToggle.setAttribute("aria-disabled", String(!typingEnabled));
+    refs.autoRatingLine.classList.toggle("is-disabled", !typingEnabled);
     refs.caseSensitiveToggle.checked = state.settings.caseSensitive;
     refs.sfxToggle.checked = state.settings.sfx;
+    refs.copyButtonsToggle.checked = state.settings.copyButtons;
+    refs.adaptiveQuizToggle.checked = state.settings.adaptiveQuiz;
+    refs.shuffleChoicesToggle.checked = state.settings.shuffleChoices;
+    refs.timedReviewToggle.checked = timedReviewEnabled;
+    refs.stepSettings.hidden = !timedReviewEnabled;
+    refs.stepSettings.classList.toggle("is-disabled", !timedReviewEnabled);
+    [refs.stepAgainInput, refs.stepHardInput, refs.stepGoodInput, refs.stepEasyInput, refs.masteryInput].forEach((input) => {
+      input.disabled = !timedReviewEnabled;
+    });
+    refs.stepAgainInput.value = state.settings.reviewSteps[1];
+    refs.stepHardInput.value = state.settings.reviewSteps[2];
+    refs.stepGoodInput.value = state.settings.reviewSteps[3];
+    refs.stepEasyInput.value = state.settings.reviewSteps[4];
+    refs.masteryInput.value = state.settings.masteryEasyCount;
+    refs.cardFilterSelect.value = state.settings.reviewFilter || "all";
     pruneSelection(bank);
     renderBanks(bank);
     renderStatus(bank);
     renderCard(card, bank);
     renderCardList(bank);
-    refs.typingPanel.classList.toggle("is-visible", Boolean(card && !complete && state.settings.typing));
+    refs.typingPanel.classList.toggle("is-visible", Boolean(card && !complete && state.settings.typing && card.type !== "quiz"));
     refs.typingAnswer.value = state.study.typedAnswer || "";
-    refs.ratingControls.classList.toggle("hidden", !card || complete || !state.study.revealed);
-    refs.revealBtn.disabled = !card || complete || state.study.revealed;
+    refs.ratingControls.classList.toggle("hidden", shouldHideRatingControls(card, complete));
+    refs.revealBtn.disabled = !card || complete;
     refs.skipBtn.disabled = !card || complete;
     renderSkipAction(card, complete);
     refs.previousBtn.disabled = !state.reviewHistory.length;
@@ -273,7 +417,56 @@
     refs.clearSelectionBtn.disabled = !selectedCardIds.size;
     refs.selectionCount.textContent = `${selectedCardIds.size} selected`;
     refs.bankNameInput.value = bank ? bank.name : "";
+    renderSettingsPanels();
     renderRatingControls(card);
+  }
+
+  function renderSettingsPanels() {
+    const panels = document.querySelectorAll("[data-settings-panel]");
+    const tabs = refs.settingsTabs ? refs.settingsTabs.querySelectorAll("[data-settings-tab]") : [];
+    let found = false;
+    for (let index = 0; index < panels.length; index += 1) {
+      if (panels[index].dataset.settingsPanel === activeSettingsPanel) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) activeSettingsPanel = "typing";
+    for (let index = 0; index < panels.length; index += 1) {
+      const panel = panels[index];
+      const active = panel.dataset.settingsPanel === activeSettingsPanel;
+      panel.hidden = !active;
+      panel.classList.toggle("is-active", active);
+    }
+    for (let index = 0; index < tabs.length; index += 1) {
+      const tab = tabs[index];
+      const active = tab.dataset.settingsTab === activeSettingsPanel;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+    }
+  }
+
+  function syncStudyCard(card) {
+    const nextId = card ? card.id : null;
+    if (state.study.cardId === nextId) return;
+    state.study.cardId = nextId;
+    state.study.revealed = false;
+    state.study.previewingQuestion = false;
+    state.study.typedAnswer = "";
+    state.study.proposedRating = null;
+    state.study.selectedRating = null;
+    state.study.quizChoice = null;
+    state.study.quizCorrect = null;
+    state.study.quizStartedAt = card && card.type === "quiz" ? Date.now() : null;
+    state.study.choiceOrderCardId = null;
+    state.study.choiceOrder = [];
+    if (refs.typingFeedback) refs.typingFeedback.textContent = "";
+  }
+
+  function shouldHideRatingControls(card, complete) {
+    if (!card || complete || !state.study.revealed || state.study.previewingQuestion) return true;
+    if (card.type === "quiz" && !state.settings.adaptiveQuiz) return true;
+    return false;
   }
 
   function renderBanks(bank) {
@@ -333,7 +526,7 @@
       if (card.rating) {
         counts.ratings[card.rating] += 1;
       }
-      if (card.rating === 4) {
+      if (card.learned) {
         counts.learned += 1;
       } else {
         counts.repeating += 1;
@@ -344,6 +537,7 @@
 
   function renderCard(card, bank) {
     refs.flashcard.className = "flashcard";
+    refs.cardCopy.className = "card-copy";
     if (cardMotion) {
       refs.flashcard.classList.add(`motion-${cardMotion}`);
     }
@@ -355,21 +549,83 @@
       return;
     }
     refs.flashcard.classList.add(card ? `tone-${card.rating || "new"}` : "tone-new");
-    refs.flashcard.classList.toggle("is-revealed", Boolean(card && state.study.revealed));
+    const answerVisible = Boolean(card && state.study.revealed && !state.study.previewingQuestion);
+    refs.flashcard.classList.toggle("is-revealed", answerVisible);
     refs.cardCategory.textContent = card ? card.tag || "category" : "category";
     refs.flashcard.setAttribute("aria-label", card && !state.study.revealed ? "reveal card" : "flashcard");
     if (!card) {
-      refs.cardCopy.innerHTML = "import a bank to begin";
+      refs.cardCopy.innerHTML = renderNoCurrentCard(bank);
       return;
     }
-    if (state.study.revealed) {
+    if (card.type === "quiz") {
+      refs.cardCopy.classList.add("is-quiz");
+      renderQuizCard(card);
+      return;
+    }
+    if (answerVisible) {
+      const explanation = visibleExplanation(card);
       refs.cardCopy.innerHTML = `
+        ${copyActionsHtml("answer")}
         <div class="answer-copy">${escapeHtml(answerText(card) || "no answer")}</div>
-        ${card.explanation ? `<div class="explanation">${escapeHtml(card.explanation)}</div>` : ""}
+        ${explanation ? `<div class="explanation">${escapeHtml(explanation)}</div>` : ""}
       `;
     } else {
-      refs.cardCopy.innerHTML = renderQuestion(card);
+      refs.cardCopy.innerHTML = `${copyActionsHtml("question")}${renderQuestion(card)}`;
     }
+  }
+
+  function renderNoCurrentCard(bank) {
+    if (!bank || !bank.cards.length) return "import a bank to begin";
+    const due = nextDueAt(bank);
+    if (due) {
+      return `<div class="complete-copy">caught up</div><div class="explanation">next review ${escapeHtml(formatDueTime(due))}</div>`;
+    }
+    return `<div class="complete-copy">no cards in filter</div>`;
+  }
+
+  function renderQuizCard(card) {
+    const order = quizChoiceOrder(card);
+    const selected = Number.isFinite(Number(state.study.quizChoice)) ? Number(state.study.quizChoice) : null;
+    const correct = Number(card.answerIndex);
+    const answered = state.study.revealed && !state.study.previewingQuestion;
+    const locked = state.study.revealed;
+    const choices = order.map((choiceIndex, displayIndex) => {
+      const stateClass = answered && choiceIndex === correct ? " is-correct" : answered && choiceIndex === selected && choiceIndex !== correct ? " is-wrong" : "";
+      const selectedClass = choiceIndex === selected ? " is-selected" : "";
+      const disabled = locked ? " disabled" : "";
+      const label = card.choiceLabels[choiceIndex] || indexToLabel(displayIndex);
+      return `<button class="quiz-choice${stateClass}${selectedClass}" type="button" data-choice="${choiceIndex}"${disabled}>
+        <span class="quiz-choice-letter">${escapeHtml(label)}</span>
+        <span class="quiz-choice-text">${escapeHtml(card.choices[choiceIndex])}</span>
+      </button>`;
+    }).join("");
+    const explanation = answered ? visibleExplanation(card) : "";
+    refs.cardCopy.innerHTML = `
+      <div class="quiz-card">
+        ${copyActionsHtml(answered ? "answer" : "question")}
+        <div class="quiz-stem">${escapeHtml(card.front || "untitled question")}</div>
+        <div class="quiz-choices">${choices}</div>
+        ${answered ? `<div class="quiz-feedback ${state.study.quizCorrect ? "is-correct" : "is-wrong"}">${state.study.quizCorrect ? "correct" : "again"}</div>` : ""}
+        ${explanation ? `<div class="explanation">${escapeHtml(explanation)}</div>` : ""}
+      </div>
+    `;
+  }
+
+  function copyActionsHtml(kind) {
+    if (!state.settings.copyButtons) return "";
+    const label = kind === "answer" ? "copy answer" : "copy question";
+    return `<div class="copy-card-actions">
+      <button class="copy-card-button" type="button" data-copy-card="${kind}" aria-label="${label}">
+        <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+      </button>
+      <button class="copy-card-button" type="button" data-card-tools aria-label="card tools" aria-expanded="${state.study.toolsOpen ? "true" : "false"}">
+        <span class="material-symbols-outlined" aria-hidden="true">more_horiz</span>
+      </button>
+      ${state.study.toolsOpen ? `<div class="card-tools-menu">
+        <button type="button" data-edit-current><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>edit</span></button>
+        <button type="button" data-delete-current><span class="material-symbols-outlined" aria-hidden="true">delete</span><span>delete</span></button>
+      </div>` : ""}
+    </div>`;
   }
 
   function renderQuestion(card) {
@@ -380,10 +636,56 @@
   }
 
   function answerText(card) {
+    if (card.type === "quiz") {
+      return card.choices[card.answerIndex] || "";
+    }
     if (card.isCloze && card.clozeAnswers.length) {
       return card.clozeAnswers.join(", ");
     }
     return card.back;
+  }
+
+  function visibleExplanation(card) {
+    const explanation = String(card.explanation || "").trim();
+    if (!explanation) return "";
+    const answer = answerText(card);
+    if (normalizeComparable(explanation) === normalizeComparable(answer)) return "";
+    if (card.type === "quiz") {
+      const withoutPrefix = explanation.replace(/^correct:\s*/i, "").replace(/\s+/g, " ").trim();
+      if (normalizeComparable(withoutPrefix) === normalizeComparable(answer)) return "";
+    }
+    return explanation;
+  }
+
+  function normalizeComparable(value) {
+    return String(value || "").toLowerCase().replace(/^correct:\s*/i, "").replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  function quizChoiceOrder(card) {
+    if (state.study.choiceOrderCardId === card.id && Array.isArray(state.study.choiceOrder) && state.study.choiceOrder.length === card.choices.length) {
+      return state.study.choiceOrder.slice();
+    }
+    const order = card.choices.map((_, index) => index);
+    if (state.settings.shuffleChoices) {
+      for (let index = order.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        const value = order[index];
+        order[index] = order[swapIndex];
+        order[swapIndex] = value;
+      }
+    }
+    state.study.choiceOrderCardId = card.id;
+    state.study.choiceOrder = order.slice();
+    return order;
+  }
+
+  function formatDueTime(timestamp) {
+    const diff = Math.max(0, timestamp - Date.now());
+    const minutes = Math.ceil(diff / 60000);
+    if (minutes <= 1) return "in 1 minute";
+    if (minutes < 60) return `in ${minutes} minutes`;
+    const hours = Math.ceil(minutes / 60);
+    return hours === 1 ? "in 1 hour" : `in ${hours} hours`;
   }
 
   function renderSkipAction(card, complete) {
@@ -419,8 +721,8 @@
     }
     const query = refs.cardSearchInput.value.trim().toLowerCase();
     const cards = bank.cards.filter((card) => {
-      const text = `${card.front} ${card.back} ${card.text} ${card.tag} ${card.explanation}`.toLowerCase();
-      return !query || text.includes(query);
+      const text = `${card.front} ${card.back} ${card.text} ${card.tag} ${card.explanation} ${(card.choices || []).join(" ")}`.toLowerCase();
+      return cardMatchesReviewFilter(card) && (!query || text.includes(query));
     });
     if (!cards.length) {
       refs.cardList.innerHTML = '<p class="empty-text">no matching cards</p>';
@@ -438,7 +740,7 @@
         ` : ""}
         <div>
           <p class="card-row-title">${escapeHtml(card.front || card.text || answerText(card) || "untitled card")}</p>
-          <div class="card-row-meta">${escapeHtml(card.tag || "category")} / ${card.rating ? RATING_LABELS[card.rating] : card.skipped ? "skipped" : "unrated"}</div>
+          <div class="card-row-meta">${escapeHtml(card.tag || "category")} / ${card.type === "quiz" ? "quiz / " : ""}${card.learned ? "learned" : card.rating ? RATING_LABELS[card.rating] : card.skipped ? "skipped" : "unrated"}</div>
         </div>
         <div class="row-actions manager-advanced">
           <button class="mini-button" type="button" data-edit="${card.id}" aria-label="edit card"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button>
@@ -463,11 +765,27 @@
     }, 420);
   }
 
+  function canPreviewFlip(card) {
+    return Boolean(card && (card.rating || state.study.selectedRating || state.study.proposedRating));
+  }
+
   function revealCard() {
     if (isBankComplete(activeBank())) return;
     const card = currentCard();
     if (!card) return;
+    if (state.study.revealed && canPreviewFlip(card)) {
+      state.study.previewingQuestion = !state.study.previewingQuestion;
+      setCardMotion("flip");
+      saveState();
+      render();
+      return;
+    }
+    if (card.type === "quiz" && !state.study.revealed) {
+      revealQuizAnswer(card);
+      return;
+    }
     state.study.revealed = true;
+    state.study.previewingQuestion = false;
     state.study.selectedRating = null;
     setCardMotion("flip");
     playSfx("reveal");
@@ -481,6 +799,7 @@
     const typed = refs.typingAnswer.value.trim();
     state.study.typedAnswer = typed;
     state.study.revealed = true;
+    state.study.previewingQuestion = false;
     state.study.selectedRating = null;
     setCardMotion("flip");
     playSfx("reveal");
@@ -502,15 +821,20 @@
     if (!bank || !card || isBankComplete(bank)) return;
     const previousRating = card.rating;
     const previousSkipped = card.skipped;
-    card.rating = rating;
-    card.skipped = false;
-    card.lastReviewedAt = new Date().toISOString();
+    const previousDueAt = card.dueAt;
+    const previousEasyStreak = card.easyStreak;
+    const previousLearned = card.learned;
+    state.study.previewingQuestion = false;
+    applyRating(card, rating);
     state.reviewHistory.push({
       type: "rating",
       bankId: bank.id,
       cardId: card.id,
       previousRating,
       previousSkipped,
+      previousDueAt,
+      previousEasyStreak,
+      previousLearned,
       rating,
       typedAnswer: state.study.typedAnswer || "",
       proposedRating: state.study.proposedRating,
@@ -529,14 +853,23 @@
     if (!bank || !card || isBankComplete(bank)) return;
     const previousRating = card.rating;
     const previousSkipped = card.skipped;
+    const previousDueAt = card.dueAt;
+    const previousEasyStreak = card.easyStreak;
+    const previousLearned = card.learned;
     card.rating = null;
     card.skipped = true;
+    card.dueAt = null;
+    card.easyStreak = 0;
+    card.learned = false;
     state.reviewHistory.push({
       type: "skip",
       bankId: bank.id,
       cardId: card.id,
       previousRating,
       previousSkipped,
+      previousDueAt,
+      previousEasyStreak,
+      previousLearned,
       index: bank.currentIndex,
       at: new Date().toISOString()
     });
@@ -551,10 +884,11 @@
     const selectedRating = Number(state.study.selectedRating) || null;
     const previousRating = card.rating;
     const previousSkipped = card.skipped;
-    if (!card.rating && selectedRating) {
-      card.rating = selectedRating;
-      card.skipped = false;
-      card.lastReviewedAt = new Date().toISOString();
+    const previousDueAt = card.dueAt;
+    const previousEasyStreak = card.easyStreak;
+    const previousLearned = card.learned;
+    if (selectedRating && state.study.revealed) {
+      applyRating(card, selectedRating);
     }
     state.reviewHistory.push({
       type: "forward",
@@ -562,6 +896,9 @@
       cardId: card.id,
       previousRating,
       previousSkipped,
+      previousDueAt,
+      previousEasyStreak,
+      previousLearned,
       index: bank.currentIndex,
       at: new Date().toISOString()
     });
@@ -605,6 +942,9 @@
     bank.cards.forEach((card) => {
       card.rating = null;
       card.skipped = false;
+      card.dueAt = null;
+      card.easyStreak = 0;
+      card.learned = false;
       card.lastReviewedAt = null;
     });
     bank.queue = bank.cards.map((card) => card.id);
@@ -614,6 +954,12 @@
     state.study.typedAnswer = "";
     state.study.proposedRating = null;
     state.study.selectedRating = null;
+    state.study.cardId = null;
+    state.study.quizChoice = null;
+    state.study.quizCorrect = null;
+    state.study.quizStartedAt = null;
+    state.study.choiceOrderCardId = null;
+    state.study.choiceOrder = [];
     saveState();
     render();
     toast("bank reset", "reset");
@@ -628,6 +974,12 @@
     state.study.typedAnswer = "";
     state.study.proposedRating = null;
     state.study.selectedRating = null;
+    state.study.cardId = null;
+    state.study.quizChoice = null;
+    state.study.quizCorrect = null;
+    state.study.quizStartedAt = null;
+    state.study.choiceOrderCardId = null;
+    state.study.choiceOrder = [];
     refs.typingFeedback.textContent = "";
     setCardMotion(motion);
     saveState();
@@ -644,6 +996,9 @@
     state.activeBankId = bank.id;
     card.rating = entry.previousRating || null;
     card.skipped = Boolean(entry.previousSkipped);
+    card.dueAt = entry.previousDueAt || null;
+    card.easyStreak = Math.max(0, Number(entry.previousEasyStreak) || 0);
+    card.learned = Boolean(entry.previousLearned);
     ensureQueue(bank);
     const index = bank.queue.indexOf(card.id);
     bank.currentIndex = index >= 0 ? index : 0;
@@ -651,9 +1006,88 @@
     state.study.typedAnswer = entry.typedAnswer || "";
     state.study.proposedRating = entry.proposedRating || null;
     state.study.selectedRating = entry.type === "rating" ? entry.rating || null : null;
+    state.study.cardId = card.id;
+    state.study.quizStartedAt = card.type === "quiz" ? Date.now() : null;
     saveState();
     render();
     toast(entry.type === "rating" ? "rating reopened" : "previous card");
+  }
+
+  function applyRating(card, rating) {
+    const now = new Date();
+    card.rating = rating;
+    card.skipped = false;
+    card.lastReviewedAt = now.toISOString();
+    if (rating === 4) {
+      card.easyStreak = Math.max(0, Number(card.easyStreak) || 0) + 1;
+    } else {
+      card.easyStreak = 0;
+      card.learned = false;
+    }
+    if (rating === 4 && card.easyStreak >= state.settings.masteryEasyCount) {
+      card.learned = true;
+      card.dueAt = null;
+    } else if (state.settings.timedReview) {
+      card.learned = false;
+      card.dueAt = new Date(now.getTime() + reviewStepMinutes(rating) * 60000).toISOString();
+    } else {
+      card.dueAt = null;
+    }
+  }
+
+  function reviewStepMinutes(rating) {
+    const steps = normalizeReviewSteps(state.settings.reviewSteps);
+    return Math.max(0, Number(steps[rating]) || 0);
+  }
+
+  function answerQuizChoice(choiceIndex) {
+    const bank = activeBank();
+    const card = currentCard();
+    if (!bank || !card || card.type !== "quiz" || state.study.revealed) return;
+    const correct = Number(choiceIndex) === Number(card.answerIndex);
+    state.study.quizChoice = Number(choiceIndex);
+    state.study.quizCorrect = correct;
+    state.study.revealed = true;
+    state.study.previewingQuestion = false;
+    const rating = state.settings.adaptiveQuiz ? proposeQuizRating(card, correct) : correct ? 4 : 1;
+    state.study.proposedRating = state.settings.adaptiveQuiz ? rating : null;
+    state.study.selectedRating = state.settings.adaptiveQuiz ? rating : null;
+    if (!state.settings.adaptiveQuiz) {
+      applyRating(card, rating);
+    }
+    setCardMotion("flip");
+    saveState();
+    render();
+    toast(correct ? "correct" : "again", correct ? "rate" : "error");
+  }
+
+  function revealQuizAnswer(card) {
+    state.study.quizChoice = null;
+    state.study.quizCorrect = false;
+    state.study.revealed = true;
+    state.study.previewingQuestion = false;
+    state.study.proposedRating = state.settings.adaptiveQuiz ? 1 : null;
+    state.study.selectedRating = state.settings.adaptiveQuiz ? 1 : null;
+    if (!state.settings.adaptiveQuiz) {
+      applyRating(card, 1);
+    }
+    setCardMotion("flip");
+    playSfx("reveal");
+    saveState();
+    render();
+  }
+
+  function proposeQuizRating(card, correct) {
+    if (!correct) return 1;
+    const started = Number(state.study.quizStartedAt) || Date.now();
+    const elapsed = Math.max(0.5, (Date.now() - started) / 1000);
+    const textLength = String(card.front || "").length + (card.choices || []).join(" ").length;
+    const expected = Math.max(6, Math.min(45, 4 + textLength / 22));
+    const ratio = elapsed / expected;
+    if (ratio <= 0.65) return 4;
+    if (ratio <= 1.15) return 3;
+    if (ratio <= 1.8) return 2;
+    return 1;
   }
 
   function proposeRating(card, typed) {
@@ -740,7 +1174,7 @@
       toast("use csv or xlsx", "error");
       return;
     }
-    const text = await file.text();
+    const text = await readFileAsText(file);
     importCsvText(text, baseName);
   }
 
@@ -771,7 +1205,7 @@
   async function importXlsxFile(file, baseName) {
     try {
       const XLSX = await ensureSheetJs();
-      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const workbook = XLSX.read(await readFileAsArrayBuffer(file), { type: "array" });
       const imported = [];
       workbook.SheetNames.forEach((sheetName) => {
         const sheet = workbook.Sheets[sheetName];
@@ -819,6 +1253,25 @@
     const text = pick(record, ["text", "cloze"]);
     const clozeAnswers = extractClozeAnswers(text);
     const isCloze = clozeAnswers.length > 0;
+    const choiceEntries = getChoiceEntries(record);
+    const answerIndex = parseChoiceAnswer(pick(record, ["answer", "correct"]), choiceEntries);
+    const stem = pick(record, ["stem", "question", "front", "q", "prompt"]);
+    if (stem && choiceEntries.length && answerIndex !== null) {
+      const choices = choiceEntries.map((entry) => entry.value);
+      return normalizeCard({
+        id: uid("card"),
+        type: "quiz",
+        sourceId: pick(record, ["id", "sourceid"]),
+        difficulty: pick(record, ["difficulty", "diff"]),
+        front: stem,
+        back: choices[answerIndex] || "",
+        tag: pick(record, ["topic", "tag", "tags", "category"]) || "category",
+        explanation: pick(record, ["explanation", "explain", "note", "notes"]),
+        choices,
+        choiceLabels: choiceEntries.map((entry) => entry.label),
+        answerIndex
+      });
+    }
     const front = pick(record, ["front", "q", "question", "stem", "prompt"]) || (isCloze ? text : "");
     const back = pick(record, ["back", "a", "answer", "response"]) || (isCloze ? clozeAnswers.join(", ") : "");
     if (!front && !back && !text) return null;
@@ -849,6 +1302,48 @@
     return String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
   }
 
+  function getChoiceEntries(record) {
+    const entries = [];
+    for (let index = 0; index < 702; index += 1) {
+      const label = indexToLabel(index);
+      const key = normalizeHeader(label);
+      if (!Object.prototype.hasOwnProperty.call(record, key)) break;
+      const value = String(record[key] || "").trim();
+      if (value) entries.push({ label, value });
+    }
+    return entries;
+  }
+
+  function parseChoiceAnswer(value, choiceEntries) {
+    const text = String(value || "").trim();
+    if (!text) return null;
+    const upper = text.toUpperCase();
+    for (let index = 0; index < choiceEntries.length; index += 1) {
+      if (choiceEntries[index].label === upper) return index;
+    }
+    const numeric = parseInt(text, 10);
+    if (!Number.isNaN(numeric)) {
+      if (numeric === 0 && choiceEntries.length) return 0;
+      if (numeric >= 1 && numeric <= choiceEntries.length) return numeric - 1;
+      if (numeric >= 0 && numeric < choiceEntries.length) return numeric;
+    }
+    const comparable = normalizeComparable(text);
+    for (let index = 0; index < choiceEntries.length; index += 1) {
+      if (normalizeComparable(choiceEntries[index].value) === comparable) return index;
+    }
+    return null;
+  }
+
+  function indexToLabel(index) {
+    let value = Number(index);
+    let label = "";
+    do {
+      label = String.fromCharCode(65 + (value % 26)) + label;
+      value = Math.floor(value / 26) - 1;
+    } while (value >= 0);
+    return label;
+  }
+
   function normalizeAccepted(value) {
     if (Array.isArray(value)) {
       return value.map((item) => String(item).trim()).filter(Boolean);
@@ -857,7 +1352,34 @@
   }
 
   function extractClozeAnswers(text) {
-    return Array.from(String(text || "").matchAll(/\[\[([^\]]+)\]\]/g)).map((match) => match[1].trim()).filter(Boolean);
+    const answers = [];
+    const pattern = /\[\[([^\]]+)\]\]/g;
+    let match = pattern.exec(String(text || ""));
+    while (match) {
+      if (match[1] && match[1].trim()) answers.push(match[1].trim());
+      match = pattern.exec(String(text || ""));
+    }
+    return answers;
+  }
+
+  function readFileAsText(file) {
+    if (file.text) return file.text();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error || new Error("file read failed"));
+      reader.readAsText(file);
+    });
+  }
+
+  function readFileAsArrayBuffer(file) {
+    if (file.arrayBuffer) return file.arrayBuffer();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error("file read failed"));
+      reader.readAsArrayBuffer(file);
+    });
   }
 
   function parseCsv(input) {
@@ -897,17 +1419,31 @@
   function exportCsv() {
     const bank = activeBank();
     if (!bank) return;
-    const rows = [["front", "back", "tag", "accepted", "explanation", "text", "rating", "skipped"]];
+    const maxChoices = bank.cards.reduce((max, card) => Math.max(max, (card.choices || []).length), 0);
+    const choiceHeaders = [];
+    for (let index = 0; index < maxChoices; index += 1) choiceHeaders.push(indexToLabel(index));
+    const rows = [["type", "id", "topic", "difficulty", "stem", ...choiceHeaders, "answer", "explanation", "front", "back", "tag", "accepted", "text", "rating", "skipped", "easyStreak", "learned", "dueAt"]];
     bank.cards.forEach((card) => {
+      const choiceCells = choiceHeaders.map((_, index) => card.choices && card.choices[index] ? card.choices[index] : "");
       rows.push([
-        card.front,
+        card.type || "card",
+        card.sourceId || card.id,
+        card.tag,
+        card.difficulty || "",
+        card.type === "quiz" ? card.front : "",
+        ...choiceCells,
+        card.type === "quiz" ? (card.choiceLabels[card.answerIndex] || indexToLabel(card.answerIndex)) : card.back,
+        card.explanation,
+        card.type === "quiz" ? "" : card.front,
         card.back,
         card.tag,
         (card.accepted || []).join("|"),
-        card.explanation,
         card.text,
         card.rating || "",
-        card.skipped ? "true" : "false"
+        card.skipped ? "true" : "false",
+        card.easyStreak || "",
+        card.learned ? "true" : "false",
+        card.dueAt || ""
       ]);
     });
     download(`${slug(bank.name)}-cards.csv`, rows.map((row) => row.map(csvCell).join(",")).join("\n"), "text/csv");
@@ -996,11 +1532,21 @@
     const index = bank.cards.findIndex((card) => card.id === selectedCardId);
     if (index < 0) return;
     const existing = bank.cards[index];
+    const edited = editorCardData();
     bank.cards[index] = {
-      ...editorCardData(),
+      ...edited,
       id: selectedCardId,
+      type: existing.type,
+      sourceId: existing.sourceId,
+      difficulty: existing.difficulty,
+      choices: existing.choices,
+      choiceLabels: existing.choiceLabels,
+      answerIndex: existing.answerIndex,
       rating: existing.rating,
       skipped: existing.skipped,
+      dueAt: existing.dueAt,
+      easyStreak: existing.easyStreak,
+      learned: existing.learned,
       lastReviewedAt: existing.lastReviewedAt
     };
     bank.updatedAt = new Date().toISOString();
@@ -1063,6 +1609,122 @@
     saveState();
     render();
     toast(`${count} card${count === 1 ? "" : "s"} deleted`, "delete");
+  }
+
+  function updateReviewStepSettings() {
+    state.settings.reviewSteps = normalizeReviewSteps({
+      1: refs.stepAgainInput.value,
+      2: refs.stepHardInput.value,
+      3: refs.stepGoodInput.value,
+      4: refs.stepEasyInput.value
+    });
+    state.settings.masteryEasyCount = Math.max(1, Number(refs.masteryInput.value) || 3);
+    saveState();
+    render();
+  }
+
+  function copyCurrentCard(kind) {
+    const card = currentCard();
+    if (!card) return;
+    const text = kind === "answer" ? answerText(card) : questionText(card);
+    if (!text) {
+      toast("nothing to copy", "error");
+      return;
+    }
+    copyText(text).then(() => toast(kind === "answer" ? "answer copied" : "question copied", "tap")).catch(() => toast("copy failed", "error"));
+  }
+
+  function questionText(card) {
+    return card.type === "quiz" ? card.front : card.front || card.text || "";
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.left = "-9999px";
+      document.body.append(area);
+      area.select();
+      try {
+        if (document.execCommand("copy")) resolve();
+        else reject(new Error("copy failed"));
+      } catch (error) {
+        reject(error);
+      }
+      area.remove();
+    });
+  }
+
+  function openCurrentCardEditor() {
+    const card = currentCard();
+    if (!card) return;
+    selectedCardId = card.id;
+    state.study.toolsOpen = false;
+    refs.modalFrontInput.value = card.front || card.text || "";
+    refs.modalBackInput.value = answerText(card);
+    refs.modalChoicesInput.value = card.type === "quiz" ? (card.choices || []).join("\n") : "";
+    refs.modalAnswerInput.value = card.type === "quiz" ? (card.choiceLabels[card.answerIndex] || indexToLabel(card.answerIndex)) : "";
+    refs.modalExplanationInput.value = card.explanation || "";
+    refs.modalTagInput.value = card.tag || "category";
+    refs.cardEditModal.classList.add("is-open");
+    refs.cardEditModal.setAttribute("aria-hidden", "false");
+    refs.modalFrontInput.focus();
+  }
+
+  function closeCardEditor() {
+    refs.cardEditModal.classList.remove("is-open");
+    refs.cardEditModal.setAttribute("aria-hidden", "true");
+  }
+
+  function saveModalCard() {
+    const bank = activeBank();
+    if (!bank || !selectedCardId) return;
+    const card = bank.cards.find((item) => item.id === selectedCardId);
+    if (!card) return;
+    const choices = refs.modalChoicesInput.value.split(/\r?\n/).map((choice) => choice.trim()).filter(Boolean);
+    card.front = refs.modalFrontInput.value.trim();
+    card.tag = refs.modalTagInput.value.trim() || "category";
+    card.explanation = refs.modalExplanationInput.value.trim();
+    if (choices.length) {
+      const entries = choices.map((choice, index) => ({ label: indexToLabel(index), value: choice }));
+      const answerIndex = parseChoiceAnswer(refs.modalAnswerInput.value, entries);
+      card.type = "quiz";
+      card.choices = choices;
+      card.choiceLabels = entries.map((entry) => entry.label);
+      card.answerIndex = answerIndex === null ? 0 : answerIndex;
+      card.back = choices[card.answerIndex] || "";
+      card.text = "";
+      card.isCloze = false;
+      card.clozeAnswers = [];
+    } else {
+      const text = refs.modalFrontInput.value.indexOf("[[") >= 0 ? refs.modalFrontInput.value.trim() : card.text;
+      const clozeAnswers = extractClozeAnswers(text);
+      card.type = "card";
+      card.back = refs.modalBackInput.value.trim() || (clozeAnswers.length ? clozeAnswers.join(", ") : "");
+      card.text = text || "";
+      card.isCloze = clozeAnswers.length > 0;
+      card.clozeAnswers = clozeAnswers;
+      card.choices = [];
+      card.choiceLabels = [];
+      card.answerIndex = null;
+    }
+    bank.updatedAt = new Date().toISOString();
+    closeCardEditor();
+    saveState();
+    render();
+    toast("card saved", "toggle");
+  }
+
+  function deleteCurrentCard() {
+    const card = currentCard();
+    if (!card) return;
+    state.study.toolsOpen = false;
+    deleteCard(card.id);
   }
 
   function setMinimal(value) {
@@ -1205,7 +1867,32 @@
 
   refs.flashcard.addEventListener("click", (event) => {
     if (event.target.closest("button,input,textarea,select")) return;
-    if (!state.study.revealed) revealCard();
+    if (!state.study.revealed || canPreviewFlip(currentCard())) revealCard();
+  });
+
+  refs.cardFace.addEventListener("click", (event) => {
+    const toolsButton = event.target.closest("[data-card-tools]");
+    if (toolsButton) {
+      state.study.toolsOpen = !state.study.toolsOpen;
+      render();
+      return;
+    }
+    if (event.target.closest("[data-edit-current]")) {
+      openCurrentCardEditor();
+      return;
+    }
+    if (event.target.closest("[data-delete-current]")) {
+      deleteCurrentCard();
+      return;
+    }
+    const copyButton = event.target.closest("[data-copy-card]");
+    if (copyButton) {
+      copyCurrentCard(copyButton.dataset.copyCard);
+      return;
+    }
+    const button = event.target.closest("[data-choice]");
+    if (!button) return;
+    answerQuizChoice(Number(button.dataset.choice));
   });
 
   refs.flashcard.addEventListener("pointerdown", (event) => {
@@ -1253,6 +1940,11 @@
   refs.infoModal.addEventListener("click", (event) => {
     if (event.target === refs.infoModal) closeInfo();
   });
+  refs.closeCardEditBtn.addEventListener("click", closeCardEditor);
+  refs.saveModalCardBtn.addEventListener("click", saveModalCard);
+  refs.cardEditModal.addEventListener("click", (event) => {
+    if (event.target === refs.cardEditModal) closeCardEditor();
+  });
 
   refs.ratingControls.addEventListener("click", (event) => {
     const button = event.target.closest("[data-rating]");
@@ -1274,6 +1966,9 @@
 
   refs.typingToggle.addEventListener("change", () => {
     state.settings.typing = refs.typingToggle.checked;
+    if (!state.settings.typing) {
+      state.settings.autoRating = false;
+    }
     state.study.revealed = false;
     state.study.typedAnswer = "";
     state.study.proposedRating = null;
@@ -1283,6 +1978,10 @@
     playSfx("toggle");
   });
   refs.autoRatingToggle.addEventListener("change", () => {
+    if (!state.settings.typing) {
+      refs.autoRatingToggle.checked = false;
+      return;
+    }
     state.settings.autoRating = refs.autoRatingToggle.checked;
     saveState();
     render();
@@ -1299,6 +1998,38 @@
     saveState();
     render();
     playSfx("toggle");
+  });
+  refs.copyButtonsToggle.addEventListener("change", () => {
+    state.settings.copyButtons = refs.copyButtonsToggle.checked;
+    saveState();
+    render();
+    playSfx("toggle");
+  });
+  refs.adaptiveQuizToggle.addEventListener("change", () => {
+    state.settings.adaptiveQuiz = refs.adaptiveQuizToggle.checked;
+    state.study.proposedRating = null;
+    state.study.selectedRating = null;
+    saveState();
+    render();
+    playSfx("toggle");
+  });
+  refs.shuffleChoicesToggle.addEventListener("change", () => {
+    state.settings.shuffleChoices = refs.shuffleChoicesToggle.checked;
+    state.study.choiceOrderCardId = null;
+    state.study.choiceOrder = [];
+    saveState();
+    render();
+    playSfx("toggle");
+  });
+  refs.timedReviewToggle.addEventListener("change", () => {
+    state.settings.timedReview = refs.timedReviewToggle.checked;
+    saveState();
+    render();
+    playSfx("toggle");
+  });
+  [refs.stepAgainInput, refs.stepHardInput, refs.stepGoodInput, refs.stepEasyInput, refs.masteryInput].forEach((input) => {
+    input.addEventListener("change", updateReviewStepSettings);
+    input.addEventListener("input", updateReviewStepSettings);
   });
 
   refs.bankSelect.addEventListener("change", () => {
@@ -1369,7 +2100,22 @@
     importCsvText(refs.pasteArea.value, refs.pasteNameInput.value.trim() || "pasted bank");
   });
 
+  refs.settingsTabs.addEventListener("click", (event) => {
+    const tab = event.target.closest("[data-settings-tab]");
+    if (!tab) return;
+    activeSettingsPanel = tab.dataset.settingsTab || "typing";
+    render();
+    playSfx("toggle");
+  });
+
   refs.cardSearchInput.addEventListener("input", () => renderCardList(activeBank()));
+  refs.cardFilterSelect.addEventListener("change", () => {
+    state.settings.reviewFilter = refs.cardFilterSelect.value;
+    state.study.cardId = null;
+    saveState();
+    render();
+    playSfx("toggle");
+  });
   refs.selectCardsBtn.addEventListener("click", toggleSelectionMode);
   refs.bulkDeleteBtn.addEventListener("click", deleteSelectedCards);
   refs.clearSelectionBtn.addEventListener("click", clearCardSelection);
@@ -1402,7 +2148,7 @@
     const file = refs.restoreInput.files[0];
     if (!file) return;
     try {
-      const restored = JSON.parse(await file.text());
+      const restored = JSON.parse(await readFileAsText(file));
       localStorage.setItem(STORE_KEY, JSON.stringify(restored));
       state = loadState();
       selectedCardId = null;
@@ -1437,6 +2183,7 @@
     const typingInField = target && /input|textarea|select/i.test(target.tagName);
     const ratingKey = ["1", "2", "3", "4"].includes(event.key);
     if (event.key === "Escape") {
+      if (refs.cardEditModal.classList.contains("is-open")) closeCardEditor();
       if (refs.infoModal.classList.contains("is-open")) closeInfo();
       return;
     }
@@ -1452,13 +2199,22 @@
       if (!state.study.revealed) revealCard();
     }
     if (ratingKey) {
-      if (state.study.revealed) rateCurrent(Number(event.key));
+      const card = currentCard();
+      if (card && card.type === "quiz" && !state.study.revealed) {
+        const order = quizChoiceOrder(card);
+        const displayIndex = Number(event.key) - 1;
+        if (order[displayIndex] !== undefined) {
+          answerQuizChoice(order[displayIndex]);
+        }
+      } else if (state.study.revealed) {
+        rateCurrent(Number(event.key));
+      }
     }
     if (event.key === "ArrowLeft") {
-      skipOrForwardCurrent();
+      reviewPrevious();
     }
     if (event.key === "ArrowRight") {
-      reviewPrevious();
+      skipOrForwardCurrent();
     }
   });
 

@@ -6,13 +6,13 @@
   <title>flashflow</title>
   <meta
     name="description"
-    content="Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management."
+    content="Minimal flashcards and native MCQ quiz cards with CSV/XLSX import, cloze blanks, optional review steps, and compact bank management."
   >
   <meta
     name="tool:description"
-    content="Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management."
+    content="Minimal flashcards and native MCQ quiz cards with CSV/XLSX import, cloze blanks, optional review steps, and compact bank management."
   >
-  <meta name="tool:tags" content="study,flashcards,csv,cloze,typing,review,memorization">
+  <meta name="tool:tags" content="study,flashcards,quiz,mcq,csv,xlsx,cloze,typing,review,memorization">
   <meta name="tool:emoji" content="🦦">
   <meta name="theme-color" content="#ebebeb">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
@@ -78,9 +78,9 @@
             <span class="material-symbols-outlined" aria-hidden="true">shuffle</span>
             <span>shuffle</span>
           </button>
-          <button class="text-button" id="previousBtn" type="button" aria-label="review previous card">
+          <button class="text-button" id="previousBtn" type="button" aria-label="previous card">
             <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-            <span>review</span>
+            <span>previous</span>
           </button>
           <button class="text-button" id="revealBtn" type="button" aria-label="reveal answer">
             <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
@@ -156,27 +156,79 @@
             <span class="material-symbols-outlined" aria-hidden="true">content_paste</span>
             <span>import paste</span>
           </button>
-          <p class="microcopy manager-advanced">accepted fields: front/back, q/a/tag, stem/answer/explanation, accepted/answers, or text with [[cloze]].</p>
+          <p class="microcopy manager-advanced">accepted fields: front/back, q/a/tag, stem/answer/explanation, mcq choices a/b/c..., accepted/answers, or text with [[cloze]].</p>
         </section>
 
-        <section class="manager-section">
-          <h2 class="section-title">typing</h2>
-          <label class="switch-line">
-            <input id="typingToggle" type="checkbox">
-            <span>typing mode</span>
-          </label>
-          <label class="switch-line">
-            <input id="autoRatingToggle" type="checkbox">
-            <span>auto-rating proposal</span>
-          </label>
-          <label class="switch-line">
-            <input id="caseSensitiveToggle" type="checkbox">
-            <span>case sensitive answers</span>
-          </label>
-          <label class="switch-line">
-            <input id="sfxToggle" type="checkbox">
-            <span>sound effects</span>
-          </label>
+        <section class="manager-section settings-section">
+          <h2 class="section-title">settings</h2>
+          <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="settings">
+            <button class="settings-tab" id="typingSettingsTab" type="button" role="tab" data-settings-tab="typing" aria-controls="typingSettingsPanel">typing</button>
+            <button class="settings-tab" id="quizSettingsTab" type="button" role="tab" data-settings-tab="quiz" aria-controls="quizSettingsPanel">quiz</button>
+            <button class="settings-tab" id="generalSettingsTab" type="button" role="tab" data-settings-tab="general" aria-controls="generalSettingsPanel">general</button>
+          </div>
+          <div class="settings-group" id="typingSettingsPanel" data-settings-panel="typing" role="tabpanel" aria-labelledby="typingSettingsTab">
+            <h3 class="settings-title">typing</h3>
+            <label class="switch-line">
+              <input id="typingToggle" type="checkbox">
+              <span>typing mode</span>
+            </label>
+            <label class="switch-line dependent-line" id="autoRatingLine">
+              <input id="autoRatingToggle" type="checkbox">
+              <span>auto-rating proposal</span>
+            </label>
+            <label class="switch-line">
+              <input id="caseSensitiveToggle" type="checkbox">
+              <span>case sensitive answers</span>
+            </label>
+          </div>
+          <div class="settings-group" id="quizSettingsPanel" data-settings-panel="quiz" role="tabpanel" aria-labelledby="quizSettingsTab" hidden>
+            <h3 class="settings-title">quiz</h3>
+            <label class="switch-line">
+              <input id="adaptiveQuizToggle" type="checkbox">
+              <span>adaptive quiz rating</span>
+            </label>
+            <label class="switch-line">
+              <input id="shuffleChoicesToggle" type="checkbox">
+              <span>shuffle quiz choices</span>
+            </label>
+          </div>
+          <div class="settings-group" id="generalSettingsPanel" data-settings-panel="general" role="tabpanel" aria-labelledby="generalSettingsTab" hidden>
+            <h3 class="settings-title">general</h3>
+            <label class="switch-line">
+              <input id="sfxToggle" type="checkbox">
+              <span>sound effects</span>
+            </label>
+            <label class="switch-line">
+              <input id="copyButtonsToggle" type="checkbox">
+              <span>card menu tools</span>
+            </label>
+            <label class="switch-line">
+              <input id="timedReviewToggle" type="checkbox">
+              <span>timed review steps</span>
+            </label>
+            <div class="step-settings" id="stepSettings" hidden>
+              <label>
+                <span>again min</span>
+                <input id="stepAgainInput" type="number" min="0" step="1" inputmode="numeric">
+              </label>
+              <label>
+                <span>hard min</span>
+                <input id="stepHardInput" type="number" min="0" step="1" inputmode="numeric">
+              </label>
+              <label>
+                <span>good min</span>
+                <input id="stepGoodInput" type="number" min="0" step="1" inputmode="numeric">
+              </label>
+              <label>
+                <span>easy min</span>
+                <input id="stepEasyInput" type="number" min="0" step="1" inputmode="numeric">
+              </label>
+              <label>
+                <span>learned after</span>
+                <input id="masteryInput" type="number" min="1" step="1" inputmode="numeric">
+              </label>
+            </div>
+          </div>
         </section>
 
         <section class="manager-section">
@@ -184,6 +236,20 @@
           <div class="field">
             <label for="cardSearchInput">search</label>
             <input id="cardSearchInput" type="search" placeholder="search cards">
+          </div>
+          <div class="field">
+            <label for="cardFilterSelect">filter</label>
+            <select id="cardFilterSelect">
+              <option value="all">all</option>
+              <option value="new">new</option>
+              <option value="again">again</option>
+              <option value="hard">hard</option>
+              <option value="good">good</option>
+              <option value="easy">easy</option>
+              <option value="skipped">skipped</option>
+              <option value="learned">learned</option>
+              <option value="repeating">repeating</option>
+            </select>
           </div>
           <div class="bulk-toolbar">
             <button class="text-button" id="selectCardsBtn" type="button" aria-pressed="false">
@@ -280,14 +346,56 @@
         </button>
       </div>
       <div class="guide-list">
-        <div class="guide-item"><strong>import or paste a bank</strong><span>use csv fields like front/back, q/a/tag, stem/answer/explanation, accepted/answers, or text with [[cloze]].</span></div>
-        <div class="guide-item"><strong>reveal and rate cards</strong><span>click, tap, or press space to reveal. choose 1 again, 2 hard, 3 good, or 4 easy.</span></div>
+        <div class="guide-item"><strong>import or paste a bank</strong><span>use csv fields like front/back, q/a/tag, stem/answer/explanation, a/b/c choices, accepted/answers, or text with [[cloze]].</span></div>
+        <div class="guide-item"><strong>reveal, quiz, and rate</strong><span>click, tap, or press space to reveal. quiz choices grade on tap. choose 1 again, 2 hard, 3 good, or 4 easy.</span></div>
         <div class="guide-item"><strong>typing mode</strong><span>type an answer and press enter. manual mode waits for your rating. auto-rating proposes a rating that you can correct.</span></div>
         <div class="guide-item"><strong>swipe behavior</strong><span>swipe left to skip and unrate. swipe right to return to the previous card or reopen its rating review.</span></div>
-        <div class="guide-item"><strong>keyboard shortcuts</strong><span>space reveals, enter submits typing, 1/2/3/4 rate, arrow left skips, and arrow right reviews.</span></div>
+        <div class="guide-item"><strong>keyboard shortcuts</strong><span>space reveals, enter submits typing, 1/2/3/4 choose or rate, arrow right skips/forwards, and arrow left goes previous.</span></div>
+        <div class="guide-item"><strong>review steps</strong><span>turn on timed review steps to send rated cards away until they are due again. leave it off to review by filters.</span></div>
         <div class="guide-item"><strong>minimal and fullscreen</strong><span>minimal mode hides manager chrome and persists after reload. fullscreen starts only from your click or tap.</span></div>
         <div class="guide-item"><strong>export cards vs progress</strong><span>cards csv exports the active bank. progress json saves banks, settings, ratings, queue, skipped state, and history for restore.</span></div>
         <div class="guide-item"><strong>cloze syntax</strong><span>write the [[answer]] inside text. the front shows a blank line, and reveal shows the hidden answer.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="cardEditModal" aria-hidden="true">
+    <div class="modal-card edit-modal-card" role="dialog" aria-modal="true" aria-labelledby="cardEditTitle">
+      <div class="modal-head">
+        <h2 class="section-title" id="cardEditTitle">edit card</h2>
+        <button class="icon-button" id="closeCardEditBtn" type="button" aria-label="close editor">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div class="field">
+        <label for="modalFrontInput">question</label>
+        <textarea id="modalFrontInput" placeholder="question"></textarea>
+      </div>
+      <div class="field">
+        <label for="modalBackInput">answer</label>
+        <textarea id="modalBackInput" placeholder="answer"></textarea>
+      </div>
+      <div class="field">
+        <label for="modalChoicesInput">quiz choices</label>
+        <textarea id="modalChoicesInput" placeholder="one choice per line"></textarea>
+      </div>
+      <div class="field">
+        <label for="modalAnswerInput">correct choice</label>
+        <input id="modalAnswerInput" type="text" placeholder="letter, number, or exact answer">
+      </div>
+      <div class="field">
+        <label for="modalExplanationInput">explanation</label>
+        <textarea id="modalExplanationInput" placeholder="short note"></textarea>
+      </div>
+      <div class="field">
+        <label for="modalTagInput">tag</label>
+        <input id="modalTagInput" type="text" placeholder="category">
+      </div>
+      <div class="manager-actions">
+        <button class="text-button" id="saveModalCardBtn" type="button">
+          <span class="material-symbols-outlined" aria-hidden="true">save</span>
+          <span>save</span>
+        </button>
       </div>
     </div>
   </div>

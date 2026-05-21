@@ -1,7 +1,7 @@
 [
   {
     "title": "flashflow",
-    "description": "Minimal flashcards with CSV and paste import, cloze blanks, typing mode, progress restore, and compact bank management.",
+    "description": "Minimal flashcards and native MCQ quiz cards with CSV/XLSX import, cloze blanks, optional review steps, and compact bank management.",
     "url": "./tool/flashflow/",
     "thumbnail": "./assets/thumbs/default.png",
     "favicon": "./tool/flashflow/favicon.svg",
@@ -9,7 +9,10 @@
     "tags": [
       "study",
       "flashcards",
+      "quiz",
+      "mcq",
       "csv",
+      "xlsx",
       "cloze",
       "typing",
       "review",
