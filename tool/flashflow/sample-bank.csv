@@ -1,5 +1,7 @@
-front,back,tag,accepted,explanation,text
-"what organ filters blood?","kidney","physiology","kidneys|renal organ","the kidneys filter blood and help regulate fluid balance.",
-"which gas do plants take in for photosynthesis?","carbon dioxide","biology","co2|carbon dioxide","plants use carbon dioxide, water, and light to make glucose.",
-"what does a semicolon do in a sentence?","links closely related independent clauses","writing","joins related clauses|connects independent clauses","a semicolon can join two complete ideas that are more closely related than two separate sentences.",
-"","","cloze","renal organ|kidneys","cloze cards show blanks before reveal.","the [[kidney]] filters blood and helps balance electrolytes."
+type,front,back,text,stem,A,B,C,D,E,answer,accepted,explanation,tags,image,imageBack
+regular,"what does the center of the card do?","reveal the answer","","","","","","","","","reveal|show answer","press space for the same action.","start here","",""
+regular,"what does the right card zone do?","skip or forward","","","","","","","","","skip|forward","unrated cards skip; rated cards move forward without changing the rating.","study flow","",""
+cloze,"","","Use double brackets like [[this]] for a hidden cloze answer.","","","","","","","","this","the revealed sentence underlines the hidden word.","cloze typing","",""
+quiz,"","","","which formats can flashflow import?","csv","xlsx","mp3","pasted tables","","A|B|D","","csv, xlsx, and pasted tables can become banks.","multi quiz","",""
+quiz,"","","","which cards support typing mode?","regular only","regular and cloze","quiz only","images only","","B","","quiz cards use choices instead of the typing field.","typing","",""
+regular,"where can a public google drive image link go?","in image or imageBack fields","","","","","","","","","image|imageBack","flashflow converts Drive file links internally into bounded card images.","images","",""

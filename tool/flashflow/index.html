@@ -49,8 +49,9 @@
         <div class="status-strip" id="statusStrip" aria-live="polite"></div>
         <div class="flashcard-frame">
           <article class="flashcard tone-new" id="flashcard" tabindex="0" role="button" aria-label="reveal card">
-            <div class="flashcard-category" id="cardCategory">category</div>
+            <div class="flashcard-category" id="cardCategory">tags</div>
             <div class="card-face" id="cardFace">
+              <div class="card-tools-layer" id="cardToolsLayer" aria-live="polite"></div>
               <div class="card-copy" id="cardCopy">import a bank to begin</div>
             </div>
             <div class="decorative-lines" id="decorativeLines" aria-hidden="true">
@@ -118,6 +119,32 @@
             <label for="bankSelect">current bank</label>
             <select id="bankSelect"></select>
           </div>
+          <div class="bulk-toolbar">
+            <button class="text-button" id="selectBanksBtn" type="button" aria-pressed="false">
+              <span class="material-symbols-outlined" aria-hidden="true">checklist</span>
+              <span>select banks</span>
+            </button>
+            <button class="text-button" id="createBankBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">add</span>
+              <span>create bank</span>
+            </button>
+            <span class="selection-count" id="bankSelectionCount">0 selected</span>
+          </div>
+          <div class="bulk-controls hidden" id="bankBulkControls">
+            <button class="text-button" id="selectAllBanksBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">select_all</span>
+              <span>select visible</span>
+            </button>
+            <button class="text-button danger-button" id="bulkDeleteBanksBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+              <span>delete selected</span>
+            </button>
+            <button class="text-button" id="clearBankSelectionBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              <span>clear</span>
+            </button>
+          </div>
+          <div class="bank-list hidden" id="bankList" aria-label="bank selection list"></div>
           <div class="form-grid manager-advanced">
             <input id="bankNameInput" type="text" placeholder="bank name" aria-label="bank name">
             <button class="text-button" id="renameBankBtn" type="button">
@@ -139,6 +166,10 @@
               <span>import csv/xlsx</span>
               <input id="csvFileInput" type="file" accept=".csv,.xlsx,text/csv">
             </label>
+            <select class="sample-select" id="sampleSelect" aria-label="sample bank type">
+              <option value="csv">csv sample</option>
+              <option value="xlsx">xlsx sample</option>
+            </select>
             <button class="text-button" id="loadSampleBtn" type="button">
               <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
               <span>load sample</span>
@@ -149,14 +180,14 @@
             <input id="pasteNameInput" type="text" placeholder="pasted bank">
           </div>
           <div class="field manager-advanced">
-            <label for="pasteArea">paste csv</label>
-            <textarea id="pasteArea" placeholder="front,back,tag"></textarea>
+            <label for="pasteArea">paste csv/table</label>
+            <textarea id="pasteArea" placeholder="front,back,tags"></textarea>
           </div>
           <button class="text-button manager-advanced" id="pasteImportBtn" type="button">
             <span class="material-symbols-outlined" aria-hidden="true">content_paste</span>
             <span>import paste</span>
           </button>
-          <p class="microcopy manager-advanced">accepted fields: front/back, q/a/tag, stem/answer/explanation, mcq choices a/b/c..., accepted/answers, or text with [[cloze]].</p>
+          <p class="microcopy manager-advanced">accepted fields: front/back, q/a/tags, stem/answer/explanation, mcq choices a/b/c..., accepted/answers, or text with [[cloze]]. paste csv, tsv, spreadsheet rows, or markdown tables.</p>
         </section>
 
         <section class="manager-section settings-section">
@@ -172,6 +203,7 @@
               <input id="typingToggle" type="checkbox">
               <span>typing mode</span>
             </label>
+            <p class="microcopy">typing mode is available for regular and cloze flashcards, not quiz cards.</p>
             <label class="switch-line dependent-line" id="autoRatingLine">
               <input id="autoRatingToggle" type="checkbox">
               <span>auto-rating proposal</span>
@@ -259,6 +291,10 @@
             <span class="selection-count" id="selectionCount">0 selected</span>
           </div>
           <div class="bulk-controls hidden" id="bulkControls">
+            <button class="text-button" id="selectAllCardsBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">select_all</span>
+              <span>select visible</span>
+            </button>
             <button class="text-button danger-button" id="bulkDeleteBtn" type="button">
               <span class="material-symbols-outlined" aria-hidden="true">delete</span>
               <span>delete selected</span>
@@ -269,46 +305,10 @@
             </button>
           </div>
           <div class="card-list" id="cardList"></div>
-          <div class="manager-advanced card-editor">
-            <div class="field" style="margin-top: 14px;">
-              <label for="cardFrontInput">front or stem</label>
-              <textarea id="cardFrontInput" placeholder="question"></textarea>
-            </div>
-            <div class="field">
-              <label for="cardBackInput">back or answer</label>
-              <textarea id="cardBackInput" placeholder="answer"></textarea>
-            </div>
-            <div class="field">
-              <label for="cardTextInput">cloze text</label>
-              <textarea id="cardTextInput" placeholder="the [[answer]] appears as a blank"></textarea>
-            </div>
-            <div class="field">
-              <label for="cardAcceptedInput">accepted answers</label>
-              <input id="cardAcceptedInput" type="text" placeholder="answer one | answer two">
-            </div>
-            <div class="field">
-              <label for="cardExplanationInput">explanation</label>
-              <textarea id="cardExplanationInput" placeholder="short note"></textarea>
-            </div>
-            <div class="field">
-              <label for="cardTagInput">tag</label>
-              <input id="cardTagInput" type="text" placeholder="category">
-            </div>
-            <div class="manager-actions">
-              <button class="text-button" id="addCardBtn" type="button">
-                <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                <span>add</span>
-              </button>
-              <button class="text-button" id="saveCardBtn" type="button">
-                <span class="material-symbols-outlined" aria-hidden="true">save</span>
-                <span>save</span>
-              </button>
-              <button class="text-button" id="clearEditorBtn" type="button">
-                <span class="material-symbols-outlined" aria-hidden="true">backspace</span>
-                <span>clear</span>
-              </button>
-            </div>
-          </div>
+          <button class="text-button manager-advanced" id="addCardBtn" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+            <span>add card</span>
+          </button>
         </section>
 
         <section class="manager-section">
@@ -345,18 +345,112 @@
           <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
       </div>
-      <div class="guide-list">
-        <div class="guide-item"><strong>import or paste a bank</strong><span>use csv fields like front/back, q/a/tag, stem/answer/explanation, a/b/c choices, accepted/answers, or text with [[cloze]].</span></div>
-        <div class="guide-item"><strong>reveal, quiz, and rate</strong><span>click, tap, or press space to reveal. quiz choices grade on tap. choose 1 again, 2 hard, 3 good, or 4 easy.</span></div>
-        <div class="guide-item"><strong>typing mode</strong><span>type an answer and press enter. manual mode waits for your rating. auto-rating proposes a rating that you can correct.</span></div>
-        <div class="guide-item"><strong>swipe behavior</strong><span>swipe left to skip and unrate. swipe right to return to the previous card or reopen its rating review.</span></div>
-        <div class="guide-item"><strong>keyboard shortcuts</strong><span>space reveals, enter submits typing, 1/2/3/4 choose or rate, arrow right skips/forwards, and arrow left goes previous.</span></div>
-        <div class="guide-item"><strong>review steps</strong><span>turn on timed review steps to send rated cards away until they are due again. leave it off to review by filters.</span></div>
-        <div class="guide-item"><strong>minimal and fullscreen</strong><span>minimal mode hides manager chrome and persists after reload. fullscreen starts only from your click or tap.</span></div>
-        <div class="guide-item"><strong>export cards vs progress</strong><span>cards csv exports the active bank. progress json saves banks, settings, ratings, queue, skipped state, and history for restore.</span></div>
-        <div class="guide-item"><strong>cloze syntax</strong><span>write the [[answer]] inside text. the front shows a blank line, and reveal shows the hidden answer.</span></div>
+      <div class="info-tabs" id="infoTabs" role="tablist" aria-label="about sections">
+        <button class="settings-tab" id="infoBasicsTab" type="button" role="tab" data-info-tab="basics" aria-controls="infoBasicsPanel">basics</button>
+        <button class="settings-tab" id="infoStudyTab" type="button" role="tab" data-info-tab="study" aria-controls="infoStudyPanel">study</button>
+        <button class="settings-tab" id="infoTypesTab" type="button" role="tab" data-info-tab="types" aria-controls="infoTypesPanel">card types</button>
+        <button class="settings-tab" id="infoImagesTab" type="button" role="tab" data-info-tab="images" aria-controls="infoImagesPanel">images</button>
+        <button class="settings-tab" id="infoImportTab" type="button" role="tab" data-info-tab="imports" aria-controls="infoImportPanel">imports</button>
+        <button class="settings-tab" id="infoManagerTab" type="button" role="tab" data-info-tab="manager" aria-controls="infoManagerPanel">manager</button>
+        <button class="settings-tab" id="infoScenariosTab" type="button" role="tab" data-info-tab="scenarios" aria-controls="infoScenariosPanel">scenarios</button>
+        <button class="settings-tab" id="infoTroubleTab" type="button" role="tab" data-info-tab="troubleshooting" aria-controls="infoTroublePanel">help</button>
+      </div>
+      <div class="guide-list" id="infoBasicsPanel" data-info-panel="basics" role="tabpanel" aria-labelledby="infoBasicsTab">
+        <div class="guide-item"><strong>what it does</strong><span>flashflow is a quiet text-first study app for recall cards, cloze blanks, quizzes, and small supporting images.</span></div>
+        <div class="guide-item"><strong>why it helps</strong><span>it keeps the card central while saving banks, ratings, skipped cards, queues, settings, and review history in your browser.</span></div>
+        <div class="guide-item"><strong>what you can make</strong><pre><code>regular cards
+cloze cards
+typing recall
+single-answer quiz
+multi-answer quiz
+mixed banks
+google drive image cards</code></pre></div>
+        <div class="guide-item"><strong>backup habit</strong><span>export progress json before clearing browser data or moving devices.</span></div>
+      </div>
+      <div class="guide-list" id="infoStudyPanel" data-info-panel="study" role="tabpanel" aria-labelledby="infoStudyTab" hidden>
+        <div class="guide-item"><strong>zones</strong><span>left side goes previous, center reveals or previews, and right side skips or forwards.</span></div>
+        <div class="guide-item"><strong>shortcuts</strong><pre><code>space reveal / preview
+1 2 3 4 rate or choose
+&lt; previous
+&gt; skip or forward
+up/down quiz navigation
+enter choose or check</code></pre></div>
+        <div class="guide-item"><strong>ratings</strong><span>again, hard, good, and easy keep the card color and progress. easy counts toward learned status.</span></div>
+        <div class="guide-item"><strong>typing</strong><span>typing works for regular and cloze cards. quizzes use choices.</span></div>
+      </div>
+      <div class="guide-list" id="infoTypesPanel" data-info-panel="types" role="tabpanel" aria-labelledby="infoTypesTab" hidden>
+        <div class="guide-item"><strong>mixed bank header</strong><pre><code>type,front,back,text,stem,A,B,C,D,E,answer,accepted,explanation,tags,image,imageBack</code></pre></div>
+        <div class="guide-item"><strong>regular</strong><pre><code>regular,what organ filters blood?,kidney,,,,,,,,kidney,kidney|renal,short note,physiology,,</code></pre></div>
+        <div class="guide-item"><strong>cloze</strong><pre><code>cloze,,,This is a [[cloze]] card.,,,,,,,,,,syntax,,</code></pre><span>front shows a blank. reveal shows the full sentence with the hidden word underlined. typing accepts the word or full sentence.</span></div>
+        <div class="guide-item"><strong>quiz</strong><pre><code>quiz,,,,Which choices are import formats?,csv,video,tsv,markdown table,,A|C|D,,csv tsv and markdown work,quiz,,</code></pre></div>
+        <div class="guide-item"><strong>auto-detect</strong><span>the type column is optional. rows can be mixed; flashflow reads each row independently.</span></div>
+      </div>
+      <div class="guide-list" id="infoImagesPanel" data-info-panel="images" role="tabpanel" aria-labelledby="infoImagesTab" hidden>
+        <div class="guide-item"><strong>drive links</strong><span>put a public google drive file link into an image field or markdown image. flashflow converts it internally, so no separate embed helper is needed.</span></div>
+        <div class="guide-item"><strong>image fields</strong><pre><code>image
+imageFront
+frontImage
+imageBack
+answerImage
+backImage
+imageExplanation</code></pre></div>
+        <div class="guide-item"><strong>markdown image</strong><pre><code>![front image](https://drive.google.com/file/d/FILE_ID/view?usp=sharing)</code></pre></div>
+        <div class="guide-item"><strong>direct format</strong><pre><code>https://drive.google.com/thumbnail?id=FILE_ID&amp;sz=w1600</code></pre></div>
+        <div class="guide-item"><strong>private files</strong><span>if an image does not load, set the Drive file to anyone with the link.</span></div>
+      </div>
+      <div class="guide-list" id="infoImportPanel" data-info-panel="imports" role="tabpanel" aria-labelledby="infoImportTab" hidden>
+        <div class="guide-item"><strong>files</strong><span>csv imports one mixed bank. xlsx imports each valid sheet as one mixed bank.</span></div>
+        <div class="guide-item"><strong>paste</strong><span>paste csv, tsv, copied spreadsheet rows, or markdown pipe tables with the same headers.</span></div>
+        <div class="guide-item"><strong>supported fields</strong><pre><code>front/back
+q/a
+text with [[cloze]]
+stem + A/B/C + answer
+accepted/answers
+explanation
+tags
+image/imageBack</code></pre></div>
+        <div class="guide-item"><strong>type column</strong><span>type is optional. row shape still auto-detects regular, cloze, or quiz cards.</span></div>
+      </div>
+      <div class="guide-list" id="infoManagerPanel" data-info-panel="manager" role="tabpanel" aria-labelledby="infoManagerTab" hidden>
+        <div class="guide-item"><strong>banks</strong><span>switch, create, select, and bulk delete banks. advanced mode adds rename and single-bank delete.</span></div>
+        <div class="guide-item"><strong>builder</strong><span>create a mixed bank in a spreadsheet-style modal with regular, cloze, quiz, and image rows.</span></div>
+        <div class="guide-item"><strong>filters</strong><pre><code>all new again hard good easy skipped learned repeating</code></pre></div>
+        <div class="guide-item"><strong>timed steps</strong><span>timed review is on by default for new state. if no card is due but reviewable cards exist, flashflow keeps studying instead of forcing a wait.</span></div>
+        <div class="guide-item"><strong>backup</strong><span>cards csv exports the active bank. progress json restores banks, ratings, queue, and settings.</span></div>
+      </div>
+      <div class="guide-list" id="infoScenariosPanel" data-info-panel="scenarios" role="tabpanel" aria-labelledby="infoScenariosTab" hidden>
+        <div class="guide-item"><strong>lecture recall</strong><span>paste a table with front, back, accepted answers, and tags. review normally, then filter again or hard cards before an exam.</span></div>
+        <div class="guide-item"><strong>cloze memorization</strong><span>write sentences with <code>[[hidden terms]]</code>. the front shows blanks, typing accepts the hidden terms, and reveal underlines the restored words.</span></div>
+        <div class="guide-item"><strong>mcq practice</strong><span>import a worksheet with stem, choices, answer, and explanation. single-answer cards grade immediately; multi-answer cards wait for check.</span></div>
+        <div class="guide-item"><strong>image review</strong><span>put public drive links in image fields. flashflow converts them internally and tapping the card image opens a larger preview.</span></div>
+        <div class="guide-item"><strong>mixed bank</strong><span>combine regular, cloze, quiz, and image rows in one sheet when a topic needs several recall styles.</span></div>
+        <div class="guide-item"><strong>timed review</strong><span>leave timed steps on for automatic comeback intervals, or filter ratings manually when you want focused rereview.</span></div>
+      </div>
+      <div class="guide-list" id="infoTroublePanel" data-info-panel="troubleshooting" role="tabpanel" aria-labelledby="infoTroubleTab" hidden>
+        <div class="guide-item"><strong>private images</strong><span>google drive images must be shared as anyone with the link.</span></div>
+        <div class="guide-item"><strong>samples</strong><span>if sample loading fails from file://, run through a local server or import the sample file manually.</span></div>
+        <div class="guide-item"><strong>quiz imports</strong><span>choice columns must start at A and continue without gaps. multi-answer choices must match the exact correct set.</span></div>
+        <div class="guide-item"><strong>duplicate notes</strong><span>if explanation repeats the answer exactly, flashflow hides it during review.</span></div>
+        <div class="guide-item guide-prompt"><strong>ai prompt</strong><span>copy this prompt into an ai tool to generate a flashflow-ready table.</span><pre id="aiPromptText">Create a FlashFlow-compatible mixed study bank as a CSV table. Use this header: type,front,back,text,stem,A,B,C,D,E,answer,accepted,explanation,tags,image,imageBack. Include regular cards, cloze cards using [[answer]], single-answer quiz rows, multi-answer quiz rows using A|C syntax, tags, accepted answers, concise explanations, and optional public Google Drive image links. Keep explanations short and do not repeat the answer exactly.</pre><button class="text-button" id="copyPromptBtn" type="button"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span><span>copy prompt</span></button></div>
       </div>
     </div>
+  </div>
+
+  <div class="modal-layer image-preview-layer" id="imagePreviewModal" aria-hidden="true">
+    <div class="image-preview-card" role="dialog" aria-modal="true" aria-label="image preview">
+      <button class="icon-button image-preview-close" id="closeImagePreviewBtn" type="button" aria-label="close image preview">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+      <img id="imagePreviewImg" alt="">
+      <p id="imagePreviewCaption"></p>
+    </div>
+  </div>
+
+  <div class="image-action-menu" id="imageActionMenu" hidden>
+    <button type="button" data-image-action="open"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span><span>open</span></button>
+    <button type="button" data-image-action="copy"><span class="material-symbols-outlined" aria-hidden="true">link</span><span>copy link</span></button>
+    <button type="button" data-image-action="save"><span class="material-symbols-outlined" aria-hidden="true">download</span><span>save</span></button>
+    <button type="button" data-image-action="share"><span class="material-symbols-outlined" aria-hidden="true">ios_share</span><span>share</span></button>
   </div>
 
   <div class="modal-layer" id="cardEditModal" aria-hidden="true">
@@ -368,33 +462,108 @@
         </button>
       </div>
       <div class="field">
-        <label for="modalFrontInput">question</label>
-        <textarea id="modalFrontInput" placeholder="question"></textarea>
+        <label for="modalFrontInput">question or cloze text</label>
+        <textarea id="modalFrontInput" placeholder="question or This is a [[word]]."></textarea>
       </div>
       <div class="field">
         <label for="modalBackInput">answer</label>
         <textarea id="modalBackInput" placeholder="answer"></textarea>
       </div>
       <div class="field">
+        <label for="modalAcceptedInput">accepted answers</label>
+        <input id="modalAcceptedInput" type="text" placeholder="answer one | answer two">
+      </div>
+      <div class="field">
         <label for="modalChoicesInput">quiz choices</label>
         <textarea id="modalChoicesInput" placeholder="one choice per line"></textarea>
       </div>
       <div class="field">
-        <label for="modalAnswerInput">correct choice</label>
-        <input id="modalAnswerInput" type="text" placeholder="letter, number, or exact answer">
+        <label for="modalAnswerInput">correct choice or choices</label>
+        <input id="modalAnswerInput" type="text" placeholder="A, A|C, 1|3, or exact choice">
       </div>
       <div class="field">
         <label for="modalExplanationInput">explanation</label>
         <textarea id="modalExplanationInput" placeholder="short note"></textarea>
       </div>
       <div class="field">
-        <label for="modalTagInput">tag</label>
-        <input id="modalTagInput" type="text" placeholder="category">
+        <label for="modalTagInput">tags</label>
+        <input id="modalTagInput" type="text" placeholder="biology">
+      </div>
+      <div class="field">
+        <label for="modalImageInput">front image</label>
+        <input id="modalImageInput" type="text" placeholder="google drive or image url">
+      </div>
+      <div class="field">
+        <label for="modalImageBackInput">answer image</label>
+        <input id="modalImageBackInput" type="text" placeholder="google drive or image url">
       </div>
       <div class="manager-actions">
         <button class="text-button" id="saveModalCardBtn" type="button">
           <span class="material-symbols-outlined" aria-hidden="true">save</span>
           <span>save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="bankBuilderModal" aria-hidden="true">
+    <div class="modal-card builder-modal-card" role="dialog" aria-modal="true" aria-labelledby="bankBuilderTitle">
+      <div class="modal-head">
+        <h2 class="section-title" id="bankBuilderTitle">create bank</h2>
+        <button class="icon-button" id="closeBankBuilderBtn" type="button" aria-label="close bank builder">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div class="field">
+        <label for="builderBankNameInput">bank name</label>
+        <input id="builderBankNameInput" type="text" placeholder="mixed bank">
+      </div>
+      <div class="manager-actions">
+        <button class="text-button" id="addRegularRowBtn" type="button">
+          <span class="material-symbols-outlined" aria-hidden="true">view_agenda</span>
+          <span>regular row</span>
+        </button>
+        <button class="text-button" id="addClozeRowBtn" type="button">
+          <span class="material-symbols-outlined" aria-hidden="true">short_text</span>
+          <span>cloze row</span>
+        </button>
+        <button class="text-button" id="addQuizRowBtn" type="button">
+          <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
+          <span>quiz row</span>
+        </button>
+        <button class="text-button" id="addImageRowBtn" type="button">
+          <span class="material-symbols-outlined" aria-hidden="true">image</span>
+          <span>image row</span>
+        </button>
+        <button class="text-button" id="addMixedRowsBtn" type="button">
+          <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
+          <span>mixed set</span>
+        </button>
+      </div>
+      <div class="builder-table-wrap">
+        <table class="builder-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>type</th>
+              <th>front / text / stem</th>
+              <th>back</th>
+              <th>choices</th>
+              <th>answer</th>
+              <th>tags</th>
+              <th>explanation</th>
+              <th>images</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="builderRows"></tbody>
+        </table>
+      </div>
+      <p class="microcopy">choices use one line per option. multi-answer quiz keys can be A|C or 1|3.</p>
+      <div class="manager-actions">
+        <button class="text-button" id="saveBankBuilderBtn" type="button">
+          <span class="material-symbols-outlined" aria-hidden="true">save</span>
+          <span>save bank</span>
         </button>
       </div>
     </div>

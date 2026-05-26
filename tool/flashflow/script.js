@@ -21,6 +21,7 @@
     advancedToggleBtn: $("advancedToggleBtn"),
     flashcard: $("flashcard"),
     cardCategory: $("cardCategory"),
+    cardToolsLayer: $("cardToolsLayer"),
     cardCopy: $("cardCopy"),
     cardFace: $("cardFace"),
     typingPanel: $("typingPanel"),
@@ -36,10 +37,19 @@
     statusStrip: $("statusStrip"),
     minimalProgress: $("minimalProgress"),
     bankSelect: $("bankSelect"),
+    selectBanksBtn: $("selectBanksBtn"),
+    createBankBtn: $("createBankBtn"),
+    bankSelectionCount: $("bankSelectionCount"),
+    bankBulkControls: $("bankBulkControls"),
+    selectAllBanksBtn: $("selectAllBanksBtn"),
+    bulkDeleteBanksBtn: $("bulkDeleteBanksBtn"),
+    clearBankSelectionBtn: $("clearBankSelectionBtn"),
+    bankList: $("bankList"),
     bankNameInput: $("bankNameInput"),
     renameBankBtn: $("renameBankBtn"),
     deleteBankBtn: $("deleteBankBtn"),
     csvFileInput: $("csvFileInput"),
+    sampleSelect: $("sampleSelect"),
     loadSampleBtn: $("loadSampleBtn"),
     pasteNameInput: $("pasteNameInput"),
     pasteArea: $("pasteArea"),
@@ -65,33 +75,48 @@
     cardList: $("cardList"),
     selectCardsBtn: $("selectCardsBtn"),
     bulkControls: $("bulkControls"),
+    selectAllCardsBtn: $("selectAllCardsBtn"),
     bulkDeleteBtn: $("bulkDeleteBtn"),
     clearSelectionBtn: $("clearSelectionBtn"),
     selectionCount: $("selectionCount"),
-    cardFrontInput: $("cardFrontInput"),
-    cardBackInput: $("cardBackInput"),
-    cardTextInput: $("cardTextInput"),
-    cardAcceptedInput: $("cardAcceptedInput"),
-    cardExplanationInput: $("cardExplanationInput"),
-    cardTagInput: $("cardTagInput"),
     addCardBtn: $("addCardBtn"),
-    saveCardBtn: $("saveCardBtn"),
-    clearEditorBtn: $("clearEditorBtn"),
     exportCsvBtn: $("exportCsvBtn"),
     exportProgressBtn: $("exportProgressBtn"),
     restoreInput: $("restoreInput"),
     resetStateBtn: $("resetStateBtn"),
     infoModal: $("infoModal"),
+    infoTabs: $("infoTabs"),
     closeInfoBtn: $("closeInfoBtn"),
     cardEditModal: $("cardEditModal"),
+    cardEditTitle: $("cardEditTitle"),
     closeCardEditBtn: $("closeCardEditBtn"),
     modalFrontInput: $("modalFrontInput"),
     modalBackInput: $("modalBackInput"),
+    modalAcceptedInput: $("modalAcceptedInput"),
     modalChoicesInput: $("modalChoicesInput"),
     modalAnswerInput: $("modalAnswerInput"),
     modalExplanationInput: $("modalExplanationInput"),
     modalTagInput: $("modalTagInput"),
+    modalImageInput: $("modalImageInput"),
+    modalImageBackInput: $("modalImageBackInput"),
     saveModalCardBtn: $("saveModalCardBtn"),
+    bankBuilderModal: $("bankBuilderModal"),
+    closeBankBuilderBtn: $("closeBankBuilderBtn"),
+    builderBankNameInput: $("builderBankNameInput"),
+    builderRows: $("builderRows"),
+    addRegularRowBtn: $("addRegularRowBtn"),
+    addClozeRowBtn: $("addClozeRowBtn"),
+    addQuizRowBtn: $("addQuizRowBtn"),
+    addImageRowBtn: $("addImageRowBtn"),
+    addMixedRowsBtn: $("addMixedRowsBtn"),
+    saveBankBuilderBtn: $("saveBankBuilderBtn"),
+    copyPromptBtn: $("copyPromptBtn"),
+    aiPromptText: $("aiPromptText"),
+    imagePreviewModal: $("imagePreviewModal"),
+    imagePreviewImg: $("imagePreviewImg"),
+    imagePreviewCaption: $("imagePreviewCaption"),
+    closeImagePreviewBtn: $("closeImagePreviewBtn"),
+    imageActionMenu: $("imageActionMenu"),
     toast: $("toast")
   };
 
@@ -101,7 +126,8 @@
     activeBankId: null,
     settings: {
       typing: false,
-      autoRating: false,
+      autoRating: true,
+      autoRatingUserSet: false,
       caseSensitive: false,
       minimal: false,
       advancedManager: false,
@@ -109,7 +135,7 @@
       copyButtons: false,
       adaptiveQuiz: false,
       shuffleChoices: false,
-      timedReview: false,
+      timedReview: true,
       reviewSteps: { 1: 1, 2: 5, 3: 7, 4: 10 },
       masteryEasyCount: 3,
       reviewFilter: "all"
@@ -124,6 +150,9 @@
       selectedRating: null,
       quizStartedAt: null,
       quizChoice: null,
+      quizChoices: [],
+      quizActiveIndex: 0,
+      quizKeyboardActive: false,
       quizCorrect: null,
       choiceOrderCardId: null,
       choiceOrder: []
@@ -137,14 +166,21 @@
   let selectedCardId = null;
   let selectionMode = false;
   let selectedCardIds = new Set();
+  let bankSelectionMode = false;
+  let selectedBankIds = new Set();
+  let builderRows = [];
   let toastTimer = 0;
-  let pointerStart = null;
   let audioContext = null;
   let audioUnlockPromise = null;
+  let audioUnlocked = false;
   let cardMotion = null;
   let cardMotionTimer = 0;
   let xlsxLoadPromise = null;
   let activeSettingsPanel = "typing";
+  let activeInfoPanel = "basics";
+  let imageMenuData = null;
+  let imageLongPressTimer = 0;
+  let imageLongPressFired = false;
 
   function loadState() {
     try {
@@ -163,8 +199,18 @@
       if (!["all", "new", "again", "hard", "good", "easy", "skipped", "learned", "repeating"].includes(merged.settings.reviewFilter)) {
         merged.settings.reviewFilter = "all";
       }
-      if (!merged.settings.typing) {
-        merged.settings.autoRating = false;
+      const savedSettings = saved.settings || {};
+      if (!Object.prototype.hasOwnProperty.call(savedSettings, "autoRatingUserSet")) {
+        merged.settings.autoRatingUserSet = false;
+      }
+      if (merged.settings.typing && !merged.settings.autoRatingUserSet) {
+        merged.settings.autoRating = true;
+      }
+      if (!merged.study.revealed) {
+        merged.study.quizChoice = null;
+        merged.study.quizChoices = [];
+        merged.study.quizKeyboardActive = false;
+        merged.study.quizCorrect = null;
       }
       merged.banks = Array.isArray(merged.banks) ? merged.banks.map(normalizeBank) : [];
       if (!merged.activeBankId && merged.banks[0]) {
@@ -195,8 +241,11 @@
     const clozeAnswers = extractClozeAnswers(text);
     const choices = Array.isArray(card.choices) ? card.choices.map((choice) => String(choice || "").trim()).filter(Boolean) : [];
     const choiceLabels = Array.isArray(card.choiceLabels) ? card.choiceLabels.map((label) => String(label || "").trim()).filter(Boolean) : [];
-    const answerIndex = Number.isFinite(Number(card.answerIndex)) ? Number(card.answerIndex) : null;
-    const type = card.type === "quiz" && choices.length && answerIndex !== null && answerIndex >= 0 && answerIndex < choices.length ? "quiz" : "card";
+    const hasAnswerIndex = card.answerIndex !== null && card.answerIndex !== undefined && card.answerIndex !== "";
+    const rawAnswerIndexes = Array.isArray(card.answerIndexes) ? card.answerIndexes : hasAnswerIndex && Number.isFinite(Number(card.answerIndex)) ? [Number(card.answerIndex)] : [];
+    const answerIndexes = uniqueNumbers(rawAnswerIndexes).filter((index) => index >= 0 && index < choices.length);
+    const answerIndex = answerIndexes.length ? answerIndexes[0] : null;
+    const type = card.type === "quiz" && choices.length && answerIndexes.length ? "quiz" : "card";
     return {
       id: card.id || uid("card"),
       type,
@@ -204,7 +253,10 @@
       difficulty: String(card.difficulty || ""),
       front: String(card.front || ""),
       back: String(card.back || ""),
-      tag: String(card.tag || "category"),
+      tag: String(card.tag || card.tags || "tags"),
+      image: String(card.image || card.imageFront || card.frontImage || ""),
+      imageBack: String(card.imageBack || card.answerImage || card.backImage || ""),
+      imageExplanation: String(card.imageExplanation || card.explanationImage || ""),
       accepted: normalizeAccepted(card.accepted),
       explanation: String(card.explanation || ""),
       text,
@@ -213,6 +265,7 @@
       choices,
       choiceLabels: choices.map((_, index) => choiceLabels[index] || indexToLabel(index)),
       answerIndex,
+      answerIndexes,
       rating: Number(card.rating) || null,
       skipped: Boolean(card.skipped),
       dueAt: card.dueAt || null,
@@ -229,6 +282,16 @@
       3: Math.max(0, Number(steps && steps[3]) || 7),
       4: Math.max(0, Number(steps && steps[4]) || 10)
     };
+  }
+
+  function uniqueNumbers(values) {
+    const seen = [];
+    (values || []).forEach((value) => {
+      if (value === null || value === undefined || value === "") return;
+      const number = Number(value);
+      if (Number.isFinite(number) && seen.indexOf(number) < 0) seen.push(number);
+    });
+    return seen;
   }
 
   function uid(prefix) {
@@ -390,34 +453,48 @@
     refs.stepEasyInput.value = state.settings.reviewSteps[4];
     refs.masteryInput.value = state.settings.masteryEasyCount;
     refs.cardFilterSelect.value = state.settings.reviewFilter || "all";
+    pruneBankSelection();
     pruneSelection(bank);
     renderBanks(bank);
+    renderBankList();
     renderStatus(bank);
     renderCard(card, bank);
     renderCardList(bank);
-    refs.typingPanel.classList.toggle("is-visible", Boolean(card && !complete && state.settings.typing && card.type !== "quiz"));
+    refs.typingPanel.classList.toggle("is-visible", Boolean(card && !complete && state.settings.typing && card.type === "card"));
     refs.typingAnswer.value = state.study.typedAnswer || "";
     refs.ratingControls.classList.toggle("hidden", shouldHideRatingControls(card, complete));
     refs.revealBtn.disabled = !card || complete;
     refs.skipBtn.disabled = !card || complete;
     renderSkipAction(card, complete);
-    refs.previousBtn.disabled = !state.reviewHistory.length;
+    refs.previousBtn.disabled = !hasCurrentBankHistory(bank);
     refs.shuffleBankBtn.disabled = !bank || bank.cards.length < 2;
     refs.resetBankBtn.disabled = !bank || !bank.cards.length;
-    refs.saveCardBtn.disabled = !selectedCardId;
+    refs.addCardBtn.disabled = false;
     refs.exportCsvBtn.disabled = !bank || !bank.cards.length;
     refs.deleteBankBtn.disabled = !bank;
     refs.renameBankBtn.disabled = !bank;
+    refs.selectBanksBtn.disabled = !state.banks.length;
+    refs.selectBanksBtn.dataset.active = String(bankSelectionMode);
+    refs.selectBanksBtn.setAttribute("aria-pressed", String(bankSelectionMode));
+    refs.selectBanksBtn.querySelector("span:last-child").textContent = bankSelectionMode ? "done" : "select banks";
+    refs.bankBulkControls.classList.toggle("hidden", !bankSelectionMode);
+    refs.bankList.classList.toggle("hidden", !bankSelectionMode);
+    refs.selectAllBanksBtn.disabled = !bankSelectionMode || !state.banks.length;
+    refs.bulkDeleteBanksBtn.disabled = !selectedBankIds.size;
+    refs.clearBankSelectionBtn.disabled = !selectedBankIds.size;
+    refs.bankSelectionCount.textContent = `${selectedBankIds.size} selected`;
     refs.selectCardsBtn.disabled = !bank || !bank.cards.length;
     refs.selectCardsBtn.dataset.active = String(selectionMode);
     refs.selectCardsBtn.setAttribute("aria-pressed", String(selectionMode));
     refs.selectCardsBtn.querySelector("span:last-child").textContent = selectionMode ? "done" : "select";
     refs.bulkControls.classList.toggle("hidden", !selectionMode);
+    refs.selectAllCardsBtn.disabled = !selectionMode || !filteredCards(bank).length;
     refs.bulkDeleteBtn.disabled = !selectedCardIds.size;
     refs.clearSelectionBtn.disabled = !selectedCardIds.size;
     refs.selectionCount.textContent = `${selectedCardIds.size} selected`;
     refs.bankNameInput.value = bank ? bank.name : "";
     renderSettingsPanels();
+    renderInfoPanels();
     renderRatingControls(card);
   }
 
@@ -446,17 +523,51 @@
     }
   }
 
+  function renderInfoPanels() {
+    if (!refs.infoTabs) return;
+    const tabs = refs.infoTabs.querySelectorAll("[data-info-tab]");
+    const panels = document.querySelectorAll("[data-info-panel]");
+    let found = false;
+    for (let index = 0; index < panels.length; index += 1) {
+      if (panels[index].dataset.infoPanel === activeInfoPanel) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) activeInfoPanel = "basics";
+    for (let index = 0; index < panels.length; index += 1) {
+      const panel = panels[index];
+      const active = panel.dataset.infoPanel === activeInfoPanel;
+      panel.hidden = !active;
+      panel.classList.toggle("is-active", active);
+    }
+    for (let index = 0; index < tabs.length; index += 1) {
+      const tab = tabs[index];
+      const active = tab.dataset.infoTab === activeInfoPanel;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+    }
+  }
+
   function syncStudyCard(card) {
     const nextId = card ? card.id : null;
     if (state.study.cardId === nextId) return;
     state.study.cardId = nextId;
+    resetStudyTransient(card);
+  }
+
+  function resetStudyTransient(card = null) {
     state.study.revealed = false;
     state.study.previewingQuestion = false;
     state.study.typedAnswer = "";
     state.study.proposedRating = null;
     state.study.selectedRating = null;
     state.study.quizChoice = null;
+    state.study.quizChoices = [];
+    state.study.quizActiveIndex = 0;
+    state.study.quizKeyboardActive = false;
     state.study.quizCorrect = null;
+    state.study.toolsOpen = false;
     state.study.quizStartedAt = card && card.type === "quiz" ? Date.now() : null;
     state.study.choiceOrderCardId = null;
     state.study.choiceOrder = [];
@@ -487,6 +598,42 @@
       refs.bankSelect.append(option);
     });
     refs.bankSelect.value = bank ? bank.id : "";
+  }
+
+  function pruneBankSelection() {
+    if (!state.banks.length) {
+      selectedBankIds.clear();
+      bankSelectionMode = false;
+      return;
+    }
+    const ids = new Set(state.banks.map((bank) => bank.id));
+    selectedBankIds = new Set(Array.from(selectedBankIds).filter((id) => ids.has(id)));
+  }
+
+  function renderBankList() {
+    refs.bankList.innerHTML = "";
+    if (!bankSelectionMode) return;
+    visibleBanks().forEach((bank) => {
+      const label = document.createElement("label");
+      label.className = "bank-select-row";
+      label.innerHTML = `
+        <input type="checkbox" data-select-bank="${escapeHtml(bank.id)}" ${selectedBankIds.has(bank.id) ? "checked" : ""}>
+        <span>${escapeHtml(bank.name)} (${bank.cards.length})</span>
+      `;
+      refs.bankList.append(label);
+    });
+  }
+
+  function visibleBanks() {
+    return state.banks.slice();
+  }
+
+  function hasCurrentBankHistory(bank) {
+    if (!bank) return false;
+    for (let index = state.reviewHistory.length - 1; index >= 0; index -= 1) {
+      if (state.reviewHistory[index] && state.reviewHistory[index].bankId === bank.id) return true;
+    }
+    return false;
   }
 
   function pruneSelection(bank) {
@@ -538,9 +685,7 @@
   function renderCard(card, bank) {
     refs.flashcard.className = "flashcard";
     refs.cardCopy.className = "card-copy";
-    if (cardMotion) {
-      refs.flashcard.classList.add(`motion-${cardMotion}`);
-    }
+    refs.cardToolsLayer.innerHTML = "";
     if (isBankComplete(bank)) {
       refs.flashcard.classList.add("tone-complete", "is-revealed", "is-complete");
       refs.cardCategory.textContent = "learned";
@@ -551,12 +696,13 @@
     refs.flashcard.classList.add(card ? `tone-${card.rating || "new"}` : "tone-new");
     const answerVisible = Boolean(card && state.study.revealed && !state.study.previewingQuestion);
     refs.flashcard.classList.toggle("is-revealed", answerVisible);
-    refs.cardCategory.textContent = card ? card.tag || "category" : "category";
+    refs.cardCategory.textContent = card ? card.tag || "tags" : "tags";
     refs.flashcard.setAttribute("aria-label", card && !state.study.revealed ? "reveal card" : "flashcard");
     if (!card) {
       refs.cardCopy.innerHTML = renderNoCurrentCard(bank);
       return;
     }
+    refs.cardToolsLayer.innerHTML = copyActionsHtml(answerVisible ? "answer" : "question");
     if (card.type === "quiz") {
       refs.cardCopy.classList.add("is-quiz");
       renderQuizCard(card);
@@ -565,12 +711,11 @@
     if (answerVisible) {
       const explanation = visibleExplanation(card);
       refs.cardCopy.innerHTML = `
-        ${copyActionsHtml("answer")}
-        <div class="answer-copy">${escapeHtml(answerText(card) || "no answer")}</div>
-        ${explanation ? `<div class="explanation">${escapeHtml(explanation)}</div>` : ""}
+        <div class="answer-copy">${card.isCloze && card.text ? renderRichHtml(renderClozeReveal(stripMediaSyntax(card.text)), mediaFromValues([card.text, card.imageBack])) : renderRichText(answerText(card) || "no answer", [card.imageBack])}</div>
+        ${explanation ? `<div class="explanation">${renderRichText(explanation, [card.imageExplanation])}</div>` : ""}
       `;
     } else {
-      refs.cardCopy.innerHTML = `${copyActionsHtml("question")}${renderQuestion(card)}`;
+      refs.cardCopy.innerHTML = renderQuestion(card);
     }
   }
 
@@ -585,30 +730,60 @@
 
   function renderQuizCard(card) {
     const order = quizChoiceOrder(card);
-    const selected = Number.isFinite(Number(state.study.quizChoice)) ? Number(state.study.quizChoice) : null;
-    const correct = Number(card.answerIndex);
+    const selected = selectedChoiceIndexes();
+    const correctAnswers = card.answerIndexes || [card.answerIndex];
     const answered = state.study.revealed && !state.study.previewingQuestion;
     const locked = state.study.revealed;
+    const multi = isMultiAnswerQuiz(card);
+    const activeChoice = Number(state.study.quizActiveIndex) || 0;
+    const showKeyboardActive = Boolean(state.study.quizKeyboardActive);
     const choices = order.map((choiceIndex, displayIndex) => {
-      const stateClass = answered && choiceIndex === correct ? " is-correct" : answered && choiceIndex === selected && choiceIndex !== correct ? " is-wrong" : "";
-      const selectedClass = choiceIndex === selected ? " is-selected" : "";
+      const isCorrect = correctAnswers.indexOf(choiceIndex) >= 0;
+      const isSelected = selected.indexOf(choiceIndex) >= 0;
+      const stateClass = answered && isCorrect ? " is-correct" : answered && isSelected && !isCorrect ? " is-wrong" : "";
+      const selectedClass = isSelected ? " is-selected" : "";
+      const pendingClass = !answered && isSelected ? " is-pending" : "";
+      const activeClass = !answered && showKeyboardActive && activeChoice === displayIndex ? " is-key-active" : "";
       const disabled = locked ? " disabled" : "";
       const label = card.choiceLabels[choiceIndex] || indexToLabel(displayIndex);
-      return `<button class="quiz-choice${stateClass}${selectedClass}" type="button" data-choice="${choiceIndex}"${disabled}>
+      const pressed = multi ? ` aria-pressed="${isSelected ? "true" : "false"}"` : "";
+      return `<button class="quiz-choice${stateClass}${selectedClass}${pendingClass}${activeClass}" type="button" data-choice="${choiceIndex}"${pressed}${disabled}>
         <span class="quiz-choice-letter">${escapeHtml(label)}</span>
-        <span class="quiz-choice-text">${escapeHtml(card.choices[choiceIndex])}</span>
+        <span class="quiz-choice-text">${renderRichText(card.choices[choiceIndex])}</span>
       </button>`;
     }).join("");
     const explanation = answered ? visibleExplanation(card) : "";
     refs.cardCopy.innerHTML = `
       <div class="quiz-card">
-        ${copyActionsHtml(answered ? "answer" : "question")}
-        <div class="quiz-stem">${escapeHtml(card.front || "untitled question")}</div>
+        <div class="quiz-stem">${renderRichText(card.front || "untitled question", [card.image])}</div>
         <div class="quiz-choices">${choices}</div>
+        ${multi && !answered ? `<button class="quiz-check-button${showKeyboardActive && activeChoice >= order.length ? " is-key-active" : ""}" type="button" data-check-quiz><span class="material-symbols-outlined" aria-hidden="true">check</span><span>check</span></button>` : ""}
         ${answered ? `<div class="quiz-feedback ${state.study.quizCorrect ? "is-correct" : "is-wrong"}">${state.study.quizCorrect ? "correct" : "again"}</div>` : ""}
-        ${explanation ? `<div class="explanation">${escapeHtml(explanation)}</div>` : ""}
+        ${explanation ? `<div class="explanation">${renderRichText(explanation, [card.imageExplanation])}</div>` : ""}
       </div>
     `;
+  }
+
+  function isMultiAnswerQuiz(card) {
+    return Boolean(card && card.type === "quiz" && (card.answerIndexes || []).length > 1);
+  }
+
+  function selectedChoiceIndexes() {
+    if (Array.isArray(state.study.quizChoices) && state.study.quizChoices.length) {
+      return uniqueNumbers(state.study.quizChoices);
+    }
+    if (state.study.quizChoice === null || state.study.quizChoice === undefined || state.study.quizChoice === "") return [];
+    return Number.isFinite(Number(state.study.quizChoice)) ? [Number(state.study.quizChoice)] : [];
+  }
+
+  function sameChoiceSet(left, right) {
+    const a = uniqueNumbers(left).sort((x, y) => x - y);
+    const b = uniqueNumbers(right).sort((x, y) => x - y);
+    if (a.length !== b.length) return false;
+    for (let index = 0; index < a.length; index += 1) {
+      if (a[index] !== b[index]) return false;
+    }
+    return true;
   }
 
   function copyActionsHtml(kind) {
@@ -628,19 +803,276 @@
     </div>`;
   }
 
+  function handleCardToolAction(event) {
+    const toolsButton = event.target.closest("[data-card-tools]");
+    if (toolsButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      state.study.toolsOpen = !state.study.toolsOpen;
+      render();
+      return true;
+    }
+    if (event.target.closest("[data-edit-current]")) {
+      event.preventDefault();
+      event.stopPropagation();
+      openCurrentCardEditor();
+      return true;
+    }
+    if (event.target.closest("[data-delete-current]")) {
+      event.preventDefault();
+      event.stopPropagation();
+      deleteCurrentCard();
+      return true;
+    }
+    const copyButton = event.target.closest("[data-copy-card]");
+    if (copyButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      copyCurrentCard(copyButton.dataset.copyCard);
+      return true;
+    }
+    return false;
+  }
+
+  function handleCardZoneClick(event) {
+    const bank = activeBank();
+    const card = currentCard();
+    if (!bank || !card || isBankComplete(bank)) return;
+    const rect = refs.cardFace.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const ratio = rect.width ? x / rect.width : 0.5;
+    if (ratio < 0.3) {
+      reviewPrevious();
+      return;
+    }
+    if (ratio > 0.7) {
+      skipOrForwardCurrent();
+      return;
+    }
+    revealCard();
+  }
+
   function renderQuestion(card) {
     if (card.isCloze && card.text) {
-      return escapeHtml(card.text).replace(/\[\[[^\]]+\]\]/g, '<span class="blank" aria-label="blank"></span>');
+      const text = stripMediaSyntax(card.text);
+      const html = escapeHtml(text).replace(/\[\[[^\]]+\]\]/g, '<span class="blank" aria-label="blank"></span>');
+      return renderRichHtml(html, mediaFromValues([card.text, card.image]));
     }
-    return escapeHtml(card.front || card.text || "untitled card");
+    return renderRichText(card.front || card.text || "untitled card", [card.image]);
+  }
+
+  function renderClozeReveal(text) {
+    const source = String(text || "");
+    const pattern = /\[\[([^\]]+)\]\]/g;
+    let cursor = 0;
+    let html = "";
+    let match = pattern.exec(source);
+    while (match) {
+      html += escapeHtml(source.slice(cursor, match.index));
+      html += `<span class="cloze-answer-highlight">${escapeHtml(match[1])}</span>`;
+      cursor = match.index + match[0].length;
+      match = pattern.exec(source);
+    }
+    html += escapeHtml(source.slice(cursor));
+    return html || escapeHtml(source);
+  }
+
+  function clozeRevealText(text) {
+    return String(text || "").replace(/\[\[([^\]]+)\]\]/g, "$1");
+  }
+
+  function renderRichHtml(html, media) {
+    const images = uniqueMedia(media || []);
+    return `<div class="rich-text">${html ? `<p>${html}</p>` : ""}${renderMediaBlock(images)}</div>`;
+  }
+
+  function renderRichText(value, extraMedia = []) {
+    const media = mediaFromValues([value, ...(extraMedia || [])]);
+    const text = stripMediaSyntax(value).trim();
+    const html = text ? escapeHtml(text).replace(/\r?\n/g, "<br>") : "";
+    return renderRichHtml(html, media);
+  }
+
+  function stripMediaSyntax(value) {
+    return String(value || "")
+      .replace(/!\[[^\]]*\]\(([^)]+)\)/g, "")
+      .replace(/https?:\/\/[^\s<>)"]+/g, (url) => mediaObject(url) ? "" : url)
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  function mediaFromValues(values) {
+    const media = [];
+    (values || []).forEach((value) => {
+      const text = String(value || "");
+      const markdownPattern = /!\[([^\]]*)\]\(([^)]+)\)/g;
+      let match = markdownPattern.exec(text);
+      while (match) {
+        const item = mediaObject(match[2], match[1]);
+        if (item) media.push(item);
+        match = markdownPattern.exec(text);
+      }
+      const urlPattern = /https?:\/\/[^\s<>)"]+/g;
+      let urlMatch = urlPattern.exec(text);
+      while (urlMatch) {
+        const item = mediaObject(urlMatch[0]);
+        if (item) media.push(item);
+        urlMatch = urlPattern.exec(text);
+      }
+    });
+    return uniqueMedia(media);
+  }
+
+  function mediaObject(url, alt = "card image") {
+    const source = String(url || "").trim();
+    if (!source) return null;
+    const drive = driveImageInfo(source);
+    if (drive) return { src: drive.direct, href: drive.original, alt: alt || "google drive image" };
+    if (isImageUrl(source)) return { src: source, href: source, alt: alt || "card image" };
+    return null;
+  }
+
+  function uniqueMedia(media) {
+    const seen = [];
+    const output = [];
+    (media || []).forEach((item) => {
+      if (!item || !item.src || seen.indexOf(item.src) >= 0) return;
+      seen.push(item.src);
+      output.push(item);
+    });
+    return output;
+  }
+
+  function renderMediaBlock(media) {
+    const items = uniqueMedia(media || []);
+    if (!items.length) return "";
+    return items.map((item) => `
+      <figure class="card-media">
+        <img src="${escapeHtml(item.src)}" alt="${escapeHtml(item.alt || "card image")}" loading="lazy" data-card-image data-image-src="${escapeHtml(item.src)}" data-image-href="${escapeHtml(item.href || item.src)}" data-image-alt="${escapeHtml(item.alt || "card image")}" onerror="this.closest('figure').classList.add('is-error'); this.remove();">
+        <figcaption class="image-fallback">image unavailable. check public sharing.</figcaption>
+      </figure>
+    `).join("");
+  }
+
+  function isImageUrl(url) {
+    return /^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(String(url || ""));
+  }
+
+  function driveImageInfo(url) {
+    const source = String(url || "").trim();
+    if (!/https?:\/\/(?:[^/]+\.)?googleusercontent\.com|https?:\/\/drive\.google\.com/i.test(source)) return null;
+    if (/\/drive-viewer\//i.test(source) || /\/thumbnail\?/i.test(source)) {
+      return { id: "", original: source, direct: source };
+    }
+    const fileMatch = source.match(/\/file\/d\/([^/?#]+)/i);
+    const idMatch = source.match(/[?&]id=([^&#]+)/i);
+    const id = fileMatch ? fileMatch[1] : idMatch ? idMatch[1] : "";
+    if (!id) return null;
+    return {
+      id,
+      original: source,
+      direct: `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`
+    };
+  }
+
+  function driveSnippets(url) {
+    const info = driveImageInfo(url);
+    if (!info) return null;
+    return {
+      direct: info.direct,
+      markdown: `![google drive image](${info.direct})`,
+      html: `<a href="${info.original}"><img src="${info.direct}" alt="google drive image" /></a>`
+    };
+  }
+
+  function imageDataFromElement(element) {
+    if (!element) return null;
+    const src = element.getAttribute("data-image-src") || element.getAttribute("src") || "";
+    if (!src) return null;
+    return {
+      src,
+      href: element.getAttribute("data-image-href") || src,
+      alt: element.getAttribute("data-image-alt") || element.getAttribute("alt") || "card image"
+    };
+  }
+
+  function openImagePreview(data) {
+    if (!data || !refs.imagePreviewModal) return;
+    closeImageMenu();
+    refs.imagePreviewImg.src = data.src;
+    refs.imagePreviewImg.alt = data.alt || "card image";
+    refs.imagePreviewCaption.textContent = data.alt || "card image";
+    refs.imagePreviewModal.classList.add("is-open");
+    refs.imagePreviewModal.setAttribute("aria-hidden", "false");
+    playSfx("tap");
+  }
+
+  function closeImagePreview() {
+    if (!refs.imagePreviewModal) return;
+    refs.imagePreviewModal.classList.remove("is-open");
+    refs.imagePreviewModal.setAttribute("aria-hidden", "true");
+    refs.imagePreviewImg.removeAttribute("src");
+  }
+
+  function openImageMenu(data, x, y) {
+    if (!data || !refs.imageActionMenu) return;
+    imageMenuData = data;
+    const menu = refs.imageActionMenu;
+    const shareButton = menu.querySelector("[data-image-action='share']");
+    if (shareButton) shareButton.hidden = !navigator.share;
+    menu.hidden = false;
+    const width = menu.offsetWidth || 160;
+    const height = menu.offsetHeight || 160;
+    const left = Math.max(8, Math.min(x, window.innerWidth - width - 8));
+    const top = Math.max(8, Math.min(y, window.innerHeight - height - 8));
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    playSfx("tap");
+  }
+
+  function closeImageMenu() {
+    if (!refs.imageActionMenu) return;
+    refs.imageActionMenu.hidden = true;
+    imageMenuData = null;
+  }
+
+  function handleImageAction(action) {
+    const data = imageMenuData;
+    if (!data) return;
+    if (action === "open") {
+      window.open(data.href || data.src, "_blank", "noopener");
+      closeImageMenu();
+      return;
+    }
+    if (action === "copy") {
+      copyText(data.href || data.src).then(() => toast("image link copied", "tap")).catch(() => toast("copy failed", "error"));
+      closeImageMenu();
+      return;
+    }
+    if (action === "save") {
+      const link = document.createElement("a");
+      link.href = data.src;
+      link.download = "flashflow-image";
+      link.rel = "noopener";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      closeImageMenu();
+      toast("image save started", "export");
+      return;
+    }
+    if (action === "share" && navigator.share) {
+      navigator.share({ title: data.alt || "flashflow image", url: data.href || data.src }).then(() => closeImageMenu()).catch(() => closeImageMenu());
+    }
   }
 
   function answerText(card) {
     if (card.type === "quiz") {
-      return card.choices[card.answerIndex] || "";
+      return (card.answerIndexes || [card.answerIndex]).map((index) => card.choices[index] || "").filter(Boolean).join(" | ");
     }
     if (card.isCloze && card.clozeAnswers.length) {
-      return card.clozeAnswers.join(", ");
+      return clozeRevealText(card.text);
     }
     return card.back;
   }
@@ -719,11 +1151,7 @@
       refs.cardList.innerHTML = '<p class="empty-text">no cards yet</p>';
       return;
     }
-    const query = refs.cardSearchInput.value.trim().toLowerCase();
-    const cards = bank.cards.filter((card) => {
-      const text = `${card.front} ${card.back} ${card.text} ${card.tag} ${card.explanation} ${(card.choices || []).join(" ")}`.toLowerCase();
-      return cardMatchesReviewFilter(card) && (!query || text.includes(query));
-    });
+    const cards = filteredCards(bank);
     if (!cards.length) {
       refs.cardList.innerHTML = '<p class="empty-text">no matching cards</p>';
       return;
@@ -740,7 +1168,7 @@
         ` : ""}
         <div>
           <p class="card-row-title">${escapeHtml(card.front || card.text || answerText(card) || "untitled card")}</p>
-          <div class="card-row-meta">${escapeHtml(card.tag || "category")} / ${card.type === "quiz" ? "quiz / " : ""}${card.learned ? "learned" : card.rating ? RATING_LABELS[card.rating] : card.skipped ? "skipped" : "unrated"}</div>
+          <div class="card-row-meta">${escapeHtml(card.tag || "tags")} / ${card.type === "quiz" ? "quiz / " : ""}${card.learned ? "learned" : card.rating ? RATING_LABELS[card.rating] : card.skipped ? "skipped" : "unrated"}</div>
         </div>
         <div class="row-actions manager-advanced">
           <button class="mini-button" type="button" data-edit="${card.id}" aria-label="edit card"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button>
@@ -751,25 +1179,30 @@
     });
   }
 
+  function filteredCards(bank) {
+    if (!bank || !bank.cards) return [];
+    const query = refs.cardSearchInput.value.trim().toLowerCase();
+    return bank.cards.filter((card) => {
+      const text = `${card.front} ${card.back} ${card.text} ${card.tag} ${card.explanation} ${(card.choices || []).join(" ")}`.toLowerCase();
+      return cardMatchesReviewFilter(card) && (!query || text.includes(query));
+    });
+  }
+
   function prefersReducedMotion() {
     return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }
 
   function setCardMotion(kind) {
     clearTimeout(cardMotionTimer);
-    cardMotion = prefersReducedMotion() ? null : kind;
-    if (!cardMotion) return;
-    cardMotionTimer = setTimeout(() => {
-      cardMotion = null;
-      render();
-    }, 420);
+    cardMotion = null;
   }
 
   function canPreviewFlip(card) {
-    return Boolean(card && (card.rating || state.study.selectedRating || state.study.proposedRating));
+    return Boolean(card && state.study.revealed);
   }
 
   function revealCard() {
+    blurActiveControl();
     if (isBankComplete(activeBank())) return;
     const card = currentCard();
     if (!card) return;
@@ -816,6 +1249,7 @@
   }
 
   function rateCurrent(rating) {
+    blurActiveControl();
     const bank = activeBank();
     const card = currentCard();
     if (!bank || !card || isBankComplete(bank)) return;
@@ -848,6 +1282,7 @@
   }
 
   function skipCurrent() {
+    blurActiveControl();
     const bank = activeBank();
     const card = currentCard();
     if (!bank || !card || isBankComplete(bank)) return;
@@ -878,6 +1313,7 @@
   }
 
   function forwardCurrent() {
+    blurActiveControl();
     const bank = activeBank();
     const card = currentCard();
     if (!bank || !card || isBankComplete(bank)) return;
@@ -887,7 +1323,7 @@
     const previousDueAt = card.dueAt;
     const previousEasyStreak = card.easyStreak;
     const previousLearned = card.learned;
-    if (selectedRating && state.study.revealed) {
+    if (selectedRating && state.study.revealed && selectedRating !== card.rating) {
       applyRating(card, selectedRating);
     }
     state.reviewHistory.push({
@@ -928,6 +1364,13 @@
     state.study.typedAnswer = "";
     state.study.proposedRating = null;
     state.study.selectedRating = null;
+    state.study.quizChoice = null;
+    state.study.quizChoices = [];
+    state.study.quizActiveIndex = 0;
+    state.study.quizKeyboardActive = false;
+    state.study.quizCorrect = null;
+    state.study.choiceOrderCardId = null;
+    state.study.choiceOrder = [];
     selectedCardIds.clear();
     selectionMode = false;
     saveState();
@@ -956,6 +1399,9 @@
     state.study.selectedRating = null;
     state.study.cardId = null;
     state.study.quizChoice = null;
+    state.study.quizChoices = [];
+    state.study.quizActiveIndex = 0;
+    state.study.quizKeyboardActive = false;
     state.study.quizCorrect = null;
     state.study.quizStartedAt = null;
     state.study.choiceOrderCardId = null;
@@ -976,6 +1422,9 @@
     state.study.selectedRating = null;
     state.study.cardId = null;
     state.study.quizChoice = null;
+    state.study.quizChoices = [];
+    state.study.quizActiveIndex = 0;
+    state.study.quizKeyboardActive = false;
     state.study.quizCorrect = null;
     state.study.quizStartedAt = null;
     state.study.choiceOrderCardId = null;
@@ -987,26 +1436,37 @@
   }
 
   function reviewPrevious() {
-    const entry = state.reviewHistory.pop();
-    if (!entry) return;
-    const bank = state.banks.find((item) => item.id === entry.bankId);
+    blurActiveControl();
+    const bank = activeBank();
     if (!bank) return;
+    let entry = null;
+    for (let index = state.reviewHistory.length - 1; index >= 0; index -= 1) {
+      if (state.reviewHistory[index] && state.reviewHistory[index].bankId === bank.id) {
+        entry = state.reviewHistory[index];
+        state.reviewHistory.splice(index, 1);
+        break;
+      }
+    }
+    if (!entry) return;
     const card = bank.cards.find((item) => item.id === entry.cardId);
     if (!card) return;
-    state.activeBankId = bank.id;
-    card.rating = entry.previousRating || null;
-    card.skipped = Boolean(entry.previousSkipped);
-    card.dueAt = entry.previousDueAt || null;
-    card.easyStreak = Math.max(0, Number(entry.previousEasyStreak) || 0);
-    card.learned = Boolean(entry.previousLearned);
     ensureQueue(bank);
     const index = bank.queue.indexOf(card.id);
     bank.currentIndex = index >= 0 ? index : 0;
     state.study.revealed = entry.type === "rating";
+    state.study.previewingQuestion = false;
+    state.study.toolsOpen = false;
     state.study.typedAnswer = entry.typedAnswer || "";
     state.study.proposedRating = entry.proposedRating || null;
     state.study.selectedRating = entry.type === "rating" ? entry.rating || null : null;
     state.study.cardId = card.id;
+    state.study.quizChoice = null;
+    state.study.quizChoices = [];
+    state.study.quizActiveIndex = 0;
+    state.study.quizKeyboardActive = false;
+    state.study.quizCorrect = null;
+    state.study.choiceOrderCardId = null;
+    state.study.choiceOrder = [];
     state.study.quizStartedAt = card.type === "quiz" ? Date.now() : null;
     saveState();
     render();
@@ -1041,12 +1501,86 @@
   }
 
   function answerQuizChoice(choiceIndex) {
+    blurActiveControl();
     const bank = activeBank();
     const card = currentCard();
     if (!bank || !card || card.type !== "quiz" || state.study.revealed) return;
-    const correct = Number(choiceIndex) === Number(card.answerIndex);
-    state.study.quizChoice = Number(choiceIndex);
+    if (isMultiAnswerQuiz(card)) {
+      toggleQuizChoice(choiceIndex);
+      state.study.quizKeyboardActive = false;
+      saveState();
+      render();
+      playSfx("tap");
+      return;
+    }
+    gradeQuizChoices([Number(choiceIndex)]);
+  }
+
+  function toggleQuizChoice(choiceIndex) {
+    const selected = selectedChoiceIndexes();
+    const index = selected.indexOf(Number(choiceIndex));
+    if (index >= 0) selected.splice(index, 1);
+    else selected.push(Number(choiceIndex));
+    state.study.quizChoices = selected;
+    state.study.quizChoice = selected.length ? selected[0] : null;
+  }
+
+  function checkQuizAnswer() {
+    const card = currentCard();
+    if (!card || card.type !== "quiz" || state.study.revealed) return;
+    const selected = selectedChoiceIndexes();
+    if (!selected.length) {
+      toast("choose an answer", "error");
+      return;
+    }
+    gradeQuizChoices(selected);
+  }
+
+  function moveQuizChoice(direction) {
+    const card = currentCard();
+    if (!card || card.type !== "quiz" || state.study.revealed) return false;
+    const order = quizChoiceOrder(card);
+    if (!order.length) return false;
+    const max = isMultiAnswerQuiz(card) ? order.length : order.length - 1;
+    let index = Number(state.study.quizActiveIndex) || 0;
+    index += direction;
+    if (isMultiAnswerQuiz(card)) {
+      if (index < 0) index = max;
+      if (index > max) index = 0;
+    } else {
+      if (index < 0) index = order.length - 1;
+      if (index >= order.length) index = 0;
+    }
+    state.study.quizActiveIndex = index;
+    state.study.quizKeyboardActive = true;
+    saveState();
+    render();
+    return true;
+  }
+
+  function activateQuizChoice() {
+    const card = currentCard();
+    if (!card || card.type !== "quiz" || state.study.revealed) return false;
+    const order = quizChoiceOrder(card);
+    const active = Number(state.study.quizActiveIndex) || 0;
+    if (isMultiAnswerQuiz(card) && active >= order.length) {
+      checkQuizAnswer();
+      return true;
+    }
+    if (order[active] === undefined) return false;
+    answerQuizChoice(order[active]);
+    return true;
+  }
+
+  function gradeQuizChoices(choices) {
+    const card = currentCard();
+    if (!card || card.type !== "quiz") return;
+    const answerIndexes = card.answerIndexes || [card.answerIndex];
+    const correct = sameChoiceSet(choices, answerIndexes);
+    state.study.quizChoice = choices.length ? Number(choices[0]) : null;
+    state.study.quizChoices = uniqueNumbers(choices);
     state.study.quizCorrect = correct;
+    state.study.quizKeyboardActive = false;
     state.study.revealed = true;
     state.study.previewingQuestion = false;
     const rating = state.settings.adaptiveQuiz ? proposeQuizRating(card, correct) : correct ? 4 : 1;
@@ -1063,7 +1597,9 @@
 
   function revealQuizAnswer(card) {
     state.study.quizChoice = null;
+    state.study.quizChoices = [];
     state.study.quizCorrect = false;
+    state.study.quizKeyboardActive = false;
     state.study.revealed = true;
     state.study.previewingQuestion = false;
     state.study.proposedRating = state.settings.adaptiveQuiz ? 1 : null;
@@ -1123,7 +1659,7 @@
   }
 
   function importCsvText(text, name) {
-    const cards = parseCardsFromCsv(text);
+    const cards = parseCardsFromText(text);
     if (!cards.length) {
       toast("no cards found", "error");
       return null;
@@ -1225,6 +1761,11 @@
       state.study.typedAnswer = "";
       state.study.proposedRating = null;
       state.study.selectedRating = null;
+      state.study.cardId = null;
+      state.study.quizChoice = null;
+      state.study.quizChoices = [];
+      state.study.quizActiveIndex = 0;
+      state.study.quizCorrect = null;
       selectedCardId = null;
       selectedCardIds.clear();
       selectionMode = false;
@@ -1237,7 +1778,11 @@
   }
 
   function parseCardsFromCsv(text) {
-    const rows = parseCsv(text).filter((row) => row.some((cell) => cell.trim()));
+    return parseCardsFromText(text);
+  }
+
+  function parseCardsFromText(text) {
+    const rows = normalizePastedTable(text).filter((row) => row.some((cell) => cell.trim()));
     if (rows.length < 2) return [];
     const headers = rows[0].map(normalizeHeader);
     return rows.slice(1).map((row) => {
@@ -1249,14 +1794,72 @@
     }).filter(Boolean);
   }
 
+  function normalizePastedTable(text) {
+    const value = String(text || "").trim();
+    if (!value) return [];
+    const markdownRows = parseMarkdownTable(value);
+    if (markdownRows.length) return markdownRows;
+    if (/\t/.test(value)) {
+      return value.split(/\r?\n/).map((line) => line.split("\t").map((cell) => cell.trim()));
+    }
+    return parseCsv(value);
+  }
+
+  function parseMarkdownTable(text) {
+    const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!lines.length || lines[0].indexOf("|") < 0) return [];
+    const rows = [];
+    lines.forEach((line) => {
+      if (line.indexOf("|") < 0) return;
+      const trimmed = line.replace(/^\|/, "").replace(/\|$/, "");
+      const cells = trimmed.split("|").map((cell) => cell.trim());
+      const separator = cells.length && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+      if (!separator) rows.push(cells);
+    });
+    if (rows.length <= 1) return [];
+    const headerLength = rows[0].length;
+    const answerIndex = rows[0].map(normalizeHeader).findIndex((header) => header === "answer" || header === "correct");
+    if (answerIndex < 0) return rows;
+    return rows.map((row, rowIndex) => {
+      if (rowIndex === 0 || row.length <= headerLength) return row;
+      const extra = row.length - headerLength;
+      const mergedAnswer = row.slice(answerIndex, answerIndex + extra + 1).join("|");
+      return row.slice(0, answerIndex).concat([mergedAnswer], row.slice(answerIndex + extra + 1));
+    });
+  }
+
+  function htmlTableToText(html) {
+    if (!html || html.indexOf("<table") < 0) return "";
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const table = doc.querySelector("table");
+    if (!table) return "";
+    const lines = [];
+    const rows = table.querySelectorAll("tr");
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+      const cells = rows[rowIndex].querySelectorAll("th,td");
+      const values = [];
+      for (let cellIndex = 0; cellIndex < cells.length; cellIndex += 1) {
+        values.push(cells[cellIndex].textContent.replace(/\s+/g, " ").trim());
+      }
+      if (values.length) lines.push(values.join("\t"));
+    }
+    return lines.join("\n");
+  }
+
   function cardFromRecord(record) {
-    const text = pick(record, ["text", "cloze"]);
+    const forcedType = normalizeHeader(pick(record, ["type", "cardtype"]));
+    const rawText = pick(record, ["text", "cloze"]);
+    const text = forcedType === "cloze" && !rawText ? pick(record, ["front", "q", "question", "stem", "prompt"]) : rawText;
     const clozeAnswers = extractClozeAnswers(text);
-    const isCloze = clozeAnswers.length > 0;
+    const isCloze = clozeAnswers.length > 0 || forcedType === "cloze";
     const choiceEntries = getChoiceEntries(record);
-    const answerIndex = parseChoiceAnswer(pick(record, ["answer", "correct"]), choiceEntries);
+    const answerIndexes = parseChoiceAnswers(pick(record, ["answer", "correct"]), choiceEntries);
     const stem = pick(record, ["stem", "question", "front", "q", "prompt"]);
-    if (stem && choiceEntries.length && answerIndex !== null) {
+    const image = pick(record, ["image", "imagefront", "frontimage"]);
+    const imageBack = pick(record, ["imageback", "answerimage", "backimage"]);
+    const imageExplanation = pick(record, ["imageexplanation", "explanationimage"]);
+    if (forcedType !== "regular" && forcedType !== "card" && stem && choiceEntries.length && answerIndexes.length) {
       const choices = choiceEntries.map((entry) => entry.value);
       return normalizeCard({
         id: uid("card"),
@@ -1264,12 +1867,16 @@
         sourceId: pick(record, ["id", "sourceid"]),
         difficulty: pick(record, ["difficulty", "diff"]),
         front: stem,
-        back: choices[answerIndex] || "",
-        tag: pick(record, ["topic", "tag", "tags", "category"]) || "category",
+        back: answerIndexes.map((index) => choices[index] || "").filter(Boolean).join(" | "),
+        tag: pick(record, ["topic", "tag", "tags", "category"]) || "tags",
         explanation: pick(record, ["explanation", "explain", "note", "notes"]),
+        image,
+        imageBack,
+        imageExplanation,
         choices,
         choiceLabels: choiceEntries.map((entry) => entry.label),
-        answerIndex
+        answerIndex: answerIndexes[0],
+        answerIndexes
       });
     }
     const front = pick(record, ["front", "q", "question", "stem", "prompt"]) || (isCloze ? text : "");
@@ -1279,9 +1886,12 @@
       id: uid("card"),
       front,
       back,
-      tag: pick(record, ["tag", "tags", "category"]) || "category",
+      tag: pick(record, ["tag", "tags", "category"]) || "tags",
       accepted: normalizeAccepted(pick(record, ["accepted", "answers", "acceptedanswers", "acceptedanswer"])),
       explanation: pick(record, ["explanation", "explain", "note", "notes"]),
+      image,
+      imageBack,
+      imageExplanation,
       text,
       isCloze,
       clozeAnswers
@@ -1314,7 +1924,31 @@
     return entries;
   }
 
+  function parseChoiceAnswers(value, choiceEntries) {
+    const text = String(value || "").trim();
+    if (!text) return [];
+    const whole = parseSingleChoiceAnswer(text, choiceEntries);
+    if (whole !== null) return [whole];
+    const pieces = text.split(/\s*(?:\||,|;|\band\b)\s*/i).map((part) => part.trim()).filter(Boolean);
+    const indexes = [];
+    const source = pieces.length ? pieces : [text];
+    source.forEach((piece) => {
+      const index = parseSingleChoiceAnswer(piece, choiceEntries);
+      if (index !== null && indexes.indexOf(index) < 0) indexes.push(index);
+    });
+    if (!indexes.length) {
+      const single = parseSingleChoiceAnswer(text, choiceEntries);
+      if (single !== null) indexes.push(single);
+    }
+    return indexes;
+  }
+
   function parseChoiceAnswer(value, choiceEntries) {
+    const indexes = parseChoiceAnswers(value, choiceEntries);
+    return indexes.length ? indexes[0] : null;
+  }
+
+  function parseSingleChoiceAnswer(value, choiceEntries) {
     const text = String(value || "").trim();
     if (!text) return null;
     const upper = text.toUpperCase();
@@ -1422,7 +2056,7 @@
     const maxChoices = bank.cards.reduce((max, card) => Math.max(max, (card.choices || []).length), 0);
     const choiceHeaders = [];
     for (let index = 0; index < maxChoices; index += 1) choiceHeaders.push(indexToLabel(index));
-    const rows = [["type", "id", "topic", "difficulty", "stem", ...choiceHeaders, "answer", "explanation", "front", "back", "tag", "accepted", "text", "rating", "skipped", "easyStreak", "learned", "dueAt"]];
+    const rows = [["type", "id", "topic", "difficulty", "stem", ...choiceHeaders, "answer", "explanation", "front", "back", "tags", "accepted", "text", "image", "imageBack", "imageExplanation", "rating", "skipped", "easyStreak", "learned", "dueAt"]];
     bank.cards.forEach((card) => {
       const choiceCells = choiceHeaders.map((_, index) => card.choices && card.choices[index] ? card.choices[index] : "");
       rows.push([
@@ -1432,13 +2066,16 @@
         card.difficulty || "",
         card.type === "quiz" ? card.front : "",
         ...choiceCells,
-        card.type === "quiz" ? (card.choiceLabels[card.answerIndex] || indexToLabel(card.answerIndex)) : card.back,
+        card.type === "quiz" ? (card.answerIndexes || [card.answerIndex]).map((index) => card.choiceLabels[index] || indexToLabel(index)).join("|") : card.back,
         card.explanation,
         card.type === "quiz" ? "" : card.front,
         card.back,
         card.tag,
         (card.accepted || []).join("|"),
         card.text,
+        card.image || "",
+        card.imageBack || "",
+        card.imageExplanation || "",
         card.rating || "",
         card.skipped ? "true" : "false",
         card.easyStreak || "",
@@ -1477,84 +2114,6 @@
     return String(value || "bank").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "bank";
   }
 
-  function fillEditor(card) {
-    selectedCardId = card ? card.id : null;
-    refs.cardFrontInput.value = card ? card.front : "";
-    refs.cardBackInput.value = card ? card.back : "";
-    refs.cardTextInput.value = card ? card.text : "";
-    refs.cardAcceptedInput.value = card ? (card.accepted || []).join(" | ") : "";
-    refs.cardExplanationInput.value = card ? card.explanation : "";
-    refs.cardTagInput.value = card ? card.tag : "";
-    render();
-  }
-
-  function editorCardData() {
-    const text = refs.cardTextInput.value.trim();
-    const clozeAnswers = extractClozeAnswers(text);
-    return normalizeCard({
-      id: selectedCardId || uid("card"),
-      front: refs.cardFrontInput.value.trim(),
-      back: refs.cardBackInput.value.trim() || (clozeAnswers.length ? clozeAnswers.join(", ") : ""),
-      text,
-      tag: refs.cardTagInput.value.trim() || "category",
-      accepted: normalizeAccepted(refs.cardAcceptedInput.value),
-      explanation: refs.cardExplanationInput.value.trim(),
-      isCloze: clozeAnswers.length > 0,
-      clozeAnswers
-    });
-  }
-
-  function addEditorCard() {
-    const bank = activeBank();
-    if (!bank) {
-      const newBank = normalizeBank({ id: uid("bank"), name: "manual bank", cards: [] });
-      state.banks.push(newBank);
-      state.activeBankId = newBank.id;
-    }
-    const target = activeBank();
-    const card = editorCardData();
-    if (!card.front && !card.back && !card.text) {
-      toast("write a card first", "error");
-      return;
-    }
-    target.cards.push(card);
-    target.queue.push(card.id);
-    target.updatedAt = new Date().toISOString();
-    selectedCardId = card.id;
-    saveState();
-    render();
-    toast("card added", "import");
-  }
-
-  function saveEditorCard() {
-    const bank = activeBank();
-    if (!bank || !selectedCardId) return;
-    const index = bank.cards.findIndex((card) => card.id === selectedCardId);
-    if (index < 0) return;
-    const existing = bank.cards[index];
-    const edited = editorCardData();
-    bank.cards[index] = {
-      ...edited,
-      id: selectedCardId,
-      type: existing.type,
-      sourceId: existing.sourceId,
-      difficulty: existing.difficulty,
-      choices: existing.choices,
-      choiceLabels: existing.choiceLabels,
-      answerIndex: existing.answerIndex,
-      rating: existing.rating,
-      skipped: existing.skipped,
-      dueAt: existing.dueAt,
-      easyStreak: existing.easyStreak,
-      learned: existing.learned,
-      lastReviewedAt: existing.lastReviewedAt
-    };
-    bank.updatedAt = new Date().toISOString();
-    saveState();
-    render();
-    toast("card saved", "toggle");
-  }
-
   function deleteCard(id) {
     const bank = activeBank();
     if (!bank) return;
@@ -1564,11 +2123,61 @@
     bank.cards = bank.cards.filter((item) => item.id !== id);
     bank.queue = bank.queue.filter((item) => item !== id);
     selectedCardIds.delete(id);
-    if (selectedCardId === id) fillEditor(null);
+    if (selectedCardId === id) selectedCardId = null;
     ensureQueue(bank);
     saveState();
     render();
     toast("card deleted", "delete");
+  }
+
+  function toggleBankSelectionMode() {
+    bankSelectionMode = !bankSelectionMode;
+    if (!bankSelectionMode) selectedBankIds.clear();
+    render();
+    playSfx("toggle");
+  }
+
+  function toggleBankSelection(id, checked) {
+    if (checked) selectedBankIds.add(id);
+    else selectedBankIds.delete(id);
+    render();
+  }
+
+  function clearBankSelection() {
+    selectedBankIds.clear();
+    render();
+    toast("selection cleared", "toggle");
+  }
+
+  function selectAllVisibleBanks() {
+    visibleBanks().forEach((bank) => selectedBankIds.add(bank.id));
+    render();
+    toast(`${selectedBankIds.size} bank${selectedBankIds.size === 1 ? "" : "s"} selected`, "toggle");
+  }
+
+  function deleteSelectedBanks() {
+    if (!selectedBankIds.size) return;
+    const count = selectedBankIds.size;
+    if (!confirm(`delete ${count} selected bank${count === 1 ? "" : "s"}?`)) return;
+    state.banks = state.banks.filter((bank) => !selectedBankIds.has(bank.id));
+    if (!state.banks.some((bank) => bank.id === state.activeBankId)) {
+      state.activeBankId = state.banks[0] ? state.banks[0].id : null;
+    }
+    selectedBankIds.clear();
+    bankSelectionMode = false;
+    selectedCardId = null;
+    selectedCardIds.clear();
+    selectionMode = false;
+    state.study.cardId = null;
+    state.study.revealed = false;
+    saveState();
+    render();
+    toast(`${count} bank${count === 1 ? "" : "s"} deleted`, "delete");
+  }
+
+  function blurActiveControl() {
+    const active = document.activeElement;
+    if (active && typeof active.blur === "function") active.blur();
   }
 
   function toggleSelectionMode() {
@@ -1594,6 +2203,13 @@
     toast("selection cleared", "toggle");
   }
 
+  function selectAllVisibleCards() {
+    const bank = activeBank();
+    filteredCards(bank).forEach((card) => selectedCardIds.add(card.id));
+    render();
+    toast(`${selectedCardIds.size} card${selectedCardIds.size === 1 ? "" : "s"} selected`, "toggle");
+  }
+
   function deleteSelectedCards() {
     const bank = activeBank();
     if (!bank || !selectedCardIds.size) return;
@@ -1601,7 +2217,7 @@
     if (!confirm(`delete ${count} selected card${count === 1 ? "" : "s"}?`)) return;
     bank.cards = bank.cards.filter((card) => !selectedCardIds.has(card.id));
     bank.queue = bank.queue.filter((id) => !selectedCardIds.has(id));
-    if (selectedCardId && selectedCardIds.has(selectedCardId)) fillEditor(null);
+    if (selectedCardId && selectedCardIds.has(selectedCardId)) selectedCardId = null;
     selectedCardIds.clear();
     selectionMode = false;
     ensureQueue(bank);
@@ -1663,14 +2279,22 @@
   function openCurrentCardEditor() {
     const card = currentCard();
     if (!card) return;
-    selectedCardId = card.id;
+    openCardEditor(card);
+  }
+
+  function openCardEditor(card) {
+    selectedCardId = card ? card.id : null;
     state.study.toolsOpen = false;
-    refs.modalFrontInput.value = card.front || card.text || "";
-    refs.modalBackInput.value = answerText(card);
-    refs.modalChoicesInput.value = card.type === "quiz" ? (card.choices || []).join("\n") : "";
-    refs.modalAnswerInput.value = card.type === "quiz" ? (card.choiceLabels[card.answerIndex] || indexToLabel(card.answerIndex)) : "";
-    refs.modalExplanationInput.value = card.explanation || "";
-    refs.modalTagInput.value = card.tag || "category";
+    refs.cardEditTitle.textContent = card ? "edit card" : "add card";
+    refs.modalFrontInput.value = card ? card.isCloze && card.text ? card.text : card.front || card.text || "" : "";
+    refs.modalBackInput.value = card ? card.type === "quiz" ? "" : card.back || answerText(card) : "";
+    refs.modalAcceptedInput.value = card ? (card.accepted || []).join(" | ") : "";
+    refs.modalChoicesInput.value = card && card.type === "quiz" ? (card.choices || []).join("\n") : "";
+    refs.modalAnswerInput.value = card && card.type === "quiz" ? (card.answerIndexes || [card.answerIndex]).map((index) => card.choiceLabels[index] || indexToLabel(index)).join("|") : "";
+    refs.modalExplanationInput.value = card ? card.explanation || "" : "";
+    refs.modalTagInput.value = card ? card.tag || "tags" : "";
+    refs.modalImageInput.value = card ? card.image || "" : "";
+    refs.modalImageBackInput.value = card ? card.imageBack || "" : "";
     refs.cardEditModal.classList.add("is-open");
     refs.cardEditModal.setAttribute("aria-hidden", "false");
     refs.modalFrontInput.focus();
@@ -1682,27 +2306,42 @@
   }
 
   function saveModalCard() {
-    const bank = activeBank();
-    if (!bank || !selectedCardId) return;
-    const card = bank.cards.find((item) => item.id === selectedCardId);
-    if (!card) return;
+    let bank = activeBank();
+    if (!bank) {
+      bank = normalizeBank({ id: uid("bank"), name: "manual bank", cards: [] });
+      state.banks.push(bank);
+      state.activeBankId = bank.id;
+    }
+    const existing = selectedCardId ? bank.cards.find((item) => item.id === selectedCardId) : null;
     const choices = refs.modalChoicesInput.value.split(/\r?\n/).map((choice) => choice.trim()).filter(Boolean);
-    card.front = refs.modalFrontInput.value.trim();
-    card.tag = refs.modalTagInput.value.trim() || "category";
+    const frontValue = refs.modalFrontInput.value.trim();
+    if (!frontValue && !refs.modalBackInput.value.trim() && !choices.length) {
+      toast("write a card first", "error");
+      return;
+    }
+    const base = existing || normalizeCard({ id: uid("card"), front: "" });
+    const card = base;
+    card.front = frontValue;
+    card.tag = refs.modalTagInput.value.trim() || "tags";
+    card.image = refs.modalImageInput.value.trim();
+    card.imageBack = refs.modalImageBackInput.value.trim();
+    card.imageExplanation = "";
+    card.accepted = normalizeAccepted(refs.modalAcceptedInput.value);
     card.explanation = refs.modalExplanationInput.value.trim();
     if (choices.length) {
       const entries = choices.map((choice, index) => ({ label: indexToLabel(index), value: choice }));
-      const answerIndex = parseChoiceAnswer(refs.modalAnswerInput.value, entries);
+      const answerIndexes = parseChoiceAnswers(refs.modalAnswerInput.value, entries);
       card.type = "quiz";
       card.choices = choices;
       card.choiceLabels = entries.map((entry) => entry.label);
-      card.answerIndex = answerIndex === null ? 0 : answerIndex;
-      card.back = choices[card.answerIndex] || "";
+      card.answerIndexes = answerIndexes.length ? answerIndexes : [0];
+      card.answerIndex = card.answerIndexes[0];
+      card.back = card.answerIndexes.map((index) => choices[index] || "").filter(Boolean).join(" | ");
       card.text = "";
       card.isCloze = false;
       card.clozeAnswers = [];
     } else {
-      const text = refs.modalFrontInput.value.indexOf("[[") >= 0 ? refs.modalFrontInput.value.trim() : card.text;
+      const text = frontValue.indexOf("[[") >= 0 ? frontValue : "";
       const clozeAnswers = extractClozeAnswers(text);
       card.type = "card";
       card.back = refs.modalBackInput.value.trim() || (clozeAnswers.length ? clozeAnswers.join(", ") : "");
@@ -1712,12 +2351,157 @@
       card.choices = [];
       card.choiceLabels = [];
       card.answerIndex = null;
+      card.answerIndexes = [];
+    }
+    if (!existing) {
+      bank.cards.push(card);
+      bank.queue.push(card.id);
+      selectedCardId = card.id;
     }
     bank.updatedAt = new Date().toISOString();
     closeCardEditor();
     saveState();
     render();
     toast("card saved", "toggle");
+  }
+
+  function newBuilderRow(type = "regular") {
+    return {
+      id: uid("row"),
+      type: type === "image" ? "regular" : type,
+      main: type === "cloze" ? "This is a [[cloze]] card." : type === "quiz" ? "Which option is correct?" : type === "image" ? "what does this image show?" : "",
+      back: type === "regular" || type === "image" ? "" : "",
+      choices: type === "quiz" ? "choice one\nchoice two\nchoice three" : "",
+      answer: type === "quiz" ? "A" : "",
+      tags: type === "cloze" ? "cloze" : type === "quiz" ? "quiz" : type === "image" ? "images" : "notes",
+      explanation: "",
+      image: type === "image" ? "paste public drive image link" : "",
+      imageBack: ""
+    };
+  }
+
+  function openBankBuilder() {
+    builderRows = [newBuilderRow("regular"), newBuilderRow("cloze"), newBuilderRow("quiz")];
+    refs.builderBankNameInput.value = `mixed bank ${state.banks.length + 1}`;
+    renderBuilderRows();
+    refs.bankBuilderModal.classList.add("is-open");
+    refs.bankBuilderModal.setAttribute("aria-hidden", "false");
+    refs.builderBankNameInput.focus();
+  }
+
+  function closeBankBuilder() {
+    refs.bankBuilderModal.classList.remove("is-open");
+    refs.bankBuilderModal.setAttribute("aria-hidden", "true");
+  }
+
+  function renderBuilderRows() {
+    refs.builderRows.innerHTML = "";
+    builderRows.forEach((row, rowIndex) => {
+      const tr = document.createElement("tr");
+      tr.dataset.builderRow = row.id;
+      tr.innerHTML = `
+        <td class="builder-row-number">${rowIndex + 1}</td>
+        <td>
+          <select data-builder-field="type">
+            <option value="regular" ${row.type === "regular" ? "selected" : ""}>regular</option>
+            <option value="cloze" ${row.type === "cloze" ? "selected" : ""}>cloze</option>
+            <option value="quiz" ${row.type === "quiz" ? "selected" : ""}>quiz</option>
+          </select>
+        </td>
+        <td><textarea data-builder-field="main" placeholder="front, cloze text, or stem">${escapeHtml(row.main)}</textarea></td>
+        <td><textarea data-builder-field="back" placeholder="back for regular cards">${escapeHtml(row.back)}</textarea></td>
+        <td><textarea data-builder-field="choices" placeholder="one quiz choice per line">${escapeHtml(row.choices)}</textarea></td>
+        <td><input data-builder-field="answer" type="text" placeholder="answer or A|C" value="${escapeHtml(row.answer)}"></td>
+        <td><input data-builder-field="tags" type="text" placeholder="tags" value="${escapeHtml(row.tags)}"></td>
+        <td><textarea data-builder-field="explanation" placeholder="short explanation">${escapeHtml(row.explanation)}</textarea></td>
+        <td>
+          <input data-builder-field="image" type="text" placeholder="front image" value="${escapeHtml(row.image)}">
+          <input data-builder-field="imageBack" type="text" placeholder="answer image" value="${escapeHtml(row.imageBack)}">
+        </td>
+        <td>
+          <button class="icon-button" type="button" data-remove-builder-row="${escapeHtml(row.id)}" aria-label="remove row">
+            <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+          </button>
+        </td>
+      `;
+      refs.builderRows.append(tr);
+    });
+  }
+
+  function syncBuilderRowsFromDom() {
+    const rows = refs.builderRows.querySelectorAll("[data-builder-row]");
+    builderRows = Array.from(rows).map((tr) => {
+      const existing = builderRows.find((row) => row.id === tr.dataset.builderRow) || newBuilderRow();
+      const row = { ...existing };
+      tr.querySelectorAll("[data-builder-field]").forEach((field) => {
+        row[field.dataset.builderField] = field.value;
+      });
+      return row;
+    });
+  }
+
+  function addBuilderRow(type) {
+    syncBuilderRowsFromDom();
+    builderRows.push(newBuilderRow(type));
+    renderBuilderRows();
+  }
+
+  function addMixedBuilderRows() {
+    syncBuilderRowsFromDom();
+    builderRows.push(newBuilderRow("regular"), newBuilderRow("cloze"), newBuilderRow("quiz"), newBuilderRow("image"));
+    renderBuilderRows();
+  }
+
+  function builderRowRecord(row) {
+    const type = normalizeHeader(row.type);
+    const record = {
+      type,
+      tags: row.tags || "tags",
+      explanation: row.explanation || "",
+      image: row.image || "",
+      imageback: row.imageBack || ""
+    };
+    if (type === "quiz") {
+      record.stem = row.main || "";
+      row.choices.split(/\r?\n/).map((choice) => choice.trim()).filter(Boolean).forEach((choice, index) => {
+        record[normalizeHeader(indexToLabel(index))] = choice;
+      });
+      record.answer = row.answer || "A";
+      return record;
+    }
+    if (type === "cloze") {
+      record.text = row.main || "";
+      record.back = row.back || "";
+      return record;
+    }
+    record.front = row.main || "";
+    record.back = row.back || row.answer || "";
+    record.answer = row.answer || "";
+    return record;
+  }
+
+  function saveBankBuilder() {
+    syncBuilderRowsFromDom();
+    const cards = builderRows.map((row) => cardFromRecord(builderRowRecord(row))).filter(Boolean);
+    if (!cards.length) {
+      toast("add at least one valid row", "error");
+      return;
+    }
+    const bank = importCardsAsBank(cards, refs.builderBankNameInput.value.trim() || `mixed bank ${state.banks.length + 1}`);
+    if (!bank) {
+      toast("bank creation failed", "error");
+      return;
+    }
+    state.activeBankId = bank.id;
+    state.study.cardId = null;
+    state.study.revealed = false;
+    selectedCardId = null;
+    selectedCardIds.clear();
+    selectionMode = false;
+    closeBankBuilder();
+    saveState();
+    render();
+    toast(`created ${cards.length} cards`, "import");
   }
 
   function deleteCurrentCard() {
@@ -1779,6 +2563,7 @@
       audioContext = new AudioCtor();
     }
     if (audioUnlockPromise && audioContext.state === "running") {
+      audioUnlocked = true;
       return audioUnlockPromise;
     }
     audioUnlockPromise = (async () => {
@@ -1793,51 +2578,63 @@
       oscillator.connect(gain);
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.01);
+      audioUnlocked = audioContext.state === "running";
       return audioContext;
     })().catch(() => {
       audioContext = null;
       audioUnlockPromise = null;
+      audioUnlocked = false;
       return null;
     });
     return audioUnlockPromise;
   }
 
-  async function playSfx(kind = "tap") {
+  function playTone(context, kind) {
+    const now = context.currentTime;
+    const notes = {
+      reveal: [392, 523],
+      rate: [440, 660],
+      skip: [247, 196],
+      forward: [330, 440],
+      complete: [392, 523, 784],
+      import: [330, 494],
+      export: [494, 392],
+      restore: [392, 494],
+      delete: [220, 165],
+      reset: [262, 196],
+      toggle: [294, 392],
+      error: [196, 146],
+      tap: [330]
+    }[kind] || [330];
+    notes.forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const start = now + index * 0.055;
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.05, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.13);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.14);
+    });
+  }
+
+  function playSfx(kind = "tap") {
     if (!state.settings.sfx) return;
     try {
-      const context = await unlockAudio();
-      if (!context || context.state !== "running") return;
-      const now = context.currentTime;
-      const notes = {
-        reveal: [392, 523],
-        rate: [440, 660],
-        skip: [247, 196],
-        forward: [330, 440],
-        complete: [392, 523, 784],
-        import: [330, 494],
-        export: [494, 392],
-        restore: [392, 494],
-        delete: [220, 165],
-        reset: [262, 196],
-        toggle: [294, 392],
-        error: [196, 146],
-        tap: [330]
-      }[kind] || [330];
-      notes.forEach((frequency, index) => {
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(frequency, now + index * 0.055);
-        gain.gain.setValueAtTime(0.0001, now + index * 0.055);
-        gain.gain.exponentialRampToValueAtTime(0.035, now + index * 0.055 + 0.012);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.055 + 0.13);
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start(now + index * 0.055);
-        oscillator.stop(now + index * 0.055 + 0.14);
+      if (audioContext && audioContext.state === "running" && audioUnlocked) {
+        playTone(audioContext, kind);
+        return;
+      }
+      unlockAudio().then((context) => {
+        if (context && context.state === "running") playTone(context, kind);
       });
     } catch {
       audioContext = null;
+      audioUnlocked = false;
     }
   }
 
@@ -1859,6 +2656,40 @@
     }[char]));
   }
 
+  function shortcutKey(event) {
+    const key = event.key || "";
+    const code = event.code || "";
+    const keyCode = Number(event.keyCode || event.which) || 0;
+    if (key === " " || key === "Spacebar" || code === "Space" || keyCode === 32) return "space";
+    if (key === "Escape" || key === "Esc" || keyCode === 27) return "escape";
+    if (key === "Enter" || keyCode === 13) return "enter";
+    if (key === "ArrowUp" || key === "Up" || keyCode === 38) return "up";
+    if (key === "ArrowDown" || key === "Down" || keyCode === 40) return "down";
+    if (key === "ArrowLeft" || key === "Left" || key === "<" || keyCode === 37 || ((code === "Comma" || keyCode === 188) && event.shiftKey)) return "previous";
+    if (key === "ArrowRight" || key === "Right" || key === ">" || keyCode === 39 || ((code === "Period" || keyCode === 190) && event.shiftKey)) return "forward";
+    if (/^[1-4]$/.test(key)) return key;
+    if (/^Digit[1-4]$/.test(code) || /^Numpad[1-4]$/.test(code)) return code.slice(-1);
+    if (keyCode >= 49 && keyCode <= 52) return String(keyCode - 48);
+    if (keyCode >= 97 && keyCode <= 100) return String(keyCode - 96);
+    if (/^[a-z]$/i.test(key)) return key.toLowerCase();
+    if (/^Key[A-Z]$/.test(code)) return code.slice(3).toLowerCase();
+    if (keyCode >= 65 && keyCode <= 90) return String.fromCharCode(keyCode).toLowerCase();
+    return key;
+  }
+
+  function quizChoiceFromLetter(card, key) {
+    if (!card || card.type !== "quiz" || !/^[a-z]$/.test(key)) return null;
+    const order = quizChoiceOrder(card);
+    const target = key.toUpperCase();
+    for (let displayIndex = 0; displayIndex < order.length; displayIndex += 1) {
+      const choiceIndex = order[displayIndex];
+      const label = card.choiceLabels[choiceIndex] || indexToLabel(displayIndex);
+      if (String(label || "").toUpperCase() === target) return choiceIndex;
+    }
+    const fallbackIndex = target.charCodeAt(0) - 65;
+    return order[fallbackIndex] === undefined ? null : order[fallbackIndex];
+  }
+
   ["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {
     document.addEventListener(eventName, () => {
       if (state.settings.sfx) unlockAudio();
@@ -1866,28 +2697,27 @@
   });
 
   refs.flashcard.addEventListener("click", (event) => {
-    if (event.target.closest("button,input,textarea,select")) return;
-    if (!state.study.revealed || canPreviewFlip(currentCard())) revealCard();
+    if (handleCardToolAction(event)) return;
+    if (event.target.closest("button,input,textarea,select,[data-card-image],.image-action-menu")) return;
+    handleCardZoneClick(event);
   });
 
   refs.cardFace.addEventListener("click", (event) => {
-    const toolsButton = event.target.closest("[data-card-tools]");
-    if (toolsButton) {
-      state.study.toolsOpen = !state.study.toolsOpen;
-      render();
+    if (handleCardToolAction(event)) return;
+    const image = event.target.closest("[data-card-image]");
+    if (image) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (imageLongPressFired) {
+        imageLongPressFired = false;
+        return;
+      }
+      openImagePreview(imageDataFromElement(image));
       return;
     }
-    if (event.target.closest("[data-edit-current]")) {
-      openCurrentCardEditor();
-      return;
-    }
-    if (event.target.closest("[data-delete-current]")) {
-      deleteCurrentCard();
-      return;
-    }
-    const copyButton = event.target.closest("[data-copy-card]");
-    if (copyButton) {
-      copyCurrentCard(copyButton.dataset.copyCard);
+    const checkButton = event.target.closest("[data-check-quiz]");
+    if (checkButton) {
+      checkQuizAnswer();
       return;
     }
     const button = event.target.closest("[data-choice]");
@@ -1895,35 +2725,44 @@
     answerQuizChoice(Number(button.dataset.choice));
   });
 
-  refs.flashcard.addEventListener("pointerdown", (event) => {
-    pointerStart = { x: event.clientX, y: event.clientY };
-    refs.flashcard.classList.add("is-dragging");
+  refs.cardFace.addEventListener("contextmenu", (event) => {
+    const image = event.target.closest("[data-card-image]");
+    if (!image) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openImageMenu(imageDataFromElement(image), event.clientX, event.clientY);
   });
 
-  refs.flashcard.addEventListener("pointermove", (event) => {
-    if (!pointerStart) return;
-    const dx = event.clientX - pointerStart.x;
-    const rotate = Math.max(-6, Math.min(6, dx / 24));
-    refs.flashcard.style.transform = `translateX(${dx * 0.08}px) rotate(${rotate}deg)`;
+  refs.cardFace.addEventListener("pointerdown", (event) => {
+    const image = event.target.closest("[data-card-image]");
+    if (!image || (event.pointerType && event.pointerType !== "touch")) return;
+    clearTimeout(imageLongPressTimer);
+    imageLongPressFired = false;
+    imageLongPressTimer = setTimeout(() => {
+      imageLongPressFired = true;
+      openImageMenu(imageDataFromElement(image), event.clientX || window.innerWidth / 2, event.clientY || window.innerHeight / 2);
+    }, 560);
   });
 
-  refs.flashcard.addEventListener("pointerup", (event) => {
-    if (!pointerStart) return;
-    const dx = event.clientX - pointerStart.x;
-    const dy = event.clientY - pointerStart.y;
-    pointerStart = null;
-    refs.flashcard.classList.remove("is-dragging");
-    refs.flashcard.style.transform = "";
-    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-      if (dx < 0) skipOrForwardCurrent();
-      else reviewPrevious();
+  ["pointerup", "pointercancel", "pointermove"].forEach((eventName) => {
+    refs.cardFace.addEventListener(eventName, () => clearTimeout(imageLongPressTimer));
+  });
+
+  refs.imagePreviewModal.addEventListener("click", (event) => {
+    if (event.target === refs.imagePreviewModal || event.target === refs.imagePreviewImg) closeImagePreview();
+  });
+  refs.closeImagePreviewBtn.addEventListener("click", closeImagePreview);
+  refs.imageActionMenu.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-image-action]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    handleImageAction(button.dataset.imageAction);
+  });
+  document.addEventListener("click", (event) => {
+    if (!refs.imageActionMenu.hidden && !event.target.closest("#imageActionMenu") && !event.target.closest("[data-card-image]")) {
+      closeImageMenu();
     }
-  });
-
-  refs.flashcard.addEventListener("pointercancel", () => {
-    pointerStart = null;
-    refs.flashcard.classList.remove("is-dragging");
-    refs.flashcard.style.transform = "";
   });
 
   refs.shuffleBankBtn.addEventListener("click", shuffleBank);
@@ -1944,6 +2783,23 @@
   refs.saveModalCardBtn.addEventListener("click", saveModalCard);
   refs.cardEditModal.addEventListener("click", (event) => {
     if (event.target === refs.cardEditModal) closeCardEditor();
+  });
+  refs.closeBankBuilderBtn.addEventListener("click", closeBankBuilder);
+  refs.bankBuilderModal.addEventListener("click", (event) => {
+    if (event.target === refs.bankBuilderModal) closeBankBuilder();
+  });
+  refs.addRegularRowBtn.addEventListener("click", () => addBuilderRow("regular"));
+  refs.addClozeRowBtn.addEventListener("click", () => addBuilderRow("cloze"));
+  refs.addQuizRowBtn.addEventListener("click", () => addBuilderRow("quiz"));
+  refs.addImageRowBtn.addEventListener("click", () => addBuilderRow("image"));
+  refs.addMixedRowsBtn.addEventListener("click", addMixedBuilderRows);
+  refs.saveBankBuilderBtn.addEventListener("click", saveBankBuilder);
+  refs.builderRows.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-remove-builder-row]");
+    if (!button) return;
+    syncBuilderRowsFromDom();
+    builderRows = builderRows.filter((row) => row.id !== button.dataset.removeBuilderRow);
+    renderBuilderRows();
   });
 
   refs.ratingControls.addEventListener("click", (event) => {
@@ -1966,8 +2822,8 @@
 
   refs.typingToggle.addEventListener("change", () => {
     state.settings.typing = refs.typingToggle.checked;
-    if (!state.settings.typing) {
-      state.settings.autoRating = false;
+    if (state.settings.typing && !state.settings.autoRatingUserSet) {
+      state.settings.autoRating = true;
     }
     state.study.revealed = false;
     state.study.typedAnswer = "";
@@ -1982,6 +2838,7 @@
       refs.autoRatingToggle.checked = false;
       return;
     }
+    state.settings.autoRatingUserSet = true;
     state.settings.autoRating = refs.autoRatingToggle.checked;
     saveState();
     render();
@@ -2033,16 +2890,25 @@
   });
 
   refs.bankSelect.addEventListener("change", () => {
+    blurActiveControl();
     state.activeBankId = refs.bankSelect.value;
-    state.study.revealed = false;
-    state.study.typedAnswer = "";
-    state.study.proposedRating = null;
-    state.study.selectedRating = null;
+    state.study.cardId = null;
+    resetStudyTransient(null);
     selectedCardId = null;
     selectedCardIds.clear();
     selectionMode = false;
     saveState();
     render();
+  });
+  refs.selectBanksBtn.addEventListener("click", toggleBankSelectionMode);
+  refs.createBankBtn.addEventListener("click", openBankBuilder);
+  refs.selectAllBanksBtn.addEventListener("click", selectAllVisibleBanks);
+  refs.bulkDeleteBanksBtn.addEventListener("click", deleteSelectedBanks);
+  refs.clearBankSelectionBtn.addEventListener("click", clearBankSelection);
+  refs.bankList.addEventListener("change", (event) => {
+    const checkbox = event.target.closest("[data-select-bank]");
+    if (!checkbox) return;
+    toggleBankSelection(checkbox.dataset.selectBank, checkbox.checked);
   });
 
   refs.renameBankBtn.addEventListener("click", () => {
@@ -2086,18 +2952,38 @@
   });
 
   refs.loadSampleBtn.addEventListener("click", async () => {
+    const sampleType = refs.sampleSelect ? refs.sampleSelect.value : "csv";
     try {
-      const response = await fetch("sample-bank.csv", { cache: "no-store" });
+      const path = sampleType === "xlsx" ? "sample-bank.xlsx" : "sample-bank.csv";
+      const response = await fetch(path, { cache: "no-store" });
       if (!response.ok) throw new Error("sample not found");
-      const text = await response.text();
-      importCsvText(text, "sample bank");
+      if (sampleType === "xlsx") {
+        await importXlsxFile(await response.blob(), "sample bank");
+      } else {
+        const text = await response.text();
+        importCsvText(text, "sample bank");
+      }
     } catch {
-      toast("open through a local server or import sample-bank.csv", "error");
+      toast(`open through a local server or import sample-bank.${sampleType}`, "error");
     }
   });
 
   refs.pasteImportBtn.addEventListener("click", () => {
     importCsvText(refs.pasteArea.value, refs.pasteNameInput.value.trim() || "pasted bank");
+  });
+
+  refs.pasteArea.addEventListener("paste", (event) => {
+    const data = event.clipboardData;
+    if (!data) return;
+    const html = data.getData("text/html");
+    const tableText = htmlTableToText(html);
+    if (!tableText) return;
+    event.preventDefault();
+    const start = refs.pasteArea.selectionStart || 0;
+    const end = refs.pasteArea.selectionEnd || 0;
+    const value = refs.pasteArea.value;
+    refs.pasteArea.value = value.slice(0, start) + tableText + value.slice(end);
+    refs.pasteArea.dispatchEvent(new Event("input"));
   });
 
   refs.settingsTabs.addEventListener("click", (event) => {
@@ -2106,6 +2992,18 @@
     activeSettingsPanel = tab.dataset.settingsTab || "typing";
     render();
     playSfx("toggle");
+  });
+
+  refs.infoTabs.addEventListener("click", (event) => {
+    const tab = event.target.closest("[data-info-tab]");
+    if (!tab) return;
+    activeInfoPanel = tab.dataset.infoTab || "general";
+    renderInfoPanels();
+    playSfx("toggle");
+  });
+
+  refs.copyPromptBtn.addEventListener("click", () => {
+    copyText(refs.aiPromptText.textContent || "").then(() => toast("prompt copied", "tap")).catch(() => toast("copy failed", "error"));
   });
 
   refs.cardSearchInput.addEventListener("input", () => renderCardList(activeBank()));
@@ -2117,6 +3015,7 @@
     playSfx("toggle");
   });
   refs.selectCardsBtn.addEventListener("click", toggleSelectionMode);
+  refs.selectAllCardsBtn.addEventListener("click", selectAllVisibleCards);
   refs.bulkDeleteBtn.addEventListener("click", deleteSelectedCards);
   refs.clearSelectionBtn.addEventListener("click", clearCardSelection);
   refs.cardList.addEventListener("change", (event) => {
@@ -2129,19 +3028,14 @@
     const deleteButton = event.target.closest("[data-delete]");
     const bank = activeBank();
     if (editButton && bank) {
-      fillEditor(bank.cards.find((card) => card.id === editButton.dataset.edit));
+      openCardEditor(bank.cards.find((card) => card.id === editButton.dataset.edit));
     }
     if (deleteButton) {
       deleteCard(deleteButton.dataset.delete);
     }
   });
 
-  refs.addCardBtn.addEventListener("click", addEditorCard);
-  refs.saveCardBtn.addEventListener("click", saveEditorCard);
-  refs.clearEditorBtn.addEventListener("click", () => {
-    fillEditor(null);
-    toast("editor cleared", "toggle");
-  });
+  refs.addCardBtn.addEventListener("click", () => openCardEditor(null));
   refs.exportCsvBtn.addEventListener("click", exportCsv);
   refs.exportProgressBtn.addEventListener("click", exportProgress);
   refs.restoreInput.addEventListener("change", async () => {
@@ -2170,7 +3064,6 @@
     selectedCardId = null;
     selectedCardIds.clear();
     selectionMode = false;
-    fillEditor(null);
     saveState();
     render();
     toast("state cleared", "reset");
@@ -2181,8 +3074,12 @@
   document.addEventListener("keydown", (event) => {
     const target = event.target;
     const typingInField = target && /input|textarea|select/i.test(target.tagName);
-    const ratingKey = ["1", "2", "3", "4"].includes(event.key);
-    if (event.key === "Escape") {
+    if ((event.ctrlKey || event.metaKey || event.altKey) && event.key !== "Escape") return;
+    const key = shortcutKey(event);
+    const ratingKey = ["1", "2", "3", "4"].includes(key);
+    if (key === "escape") {
+      closeImageMenu();
+      closeImagePreview();
       if (refs.cardEditModal.classList.contains("is-open")) closeCardEditor();
       if (refs.infoModal.classList.contains("is-open")) closeInfo();
       return;
@@ -2190,30 +3087,63 @@
     if (typingInField) {
       if (target === refs.typingAnswer && ratingKey && state.study.revealed) {
         event.preventDefault();
-        rateCurrent(Number(event.key));
+        rateCurrent(Number(key));
       }
       return;
     }
-    if (event.key === " " || event.code === "Space") {
+    if (key === "space") {
       event.preventDefault();
-      if (!state.study.revealed) revealCard();
+      revealCard();
+    }
+    if (key === "up") {
+      if (moveQuizChoice(-1)) {
+        event.preventDefault();
+        return;
+      }
+    }
+    if (key === "down") {
+      if (moveQuizChoice(1)) {
+        event.preventDefault();
+        return;
+      }
+    }
+    if (key === "enter") {
+      if (activateQuizChoice()) {
+        event.preventDefault();
+        return;
+      }
     }
     if (ratingKey) {
       const card = currentCard();
       if (card && card.type === "quiz" && !state.study.revealed) {
         const order = quizChoiceOrder(card);
-        const displayIndex = Number(event.key) - 1;
+        const displayIndex = Number(key) - 1;
         if (order[displayIndex] !== undefined) {
+          event.preventDefault();
           answerQuizChoice(order[displayIndex]);
+          return;
         }
       } else if (state.study.revealed) {
-        rateCurrent(Number(event.key));
+        event.preventDefault();
+        rateCurrent(Number(key));
+        return;
       }
     }
-    if (event.key === "ArrowLeft") {
+    if (/^[a-z]$/.test(key)) {
+      const card = currentCard();
+      const choiceIndex = quizChoiceFromLetter(card, key);
+      if (choiceIndex !== null && !state.study.revealed) {
+        event.preventDefault();
+        answerQuizChoice(choiceIndex);
+        return;
+      }
+    }
+    if (key === "previous") {
+      event.preventDefault();
       reviewPrevious();
     }
-    if (event.key === "ArrowRight") {
+    if (key === "forward") {
+      event.preventDefault();
       skipOrForwardCurrent();
     }
   });
@@ -2223,6 +3153,9 @@
     importFile,
     importXlsxFile,
     parseCardsFromCsv,
+    parseCardsFromText,
+    normalizePastedTable,
+    shortcutKey,
     getState: () => JSON.parse(JSON.stringify(state)),
     reset: () => {
       localStorage.removeItem(STORE_KEY);
