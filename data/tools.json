@@ -3,7 +3,7 @@
     "title": "flashflow",
     "description": "Minimal flashcards and native MCQ quiz cards with CSV/XLSX import, cloze blanks, optional review steps, and compact bank management.",
     "url": "./tool/flashflow/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/flashflow.png",
     "favicon": "./tool/flashflow/favicon.svg",
     "emoji": "🦦",
     "tags": [
