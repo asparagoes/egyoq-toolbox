@@ -129,20 +129,25 @@
               <span>create bank</span>
             </button>
             <span class="selection-count" id="bankSelectionCount">0 selected</span>
-          </div>
-          <div class="bulk-controls hidden" id="bankBulkControls">
-            <button class="text-button" id="selectAllBanksBtn" type="button">
-              <span class="material-symbols-outlined" aria-hidden="true">select_all</span>
-              <span>select visible</span>
-            </button>
-            <button class="text-button danger-button" id="bulkDeleteBanksBtn" type="button">
-              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
-              <span>delete selected</span>
-            </button>
-            <button class="text-button" id="clearBankSelectionBtn" type="button">
-              <span class="material-symbols-outlined" aria-hidden="true">close</span>
-              <span>clear</span>
-            </button>
+            <div class="bulk-menu-wrap hidden" id="bankBulkMenuWrap">
+              <button class="mini-button bulk-menu-button" id="bankBulkMenuBtn" type="button" aria-label="bank selection actions" aria-expanded="false" aria-controls="bankBulkControls">
+                <span class="material-symbols-outlined" aria-hidden="true">more_horiz</span>
+              </button>
+              <div class="bulk-controls bulk-menu" id="bankBulkControls" hidden>
+                <button class="text-button" id="selectAllBanksBtn" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">select_all</span>
+                  <span>select visible</span>
+                </button>
+                <button class="text-button danger-button" id="bulkDeleteBanksBtn" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                  <span>delete selected</span>
+                </button>
+                <button class="text-button" id="clearBankSelectionBtn" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                  <span>clear</span>
+                </button>
+              </div>
+            </div>
           </div>
           <div class="bank-list hidden" id="bankList" aria-label="bank selection list"></div>
           <div class="form-grid manager-advanced">
@@ -166,14 +171,22 @@
               <span>import csv/xlsx</span>
               <input id="csvFileInput" type="file" accept=".csv,.xlsx,text/csv">
             </label>
-            <select class="sample-select" id="sampleSelect" aria-label="sample bank type">
-              <option value="csv">csv sample</option>
-              <option value="xlsx">xlsx sample</option>
-            </select>
-            <button class="text-button" id="loadSampleBtn" type="button">
-              <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
-              <span>load sample</span>
-            </button>
+            <div class="sample-menu-wrap">
+              <button class="text-button" id="loadSampleBtn" type="button" aria-expanded="false" aria-controls="sampleMenu">
+                <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                <span>load sample</span>
+              </button>
+              <div class="sample-menu hidden" id="sampleMenu">
+                <button type="button" data-sample-type="csv">
+                  <span class="material-symbols-outlined" aria-hidden="true">description</span>
+                  <span>csv sample</span>
+                </button>
+                <button type="button" data-sample-type="xlsx">
+                  <span class="material-symbols-outlined" aria-hidden="true">table</span>
+                  <span>xlsx sample</span>
+                </button>
+              </div>
+            </div>
           </div>
           <div class="field manager-advanced" style="margin-top: 12px;">
             <label for="pasteNameInput">paste bank name</label>
@@ -289,20 +302,25 @@
               <span>select</span>
             </button>
             <span class="selection-count" id="selectionCount">0 selected</span>
-          </div>
-          <div class="bulk-controls hidden" id="bulkControls">
-            <button class="text-button" id="selectAllCardsBtn" type="button">
-              <span class="material-symbols-outlined" aria-hidden="true">select_all</span>
-              <span>select visible</span>
-            </button>
-            <button class="text-button danger-button" id="bulkDeleteBtn" type="button">
-              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
-              <span>delete selected</span>
-            </button>
-            <button class="text-button" id="clearSelectionBtn" type="button">
-              <span class="material-symbols-outlined" aria-hidden="true">close</span>
-              <span>clear</span>
-            </button>
+            <div class="bulk-menu-wrap hidden" id="cardBulkMenuWrap">
+              <button class="mini-button bulk-menu-button" id="cardBulkMenuBtn" type="button" aria-label="card selection actions" aria-expanded="false" aria-controls="bulkControls">
+                <span class="material-symbols-outlined" aria-hidden="true">more_horiz</span>
+              </button>
+              <div class="bulk-controls bulk-menu" id="bulkControls" hidden>
+                <button class="text-button" id="selectAllCardsBtn" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">select_all</span>
+                  <span>select visible</span>
+                </button>
+                <button class="text-button danger-button" id="bulkDeleteBtn" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                  <span>delete selected</span>
+                </button>
+                <button class="text-button" id="clearSelectionBtn" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                  <span>clear</span>
+                </button>
+              </div>
+            </div>
           </div>
           <div class="card-list" id="cardList"></div>
           <button class="text-button manager-advanced" id="addCardBtn" type="button">
@@ -419,12 +437,12 @@ image/imageBack</code></pre></div>
         <div class="guide-item"><strong>backup</strong><span>cards csv exports the active bank. progress json restores banks, ratings, queue, and settings.</span></div>
       </div>
       <div class="guide-list" id="infoScenariosPanel" data-info-panel="scenarios" role="tabpanel" aria-labelledby="infoScenariosTab" hidden>
-        <div class="guide-item"><strong>lecture recall</strong><span>paste a table with front, back, accepted answers, and tags. review normally, then filter again or hard cards before an exam.</span></div>
-        <div class="guide-item"><strong>cloze memorization</strong><span>write sentences with <code>[[hidden terms]]</code>. the front shows blanks, typing accepts the hidden terms, and reveal underlines the restored words.</span></div>
-        <div class="guide-item"><strong>mcq practice</strong><span>import a worksheet with stem, choices, answer, and explanation. single-answer cards grade immediately; multi-answer cards wait for check.</span></div>
-        <div class="guide-item"><strong>image review</strong><span>put public drive links in image fields. flashflow converts them internally and tapping the card image opens a larger preview.</span></div>
-        <div class="guide-item"><strong>mixed bank</strong><span>combine regular, cloze, quiz, and image rows in one sheet when a topic needs several recall styles.</span></div>
-        <div class="guide-item"><strong>timed review</strong><span>leave timed steps on for automatic comeback intervals, or filter ratings manually when you want focused rereview.</span></div>
+        <div class="guide-item"><strong>lecture flow</strong><span>turn notes into regular, cloze, quiz, image, or mixed rows. study the bank, rate each reveal, then filter weak cards before the exam.</span></div>
+        <div class="guide-item"><strong>regular flow</strong><span>front appears first, reveal shows the answer, rating sets the next return. again/hard/good/easy follow the timed minutes in general settings.</span></div>
+        <div class="guide-item"><strong>cloze flow</strong><span><code>[[hidden terms]]</code> become blanks. typing accepts the term or full sentence, and reveal underlines the restored answer.</span></div>
+        <div class="guide-item"><strong>quiz flow</strong><span>single-answer choices grade immediately. multi-answer quizzes let you select several choices, then check the exact set.</span></div>
+        <div class="guide-item"><strong>image flow</strong><span>public drive links in image fields become bounded card images. tap an image for preview, then reveal and rate like any card.</span></div>
+        <div class="guide-item"><strong>manual flow</strong><span>when you want focused cleanup, use filters for again, hard, good, easy, skipped, learned, or repeating cards.</span></div>
       </div>
       <div class="guide-list" id="infoTroublePanel" data-info-panel="troubleshooting" role="tabpanel" aria-labelledby="infoTroubleTab" hidden>
         <div class="guide-item"><strong>private images</strong><span>google drive images must be shared as anyone with the link.</span></div>
@@ -539,6 +557,30 @@ image/imageBack</code></pre></div>
           <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
           <span>mixed set</span>
         </button>
+        <button class="text-button" id="selectBuilderRowsBtn" type="button" aria-pressed="false">
+          <span class="material-symbols-outlined" aria-hidden="true">checklist</span>
+          <span>select rows</span>
+        </button>
+        <span class="selection-count" id="builderSelectionCount">0 selected</span>
+        <div class="bulk-menu-wrap hidden" id="builderBulkMenuWrap">
+          <button class="mini-button bulk-menu-button" id="builderBulkMenuBtn" type="button" aria-label="builder row actions" aria-expanded="false" aria-controls="builderBulkControls">
+            <span class="material-symbols-outlined" aria-hidden="true">more_horiz</span>
+          </button>
+          <div class="bulk-controls bulk-menu" id="builderBulkControls" hidden>
+            <button class="text-button" id="selectAllBuilderRowsBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">select_all</span>
+              <span>select visible</span>
+            </button>
+            <button class="text-button danger-button" id="deleteSelectedBuilderRowsBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+              <span>delete selected</span>
+            </button>
+            <button class="text-button" id="clearBuilderSelectionBtn" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              <span>clear</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="builder-table-wrap">
         <table class="builder-table">

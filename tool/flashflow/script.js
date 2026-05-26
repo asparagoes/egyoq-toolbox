@@ -40,6 +40,8 @@
     selectBanksBtn: $("selectBanksBtn"),
     createBankBtn: $("createBankBtn"),
     bankSelectionCount: $("bankSelectionCount"),
+    bankBulkMenuWrap: $("bankBulkMenuWrap"),
+    bankBulkMenuBtn: $("bankBulkMenuBtn"),
     bankBulkControls: $("bankBulkControls"),
     selectAllBanksBtn: $("selectAllBanksBtn"),
     bulkDeleteBanksBtn: $("bulkDeleteBanksBtn"),
@@ -49,8 +51,8 @@
     renameBankBtn: $("renameBankBtn"),
     deleteBankBtn: $("deleteBankBtn"),
     csvFileInput: $("csvFileInput"),
-    sampleSelect: $("sampleSelect"),
     loadSampleBtn: $("loadSampleBtn"),
+    sampleMenu: $("sampleMenu"),
     pasteNameInput: $("pasteNameInput"),
     pasteArea: $("pasteArea"),
     pasteImportBtn: $("pasteImportBtn"),
@@ -74,6 +76,8 @@
     cardFilterSelect: $("cardFilterSelect"),
     cardList: $("cardList"),
     selectCardsBtn: $("selectCardsBtn"),
+    cardBulkMenuWrap: $("cardBulkMenuWrap"),
+    cardBulkMenuBtn: $("cardBulkMenuBtn"),
     bulkControls: $("bulkControls"),
     selectAllCardsBtn: $("selectAllCardsBtn"),
     bulkDeleteBtn: $("bulkDeleteBtn"),
@@ -109,6 +113,14 @@
     addQuizRowBtn: $("addQuizRowBtn"),
     addImageRowBtn: $("addImageRowBtn"),
     addMixedRowsBtn: $("addMixedRowsBtn"),
+    selectBuilderRowsBtn: $("selectBuilderRowsBtn"),
+    builderSelectionCount: $("builderSelectionCount"),
+    builderBulkMenuWrap: $("builderBulkMenuWrap"),
+    builderBulkMenuBtn: $("builderBulkMenuBtn"),
+    builderBulkControls: $("builderBulkControls"),
+    selectAllBuilderRowsBtn: $("selectAllBuilderRowsBtn"),
+    deleteSelectedBuilderRowsBtn: $("deleteSelectedBuilderRowsBtn"),
+    clearBuilderSelectionBtn: $("clearBuilderSelectionBtn"),
     saveBankBuilderBtn: $("saveBankBuilderBtn"),
     copyPromptBtn: $("copyPromptBtn"),
     aiPromptText: $("aiPromptText"),
@@ -169,6 +181,8 @@
   let bankSelectionMode = false;
   let selectedBankIds = new Set();
   let builderRows = [];
+  let builderSelectionMode = false;
+  let selectedBuilderRowIds = new Set();
   let toastTimer = 0;
   let audioContext = null;
   let audioUnlockPromise = null;
@@ -477,7 +491,8 @@
     refs.selectBanksBtn.dataset.active = String(bankSelectionMode);
     refs.selectBanksBtn.setAttribute("aria-pressed", String(bankSelectionMode));
     refs.selectBanksBtn.querySelector("span:last-child").textContent = bankSelectionMode ? "done" : "select banks";
-    refs.bankBulkControls.classList.toggle("hidden", !bankSelectionMode);
+    refs.bankBulkMenuWrap.classList.toggle("hidden", !bankSelectionMode);
+    if (!bankSelectionMode) setMenuOpen(refs.bankBulkControls, refs.bankBulkMenuBtn, false);
     refs.bankList.classList.toggle("hidden", !bankSelectionMode);
     refs.selectAllBanksBtn.disabled = !bankSelectionMode || !state.banks.length;
     refs.bulkDeleteBanksBtn.disabled = !selectedBankIds.size;
@@ -487,7 +502,8 @@
     refs.selectCardsBtn.dataset.active = String(selectionMode);
     refs.selectCardsBtn.setAttribute("aria-pressed", String(selectionMode));
     refs.selectCardsBtn.querySelector("span:last-child").textContent = selectionMode ? "done" : "select";
-    refs.bulkControls.classList.toggle("hidden", !selectionMode);
+    refs.cardBulkMenuWrap.classList.toggle("hidden", !selectionMode);
+    if (!selectionMode) setMenuOpen(refs.bulkControls, refs.cardBulkMenuBtn, false);
     refs.selectAllCardsBtn.disabled = !selectionMode || !filteredCards(bank).length;
     refs.bulkDeleteBtn.disabled = !selectedCardIds.size;
     refs.clearSelectionBtn.disabled = !selectedCardIds.size;
@@ -1848,7 +1864,7 @@
   }
 
   function cardFromRecord(record) {
-    const forcedType = normalizeHeader(pick(record, ["type", "cardtype"]));
+    const forcedType = normalizeCardType(pick(record, ["type", "cardtype"]));
     const rawText = pick(record, ["text", "cloze"]);
     const text = forcedType === "cloze" && !rawText ? pick(record, ["front", "q", "question", "stem", "prompt"]) : rawText;
     const clozeAnswers = extractClozeAnswers(text);
@@ -1910,6 +1926,15 @@
 
   function normalizeHeader(value) {
     return String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+  }
+
+  function normalizeCardType(value) {
+    const type = normalizeHeader(value);
+    if (type === "r" || type === "regular" || type === "card") return "regular";
+    if (type === "c" || type === "cloze") return "cloze";
+    if (type === "q" || type === "quiz" || type === "mcq") return "quiz";
+    if (type === "i" || type === "image" || type === "imagecard") return "image";
+    return type;
   }
 
   function getChoiceEntries(record) {
@@ -2133,6 +2158,7 @@
   function toggleBankSelectionMode() {
     bankSelectionMode = !bankSelectionMode;
     if (!bankSelectionMode) selectedBankIds.clear();
+    closeBulkMenus();
     render();
     playSfx("toggle");
   }
@@ -2145,12 +2171,14 @@
 
   function clearBankSelection() {
     selectedBankIds.clear();
+    closeBulkMenus();
     render();
     toast("selection cleared", "toggle");
   }
 
   function selectAllVisibleBanks() {
     visibleBanks().forEach((bank) => selectedBankIds.add(bank.id));
+    closeBulkMenus();
     render();
     toast(`${selectedBankIds.size} bank${selectedBankIds.size === 1 ? "" : "s"} selected`, "toggle");
   }
@@ -2168,6 +2196,7 @@
     selectedCardId = null;
     selectedCardIds.clear();
     selectionMode = false;
+    closeBulkMenus();
     state.study.cardId = null;
     state.study.revealed = false;
     saveState();
@@ -2183,6 +2212,7 @@
   function toggleSelectionMode() {
     selectionMode = !selectionMode;
     if (!selectionMode) selectedCardIds.clear();
+    closeBulkMenus();
     render();
     toast(selectionMode ? "selection on" : "selection off", "toggle");
   }
@@ -2199,6 +2229,7 @@
 
   function clearCardSelection() {
     selectedCardIds.clear();
+    closeBulkMenus();
     render();
     toast("selection cleared", "toggle");
   }
@@ -2206,6 +2237,7 @@
   function selectAllVisibleCards() {
     const bank = activeBank();
     filteredCards(bank).forEach((card) => selectedCardIds.add(card.id));
+    closeBulkMenus();
     render();
     toast(`${selectedCardIds.size} card${selectedCardIds.size === 1 ? "" : "s"} selected`, "toggle");
   }
@@ -2220,6 +2252,7 @@
     if (selectedCardId && selectedCardIds.has(selectedCardId)) selectedCardId = null;
     selectedCardIds.clear();
     selectionMode = false;
+    closeBulkMenus();
     ensureQueue(bank);
     bank.updatedAt = new Date().toISOString();
     saveState();
@@ -2368,7 +2401,7 @@
   function newBuilderRow(type = "regular") {
     return {
       id: uid("row"),
-      type: type === "image" ? "regular" : type,
+      type,
       main: type === "cloze" ? "This is a [[cloze]] card." : type === "quiz" ? "Which option is correct?" : type === "image" ? "what does this image show?" : "",
       back: type === "regular" || type === "image" ? "" : "",
       choices: type === "quiz" ? "choice one\nchoice two\nchoice three" : "",
@@ -2382,6 +2415,8 @@
 
   function openBankBuilder() {
     builderRows = [newBuilderRow("regular"), newBuilderRow("cloze"), newBuilderRow("quiz")];
+    builderSelectionMode = false;
+    selectedBuilderRowIds.clear();
     refs.builderBankNameInput.value = `mixed bank ${state.banks.length + 1}`;
     renderBuilderRows();
     refs.bankBuilderModal.classList.add("is-open");
@@ -2392,20 +2427,39 @@
   function closeBankBuilder() {
     refs.bankBuilderModal.classList.remove("is-open");
     refs.bankBuilderModal.setAttribute("aria-hidden", "true");
+    builderSelectionMode = false;
+    selectedBuilderRowIds.clear();
+    closeBulkMenus();
   }
 
   function renderBuilderRows() {
+    selectedBuilderRowIds.forEach((id) => {
+      if (!builderRows.some((row) => row.id === id)) selectedBuilderRowIds.delete(id);
+    });
+    refs.selectBuilderRowsBtn.dataset.active = String(builderSelectionMode);
+    refs.selectBuilderRowsBtn.setAttribute("aria-pressed", String(builderSelectionMode));
+    refs.selectBuilderRowsBtn.querySelector("span:last-child").textContent = builderSelectionMode ? "done" : "select rows";
+    refs.builderSelectionCount.textContent = `${selectedBuilderRowIds.size} selected`;
+    refs.builderBulkMenuWrap.classList.toggle("hidden", !builderSelectionMode);
+    if (!builderSelectionMode) setMenuOpen(refs.builderBulkControls, refs.builderBulkMenuBtn, false);
+    refs.selectAllBuilderRowsBtn.disabled = !builderSelectionMode || !builderRows.length;
+    refs.deleteSelectedBuilderRowsBtn.disabled = !selectedBuilderRowIds.size;
+    refs.clearBuilderSelectionBtn.disabled = !selectedBuilderRowIds.size;
     refs.builderRows.innerHTML = "";
     builderRows.forEach((row, rowIndex) => {
       const tr = document.createElement("tr");
       tr.dataset.builderRow = row.id;
+      const rowMarker = builderSelectionMode
+        ? `<label class="builder-row-select"><input type="checkbox" data-select-builder-row="${escapeHtml(row.id)}" ${selectedBuilderRowIds.has(row.id) ? "checked" : ""}><span>${rowIndex + 1}</span></label>`
+        : `${rowIndex + 1}`;
       tr.innerHTML = `
-        <td class="builder-row-number">${rowIndex + 1}</td>
+        <td class="builder-row-number">${rowMarker}</td>
         <td>
           <select data-builder-field="type">
-            <option value="regular" ${row.type === "regular" ? "selected" : ""}>regular</option>
-            <option value="cloze" ${row.type === "cloze" ? "selected" : ""}>cloze</option>
-            <option value="quiz" ${row.type === "quiz" ? "selected" : ""}>quiz</option>
+            <option value="regular" ${row.type === "regular" ? "selected" : ""}>r</option>
+            <option value="cloze" ${row.type === "cloze" ? "selected" : ""}>c</option>
+            <option value="quiz" ${row.type === "quiz" ? "selected" : ""}>q</option>
+            <option value="image" ${row.type === "image" ? "selected" : ""}>i</option>
           </select>
         </td>
         <td><textarea data-builder-field="main" placeholder="front, cloze text, or stem">${escapeHtml(row.main)}</textarea></td>
@@ -2415,8 +2469,10 @@
         <td><input data-builder-field="tags" type="text" placeholder="tags" value="${escapeHtml(row.tags)}"></td>
         <td><textarea data-builder-field="explanation" placeholder="short explanation">${escapeHtml(row.explanation)}</textarea></td>
         <td>
+          <div class="builder-image-fields">
           <input data-builder-field="image" type="text" placeholder="front image" value="${escapeHtml(row.image)}">
           <input data-builder-field="imageBack" type="text" placeholder="answer image" value="${escapeHtml(row.imageBack)}">
+          </div>
         </td>
         <td>
           <button class="icon-button" type="button" data-remove-builder-row="${escapeHtml(row.id)}" aria-label="remove row">
@@ -2452,8 +2508,50 @@
     renderBuilderRows();
   }
 
+  function toggleBuilderSelectionMode() {
+    builderSelectionMode = !builderSelectionMode;
+    if (!builderSelectionMode) selectedBuilderRowIds.clear();
+    closeBulkMenus();
+    renderBuilderRows();
+    playSfx("toggle");
+  }
+
+  function toggleBuilderRowSelection(id, checked) {
+    if (checked) selectedBuilderRowIds.add(id);
+    else selectedBuilderRowIds.delete(id);
+    renderBuilderRows();
+    playSfx("tap");
+  }
+
+  function selectAllBuilderRows() {
+    syncBuilderRowsFromDom();
+    builderRows.forEach((row) => selectedBuilderRowIds.add(row.id));
+    closeBulkMenus();
+    renderBuilderRows();
+    toast(`${selectedBuilderRowIds.size} row${selectedBuilderRowIds.size === 1 ? "" : "s"} selected`, "toggle");
+  }
+
+  function clearBuilderSelection() {
+    selectedBuilderRowIds.clear();
+    closeBulkMenus();
+    renderBuilderRows();
+    toast("selection cleared", "toggle");
+  }
+
+  function deleteSelectedBuilderRows() {
+    if (!selectedBuilderRowIds.size) return;
+    syncBuilderRowsFromDom();
+    const count = selectedBuilderRowIds.size;
+    builderRows = builderRows.filter((row) => !selectedBuilderRowIds.has(row.id));
+    selectedBuilderRowIds.clear();
+    builderSelectionMode = false;
+    closeBulkMenus();
+    renderBuilderRows();
+    toast(`${count} row${count === 1 ? "" : "s"} removed`, "delete");
+  }
+
   function builderRowRecord(row) {
-    const type = normalizeHeader(row.type);
+    const type = normalizeCardType(row.type);
     const record = {
       type,
       tags: row.tags || "tags",
@@ -2502,6 +2600,23 @@
     saveState();
     render();
     toast(`created ${cards.length} cards`, "import");
+  }
+
+  async function loadSample(sampleType) {
+    const type = sampleType === "xlsx" ? "xlsx" : "csv";
+    try {
+      const path = type === "xlsx" ? "sample-bank.xlsx" : "sample-bank.csv";
+      const response = await fetch(path, { cache: "no-store" });
+      if (!response.ok) throw new Error("sample not found");
+      if (type === "xlsx") {
+        await importXlsxFile(await response.blob(), "sample bank");
+      } else {
+        const text = await response.text();
+        importCsvText(text, "sample bank");
+      }
+    } catch {
+      toast(`open through a local server or import sample-bank.${type}`, "error");
+    }
   }
 
   function deleteCurrentCard() {
@@ -2646,6 +2761,33 @@
     toastTimer = setTimeout(() => refs.toast.classList.remove("is-visible"), 1800);
   }
 
+  function setMenuOpen(menu, button, open) {
+    if (!menu) return;
+    menu.hidden = !open;
+    menu.classList.toggle("hidden", !open);
+    if (button) button.setAttribute("aria-expanded", String(open));
+  }
+
+  function toggleMenu(menu, button) {
+    setMenuOpen(menu, button, Boolean(menu && menu.hidden));
+  }
+
+  function closeSampleMenu() {
+    setMenuOpen(refs.sampleMenu, refs.loadSampleBtn, false);
+  }
+
+  function closeBulkMenus() {
+    setMenuOpen(refs.bankBulkControls, refs.bankBulkMenuBtn, false);
+    setMenuOpen(refs.bulkControls, refs.cardBulkMenuBtn, false);
+    setMenuOpen(refs.builderBulkControls, refs.builderBulkMenuBtn, false);
+  }
+
+  function closeFloatingMenus() {
+    closeSampleMenu();
+    closeBulkMenus();
+    closeImageMenu();
+  }
+
   function escapeHtml(value) {
     return String(value || "").replace(/[&<>"']/g, (char) => ({
       "&": "&amp;",
@@ -2760,6 +2902,10 @@
     handleImageAction(button.dataset.imageAction);
   });
   document.addEventListener("click", (event) => {
+    if (!event.target.closest(".sample-menu-wrap")) closeSampleMenu();
+    if (!event.target.closest("#bankBulkMenuWrap") && !event.target.closest("#cardBulkMenuWrap") && !event.target.closest("#builderBulkMenuWrap")) {
+      closeBulkMenus();
+    }
     if (!refs.imageActionMenu.hidden && !event.target.closest("#imageActionMenu") && !event.target.closest("[data-card-image]")) {
       closeImageMenu();
     }
@@ -2793,6 +2939,14 @@
   refs.addQuizRowBtn.addEventListener("click", () => addBuilderRow("quiz"));
   refs.addImageRowBtn.addEventListener("click", () => addBuilderRow("image"));
   refs.addMixedRowsBtn.addEventListener("click", addMixedBuilderRows);
+  refs.selectBuilderRowsBtn.addEventListener("click", toggleBuilderSelectionMode);
+  refs.builderBulkMenuBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleMenu(refs.builderBulkControls, refs.builderBulkMenuBtn);
+  });
+  refs.selectAllBuilderRowsBtn.addEventListener("click", selectAllBuilderRows);
+  refs.deleteSelectedBuilderRowsBtn.addEventListener("click", deleteSelectedBuilderRows);
+  refs.clearBuilderSelectionBtn.addEventListener("click", clearBuilderSelection);
   refs.saveBankBuilderBtn.addEventListener("click", saveBankBuilder);
   refs.builderRows.addEventListener("click", (event) => {
     const button = event.target.closest("[data-remove-builder-row]");
@@ -2800,6 +2954,11 @@
     syncBuilderRowsFromDom();
     builderRows = builderRows.filter((row) => row.id !== button.dataset.removeBuilderRow);
     renderBuilderRows();
+  });
+  refs.builderRows.addEventListener("change", (event) => {
+    const checkbox = event.target.closest("[data-select-builder-row]");
+    if (!checkbox) return;
+    toggleBuilderRowSelection(checkbox.dataset.selectBuilderRow, checkbox.checked);
   });
 
   refs.ratingControls.addEventListener("click", (event) => {
@@ -2902,6 +3061,10 @@
   });
   refs.selectBanksBtn.addEventListener("click", toggleBankSelectionMode);
   refs.createBankBtn.addEventListener("click", openBankBuilder);
+  refs.bankBulkMenuBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleMenu(refs.bankBulkControls, refs.bankBulkMenuBtn);
+  });
   refs.selectAllBanksBtn.addEventListener("click", selectAllVisibleBanks);
   refs.bulkDeleteBanksBtn.addEventListener("click", deleteSelectedBanks);
   refs.clearBankSelectionBtn.addEventListener("click", clearBankSelection);
@@ -2951,21 +3114,17 @@
     refs.csvFileInput.value = "";
   });
 
-  refs.loadSampleBtn.addEventListener("click", async () => {
-    const sampleType = refs.sampleSelect ? refs.sampleSelect.value : "csv";
-    try {
-      const path = sampleType === "xlsx" ? "sample-bank.xlsx" : "sample-bank.csv";
-      const response = await fetch(path, { cache: "no-store" });
-      if (!response.ok) throw new Error("sample not found");
-      if (sampleType === "xlsx") {
-        await importXlsxFile(await response.blob(), "sample bank");
-      } else {
-        const text = await response.text();
-        importCsvText(text, "sample bank");
-      }
-    } catch {
-      toast(`open through a local server or import sample-bank.${sampleType}`, "error");
-    }
+  refs.loadSampleBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleMenu(refs.sampleMenu, refs.loadSampleBtn);
+  });
+  refs.sampleMenu.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-sample-type]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    closeSampleMenu();
+    await loadSample(button.dataset.sampleType || "csv");
   });
 
   refs.pasteImportBtn.addEventListener("click", () => {
@@ -3015,6 +3174,10 @@
     playSfx("toggle");
   });
   refs.selectCardsBtn.addEventListener("click", toggleSelectionMode);
+  refs.cardBulkMenuBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleMenu(refs.bulkControls, refs.cardBulkMenuBtn);
+  });
   refs.selectAllCardsBtn.addEventListener("click", selectAllVisibleCards);
   refs.bulkDeleteBtn.addEventListener("click", deleteSelectedCards);
   refs.clearSelectionBtn.addEventListener("click", clearCardSelection);
@@ -3078,7 +3241,7 @@
     const key = shortcutKey(event);
     const ratingKey = ["1", "2", "3", "4"].includes(key);
     if (key === "escape") {
-      closeImageMenu();
+      closeFloatingMenus();
       closeImagePreview();
       if (refs.cardEditModal.classList.contains("is-open")) closeCardEditor();
       if (refs.infoModal.classList.contains("is-open")) closeInfo();

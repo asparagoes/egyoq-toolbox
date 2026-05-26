@@ -1,340 +1,582 @@
-# flashflow documentation
+# flashflow manual
 
-## What flashflow is
+flashflow is a local, text-first study tool for recall cards, cloze blanks, quiz questions, and small image-supported review cards. It is built for fast personal bank making: paste a table, import a CSV or XLSX workbook, or create a mixed bank in the builder, then review from the central card without leaving the page.
 
-flashflow is a calm, text-first study app for recall cards, cloze blanks, multiple-choice quizzes, and small image-supported cards. It runs as a standalone browser tool and stores banks, ratings, skipped cards, queue position, review steps, filters, and settings in local browser storage.
+The app saves banks, card order, ratings, skipped cards, review history, typing settings, timed review settings, minimal mode, and the active bank in browser storage. Export progress JSON before clearing browser data or moving devices.
 
-The app helps by keeping one card as the center of attention. You can import a bank, reveal an answer, rate it, and come back through timed review steps or manual rating filters without building a study plan elsewhere.
+## Mental model
 
-## Main study flow
+flashflow has four main ideas:
 
-1. Import, paste, load a sample, or create a bank.
-2. Read the card front.
-3. Reveal with the center card zone, the reveal button, or Space.
-4. Rate flashcards with `1 again`, `2 hard`, `3 good`, or `4 easy`.
-5. Use previous to revisit the last current-bank card.
-6. Use skip for unrated cards or forward for rated cards.
-7. Export progress JSON before clearing browser data or moving devices.
+- **Banks** are study sets. A CSV creates one bank. An XLSX workbook creates one bank per valid worksheet.
+- **Cards** are rows inside a bank. One bank can mix regular, cloze, quiz, and image-supported cards.
+- **Ratings** describe how well you recalled a card: `again`, `hard`, `good`, or `easy`.
+- **The queue** decides what appears next. Timed review can schedule cards by minute delays; filters let you manually review rated groups.
 
-## Controls
-
-```text
-space              reveal answer, then preview the question again
-1 2 3 4            rate revealed cards, or choose quiz choices before reveal
-a b c d ...        choose matching quiz choice letters
-arrow up/down      move the keyboard quiz choice target
-enter              submit typing, choose/toggle quiz choice, or check multi-answer quiz
-<                  previous card in the current bank only
->                  skip or forward
-escape             close open modals or image preview
+```mermaid
+flowchart TD
+  A["bank"] --> B["cards"]
+  B --> C["regular recall"]
+  B --> D["cloze blank"]
+  B --> E["quiz"]
+  B --> F["image-supported"]
+  C --> G["reveal"]
+  D --> G
+  E --> H["choose answer"]
+  F --> G
+  G --> I["rate"]
+  H --> I
+  I --> J["queue / timed review / filters"]
 ```
+
+## Quick start
+
+1. Open the manager.
+2. Select **load sample** and choose either the CSV sample or XLSX sample.
+3. Click the center of the card, or press `Space`, to reveal.
+4. Rate your recall with `1 again`, `2 hard`, `3 good`, or `4 easy`.
+5. Use **previous** to revisit the last card in the same bank.
+6. Use **forward** to move through a rated card without changing its rating.
+7. Export **progress json** when you want a full backup.
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Card
+  participant Queue
+  User->>Card: reveal
+  Card-->>User: answer / explanation
+  User->>Card: rate 1-4
+  Card->>Queue: update rating and next due state
+  Queue-->>User: next card
+```
+
+## The study screen
+
+The flashcard is the main surface. On normal cards, the front appears first. The answer appears after reveal. On quiz cards, choices appear inside the card. On image cards, images stay bounded inside the colored face and can be tapped for a large preview.
+
+The lower controls are:
+
+- **shuffle**: reshuffles the active bank queue.
+- **previous**: returns to the previous card in the active bank.
+- **reveal**: shows the answer, or flips back to the question preview after reveal.
+- **skip / forward**: skips an unrated card, or moves forward on a rated card without changing its rating.
+- **reset**: resets the active bank progress after confirmation.
 
 Card zones:
 
-```text
-left side          previous
-center             reveal or question preview
-right side         skip or forward
-```
+- left side: previous.
+- center: reveal or flip back preview.
+- right side: skip or forward.
 
-Buttons, quiz choices, images, and menus do not trigger card zones.
+Zones ignore controls, quiz choices, images, menus, and modal elements.
+
+## Keyboard controls
+
+| key | action |
+| --- | --- |
+| `Space` | reveal answer, then flip back to question preview |
+| `1` | rate again |
+| `2` | rate hard |
+| `3` | rate good |
+| `4` | rate easy |
+| `<` or left arrow | previous |
+| `>` or right arrow | skip or forward |
+| `ArrowUp` / `ArrowDown` | move quiz keyboard choice |
+| `A`, `B`, `C`, etc. | choose matching quiz option |
+| `Enter` | submit typing answer, select/toggle quiz choice, or check multi-answer quiz |
+| `Escape` | close open menus or modals |
+
+flashflow blurs active controls after shortcut actions so the last clicked button should not trap keyboard input.
 
 ## Card types
 
 ### Regular cards
 
-Use regular cards for direct recall.
+Regular cards use a prompt and an answer.
 
 ```csv
 type,front,back,accepted,explanation,tags
-regular,what organ filters blood?,kidney,kidney|renal,the kidneys filter blood and regulate fluid balance,physiology
+r,what organ filters blood?,kidney,kidney|kidneys,the kidneys filter blood and help regulate fluid balance,physiology
 ```
 
-Typing mode works on regular cards. Accepted answers can be separated with `|`.
+Study flow:
+
+```mermaid
+flowchart TD
+  A["regular card front"] --> B["press Space or click center"]
+  B --> C["answer appears"]
+  C --> D{"did you recall it?"}
+  D -->|no| E["rate again"]
+  D -->|partial| F["rate hard or good"]
+  D -->|yes| G["rate easy"]
+  E --> H["comes back by again delay or manual filter"]
+  F --> I["repeats until learned"]
+  G --> J["easy streak increases"]
+```
+
+Regular cards support typing mode. Accepted answers can be separated with `|`.
 
 ### Cloze cards
 
-Use cloze cards when the answer belongs inside a sentence.
+Cloze cards hide terms inside a sentence.
 
 ```csv
-type,text,answer,explanation,tags
-cloze,This is a [[cloze]] card.,cloze,the hidden word appears as a blank first,syntax
+type,text,tags
+c,The [[kidney]] filters blood.,physiology
 ```
 
 Front:
 
 ```text
-This is a _____ card.
+The _____ filters blood.
 ```
 
 Reveal:
 
 ```text
-This is a cloze card.
+The kidney filters blood.
 ```
 
-The restored cloze word is underlined on the card. Typing mode accepts the hidden term or the full revealed sentence.
+The hidden term is underlined on reveal. Typing mode accepts the cloze term itself and the full revealed sentence.
+
+```mermaid
+flowchart TD
+  A["sentence with [[term]]"] --> B["front replaces term with blank"]
+  B --> C["type answer or reveal"]
+  C --> D["revealed sentence with underlined term"]
+  D --> E["rate recall"]
+```
 
 ### Quiz cards
 
-Quiz cards use a stem, contiguous choice columns, an answer, and an optional explanation.
+Quiz cards use a stem, choices, and an answer key.
 
 ```csv
 type,stem,A,B,C,D,answer,explanation,tags
-quiz,which button moves through a rated card?,again,previous,forward,minimal,C,forward moves without changing the rating,quiz
+q,Which cell produces myelin in the CNS?,astrocyte,oligodendrocyte,schwann cell,microglia,B,Oligodendrocytes myelinate CNS axons,neuro
 ```
 
-Single-answer quizzes grade immediately when a choice is selected.
+Single-answer quiz cards grade immediately when a choice is selected. Correct answers rate as easy in basic mode. Wrong answers rate as again.
 
-### Multi-answer quiz cards
-
-Use `A|C`, `A, C`, `1|3`, or exact choice text for multi-answer quizzes.
+Multi-answer quiz cards allow more than one correct choice:
 
 ```csv
-type,stem,A,B,C,D,E,answer,explanation,tags
-quiz,which formats can flashflow paste?,csv,video,tsv,markdown table,pdf,A|C|D,csv tsv and markdown tables are supported,import
+type,stem,A,B,C,D,answer,explanation,tags
+q,Which are epithelial tissues?,simple squamous,smooth muscle,stratified squamous,cartilage,A|C,Both named choices are epithelial tissue types,histology
 ```
 
-Multi-answer quizzes wait for the check button. The selected set must exactly match the correct set.
+For multi-answer cards, select all intended choices, then press **check**. The selected set must exactly match all correct answers.
+
+```mermaid
+flowchart TD
+  A["quiz card"] --> B{"single answer?"}
+  B -->|yes| C["tap or press choice letter"]
+  C --> D["grade immediately"]
+  B -->|no| E["toggle choices"]
+  E --> F["press check"]
+  F --> D
+  D --> G{"correct?"}
+  G -->|yes| H["easy, or adaptive proposal if enabled"]
+  G -->|no| I["again"]
+```
 
 ### Image-supported cards
 
-flashflow is text-first, but card text, choices, explanations, and image fields can include public image links.
+Any card can include images. Put public image links in image fields, or use Markdown image syntax inside text fields.
+
+Recommended fields:
 
 ```csv
-type,front,back,tags,image,imageBack
-regular,what view is shown?,front and back images,images,https://drive.google.com/file/d/FILE_ID/view?usp=sharing,https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+type,front,back,image,imageBack,explanation,tags
+i,identify the tissue,compact bone,https://drive.google.com/file/d/FILE_ID/view?usp=sharing,https://drive.google.com/file/d/FILE_ID_2/view?usp=sharing,look for osteons,histology
 ```
 
-Google Drive links are converted internally to:
+Supported image fields:
 
 ```text
-https://drive.google.com/thumbnail?id=FILE_ID&sz=w1600
+image
+imageFront
+frontImage
+imageBack
+answerImage
+backImage
+imageExplanation
+explanationImage
 ```
 
-The file must be shared publicly or as anyone with the link. If it is private, the card shows image unavailable guidance.
-
-Markdown image syntax also works:
+Supported inline Markdown:
 
 ```markdown
-![slide front](https://drive.google.com/file/d/FILE_ID/view?usp=sharing)
+![slide image](https://drive.google.com/file/d/FILE_ID/view?usp=sharing)
 ```
 
-Click or tap a card image to open a large preview. Right-click or long-press an image for open, copy link, save, and share actions when supported by the browser.
+Google Drive links are converted internally into bounded card images. Files must be shared publicly as anyone with the link. If a Drive image does not render, the usual cause is private sharing or a blocked file preview.
 
-## Mixed bank format
+```mermaid
+flowchart TD
+  A["row contains Drive link"] --> B["flashflow extracts file id"]
+  B --> C["generates thumbnail URL"]
+  C --> D["renders bounded image in card"]
+  D --> E["tap image for preview"]
+```
 
-Rows can be mixed in one CSV, worksheet, pasted table, or created bank. The recommended wide header is:
+## Ratings and review logic
+
+Ratings are stored on each card.
+
+| rating | meaning | default timed delay |
+| --- | --- | --- |
+| `again` | missed or wrong | 1 minute |
+| `hard` | recalled with difficulty | 5 minutes |
+| `good` | mostly recalled | 7 minutes |
+| `easy` | confidently recalled | 10 minutes |
+
+When timed review is on, ratings schedule cards with the configured delay. When timed review is off, rated cards remain reviewable through filters.
+
+```mermaid
+flowchart TD
+  A["rate card"] --> B{"timed review on?"}
+  B -->|yes| C["set due time from rating delay"]
+  C --> D{"card due now?"}
+  D -->|yes| E["eligible for queue"]
+  D -->|no| F["held until due, unless queue has other cards"]
+  B -->|no| G["card stays available by filter"]
+  G --> H["all/new/again/hard/good/easy/skipped/learned/repeating"]
+```
+
+### Learned cards
+
+The **fully learned after** setting controls how many consecutive easy ratings a card needs before it is fully learned. Default: `3`.
+
+- Easy increases the streak.
+- Any non-easy rating resets the streak.
+- Fully learned cards stop returning in the normal queue.
+- Learned cards can still be inspected through filters and exports.
+
+### Repeating cards
+
+Repeating means a card is rated but not fully learned. It includes `again`, `hard`, `good`, and easy cards that have not reached the easy streak threshold.
+
+### Skipped cards
+
+Skip leaves an unrated card unlearned. It is counted separately and can be filtered with `skipped`.
+
+## Previous and forward
+
+**previous** is navigation. It stays inside the active bank and does not change ratings.
+
+**forward** moves away from a rated card without changing the existing rating.
+
+Explicit rating review can reopen the rating buttons with the previous rating highlighted. Natural reappearance from queue cycling, shuffle, filters, or forward does not automatically reopen rating review.
+
+```mermaid
+flowchart LR
+  A["rate card"] --> B["next card"]
+  B --> C["previous"]
+  C --> D["same bank, prior card"]
+  D --> E["rating is preserved"]
+  E --> F["forward"]
+  F --> G["no rerating unless user selects a rating"]
+```
+
+## Typing mode
+
+Typing mode applies to regular and cloze cards, not quiz cards.
+
+Flow:
+
+1. Enable typing mode in settings.
+2. Type an answer into the field.
+3. Press `Enter`.
+4. flashflow reveals the answer and compares your input.
+5. If auto-rating proposal is on, flashflow proposes a rating.
+6. You can accept or override the rating with `1`, `2`, `3`, or `4`.
+
+For cloze cards, flashflow accepts:
+
+- the hidden term,
+- any accepted answer field,
+- the full revealed cloze sentence.
+
+## Adaptive quiz mode
+
+Basic quiz mode has only two automatic outcomes:
+
+- correct: easy.
+- wrong: again.
+
+Adaptive quiz mode can propose `again`, `hard`, `good`, or `easy` for correct quiz answers based on answer speed. Longer stems and choices allow more time. The proposal is editable with rating keys.
+
+## Imports
+
+flashflow accepts:
+
+- CSV files.
+- XLSX files.
+- pasted CSV.
+- pasted TSV or copied spreadsheet rows.
+- pasted Markdown pipe tables.
+- the built-in builder table.
+
+### Mixed bank header
+
+Use this wide header when you want one table that can contain every card type:
 
 ```csv
 type,front,back,text,stem,A,B,C,D,E,answer,accepted,explanation,tags,image,imageBack
 ```
 
-The `type` column is optional. If it is missing, flashflow detects each row:
+`type` is optional. If provided, these compact values are recommended:
 
-- quiz: has `stem`, choice columns, and valid `answer` or `correct`.
-- cloze: has `text` with `[[answer]]`.
-- regular: has `front/back`, `q/a`, or compatible answer fields.
+| type | card |
+| --- | --- |
+| `r` or `regular` | regular card |
+| `c` or `cloze` | cloze card |
+| `q` or `quiz` | quiz card |
+| `i` or `image` | image-supported regular card |
 
-Saved state still uses `card.tag` internally for compatibility, but the UI, exports, examples, and docs call the field `tags`.
+Rows are parsed independently. A single sheet can contain regular rows, cloze rows, quiz rows, and image rows together.
 
-## Importing
+### Auto-detection
 
-### CSV
+If `type` is blank:
 
-CSV import creates one bank from the file.
+- rows with `stem`, choice columns, and `answer` become quiz cards.
+- rows with `text` containing `[[...]]` become cloze cards.
+- rows with `front/back`, `q/a`, or compatible fields become regular cards.
+- rows with image fields become image-supported cards.
 
-Supported regular-card fields:
+### XLSX workbooks
 
-```text
-front/back
-q/a/tag
-Stem/Answer/Explanation
-accepted/answers
-text with [[cloze]]
-tags
-image/imageBack
+Each valid worksheet becomes one bank. Invalid or empty sheets are skipped. This makes topic workbooks convenient: one workbook can create many banks at once.
+
+```mermaid
+flowchart TD
+  A["xlsx workbook"] --> B["sheet 1"]
+  A --> C["sheet 2"]
+  A --> D["summary sheet"]
+  B --> E["bank"]
+  C --> F["bank"]
+  D --> G["skipped if invalid"]
 ```
 
-### XLSX
+### Paste import
 
-XLSX import reads every valid worksheet as one bank. Each worksheet can contain mixed card rows. Empty or invalid summary sheets are skipped.
-
-Choice columns should start at `A` and continue without gaps:
-
-```text
-Stem | A | B | C | D | Answer | Explanation | Tags
-```
-
-### Paste CSV/table
-
-Paste import accepts:
-
-- CSV text.
-- TSV or copied spreadsheet rows.
-- simple Markdown pipe tables.
-- copied HTML tables from spreadsheet apps.
-
-Markdown table example:
+Paste import accepts copied spreadsheet cells, TSV, CSV, and Markdown tables. Markdown pipe tables should include a header row.
 
 ```markdown
 | type | front | back | tags |
 | --- | --- | --- | --- |
-| regular | what is active recall? | retrieving from memory | basics |
+| r | what is the renal filtration organ? | kidney | physiology |
 ```
 
-## Rating and review
+## The manager
 
-Ratings:
+The manager is compact by default. Advanced mode reveals heavier controls.
 
-```text
-1 again
-2 hard
-3 good
-4 easy
-```
+Compact manager:
 
-Stats:
-
-- learned: fully learned cards.
-- repeating: cards that are not fully learned.
-- skipped: skipped cards.
-
-Timed review steps are on by default for new state:
-
-```text
-again 1 minute
-hard 5 minutes
-good 7 minutes
-easy 10 minutes
-fully learned after 3 consecutive easy ratings
-```
-
-When timed review is on, rated cards become due after their delay. If no card is due but reviewable cards still exist, flashflow continues with the queue instead of forcing a wait. If every card reaches the easy streak threshold, the bank shows bank complete.
-
-When timed review is off, use the card filter:
-
-```text
-all new again hard good easy skipped learned repeating
-```
-
-## Typing mode
-
-Typing mode works on regular and cloze flashcards. It is hidden for quiz cards.
-
-Settings:
-
-- typing mode: show the answer box.
-- auto-rating proposal: propose a rating after Enter.
-- case sensitive answers: compare exact case.
-
-When typing mode is turned on, auto-rating is enabled by default unless the user has manually turned it off.
-
-## Quiz behavior
-
-Basic quiz mode:
-
-- correct answer rates easy.
-- wrong answer rates again.
-- reveal without choosing counts as again.
-
-Adaptive quiz mode:
-
-- wrong answers propose again.
-- correct answers propose easy, good, hard, or again based on answer speed.
-- longer stems and choice sets get more time.
-- proposed ratings can be overridden with rating buttons or `1/2/3/4`.
-
-Correct quiz answers receive a green tint after grading. Wrong selected choices are marked separately.
-
-## Manager
-
-Compact manager shows the common controls:
-
-- current bank selector.
-- bank selection and create bank.
-- import CSV/XLSX.
-- sample dropdown.
-- paste CSV/table.
-- settings tabs.
-- card search/filter/list.
+- bank selector.
+- select banks.
+- create bank.
+- import csv/xlsx.
+- load sample.
+- settings panels.
+- search/filter cards.
+- select cards.
 - export and restore.
 
-Advanced manager adds:
+Advanced manager:
 
-- rename bank.
-- single-bank delete.
-- detailed card edit actions.
+- rename/delete current bank.
+- paste csv/table.
+- add/edit cards.
 
-Card selection and bank selection both include select visible, clear, and delete selected. Select visible respects the current visible list and card search/filter.
+Bulk actions use ellipsis menus to reduce clutter. Selection mode stays visible because it changes the list behavior.
 
-## Bank builder
+## Create bank builder
 
-Create bank opens a spreadsheet-style modal. Add row types with quick buttons:
+The builder is a spreadsheet-style modal for quick mixed banks.
 
-- regular row.
-- cloze row.
-- quiz row.
-- image row.
-- mixed set.
+Recommended row type keys:
 
-Each row can hold:
+- `r`: regular.
+- `c`: cloze.
+- `q`: quiz.
+- `i`: image-supported regular card.
 
-- front, cloze text, or quiz stem.
-- back answer.
-- choices, one per line.
-- answer or multi-answer key.
-- tags.
-- explanation.
-- front image.
-- answer image.
+Builder columns:
 
-Saving the builder normalizes rows through the same parser used by imports.
+- `type`: compact row type.
+- `front / text / stem`: regular front, cloze sentence, or quiz stem.
+- `back`: regular answer or cloze supporting back text.
+- `choices`: one quiz choice per line.
+- `answer`: typed answer, accepted answer, or quiz key like `A` or `A|C`.
+- `tags`: searchable grouping text.
+- `explanation`: short note shown after reveal or grading.
+- `images`: front image and answer image links.
 
-## Card tools
+The builder saves through the same parser as imports, so it follows the same card rules.
 
-Card menu tools are optional and off by default. When enabled:
-
-- copy is visible on the card face.
-- edit and delete are inside the ellipsis menu.
-- tools are placed inside the colored card face.
-
-Copy question copies the current question text. Copy answer copies the revealed answer; for cloze cards this copies the full revealed sentence.
-
-## Export and restore
-
-Cards CSV exports the active bank.
-
-Progress JSON exports:
-
-- all banks.
-- ratings.
-- skipped state.
-- queues and active card.
-- active bank.
-- settings.
-- review history.
-
-Restore JSON replaces local flashflow state with the saved progress file.
+```mermaid
+flowchart TD
+  A["open create bank"] --> B["add regular/cloze/quiz/image rows"]
+  B --> C["edit table cells directly"]
+  C --> D["save bank"]
+  D --> E["rows normalize through import parser"]
+  E --> F["new mixed bank becomes active"]
+```
 
 ## Samples
 
-`sample-bank.csv` is a small quick-start mixed deck.
+The CSV sample is a small quick-start deck.
 
-`sample-bank.xlsx` is a larger workbook with sheets for:
+The XLSX sample is a larger workbook with multiple sheets demonstrating:
 
 - start here.
 - regular cards.
 - cloze typing.
-- single quiz.
-- multi quiz.
-- drive images.
-- mixed layout.
-- keyboard touch.
+- single-answer quiz.
+- multi-answer quiz.
+- Google Drive images.
+- mixed bank layout.
+- keyboard and touch behavior.
 - bank builder.
 - review steps.
+- use cases.
 
-Choose the sample type in the manager dropdown, then select load sample.
+Use **load sample** and choose CSV or XLSX. If sample loading fails from `file://`, run the toolbox through a local server or import the sample file manually.
+
+## Example flows
+
+### Lecture recall
+
+Use this when you have notes from a lecture and want active recall.
+
+```mermaid
+flowchart TD
+  A["lecture notes"] --> B{"best card style?"}
+  B -->|definition or fact| C["regular card"]
+  B -->|term inside sentence| D["cloze card"]
+  B -->|exam question| E["quiz card"]
+  B -->|slide or diagram| F["image-supported card"]
+  C --> G["study bank"]
+  D --> G
+  E --> G
+  F --> G
+  G --> H["reveal or answer"]
+  H --> I["rate"]
+  I --> J["timed review or filters"]
+```
+
+Detailed example:
+
+1. Put the lecture topic in `tags`.
+2. Use regular cards for direct recall.
+3. Use cloze cards for exact wording or pathways.
+4. Use quiz rows for exam-style practice.
+5. Use image fields for slides.
+6. Study normally.
+7. Filter `again` and `hard` before the exam.
+8. Export progress JSON after a long session.
+
+### Regular card review
+
+```mermaid
+flowchart TD
+  A["front: what organ filters blood?"] --> B["press Space"]
+  B --> C["answer: kidney"]
+  C --> D{"self-check"}
+  D -->|forgot| E["1 again"]
+  D -->|slow| F["2 hard"]
+  D -->|mostly knew| G["3 good"]
+  D -->|clear recall| H["4 easy"]
+  E --> I["due after again minutes"]
+  F --> J["due after hard minutes"]
+  G --> K["due after good minutes"]
+  H --> L["easy streak +1"]
+```
+
+### Cloze memorization
+
+Use cloze cards when you need to remember a missing word in context.
+
+```mermaid
+flowchart TD
+  A["The [[kidney]] filters blood."] --> B["The _____ filters blood."]
+  B --> C["type kidney or reveal"]
+  C --> D["The kidney filters blood."]
+  D --> E["kidney is underlined"]
+  E --> F["rate recall"]
+```
+
+### MCQ practice
+
+Use quiz cards when the task is choosing between options.
+
+```mermaid
+flowchart TD
+  A["read stem"] --> B["choose option"]
+  B --> C{"single or multi answer?"}
+  C -->|single| D["grade immediately"]
+  C -->|multi| E["toggle choices and check"]
+  E --> D
+  D --> F{"correct?"}
+  F -->|yes| G["easy or adaptive proposal"]
+  F -->|no| H["again"]
+```
+
+### Histology or slide review
+
+Use image-supported cards when the visual is the prompt or answer.
+
+```mermaid
+flowchart TD
+  A["public Drive image link"] --> B["image appears on front"]
+  B --> C["identify structure"]
+  C --> D["reveal answer and optional answer image"]
+  D --> E["tap image for larger preview"]
+  E --> F["rate recall"]
+```
+
+### Mixed exam bank
+
+Use a mixed bank when one topic needs several recall styles.
+
+```mermaid
+flowchart TD
+  A["one worksheet"] --> B["regular rows"]
+  A --> C["cloze rows"]
+  A --> D["quiz rows"]
+  A --> E["image rows"]
+  B --> F["one mixed bank"]
+  C --> F
+  D --> F
+  E --> F
+  F --> G["study in one queue"]
+```
+
+## Export and restore
+
+Use **cards csv** when you want the active bank content.
+
+Use **progress json** when you want everything needed to restore your study state:
+
+- banks.
+- cards.
+- active bank.
+- queue.
+- current card.
+- ratings.
+- skipped state.
+- typing settings.
+- timed review settings.
+- minimal mode.
+- review history.
+- status counts.
+
+Restore progress JSON only from files you trust.
 
 ## AI prompt for making banks
 
@@ -342,34 +584,36 @@ Choose the sample type in the manager dropdown, then select load sample.
 Create a FlashFlow-compatible mixed study bank as a CSV table. Use this header: type,front,back,text,stem,A,B,C,D,E,answer,accepted,explanation,tags,image,imageBack. Include regular cards, cloze cards using [[answer]], single-answer quiz rows, multi-answer quiz rows using A|C syntax, tags, accepted answers, concise explanations, and optional public Google Drive image links. Keep explanations short and do not repeat the answer exactly.
 ```
 
-## Use-case examples
-
-### Lecture recall
-
-Make rows with `front`, `back`, `accepted`, `explanation`, and `tags`. Study normally, then filter again and hard cards for focused cleanup.
-
-### Slide or histology image review
-
-Put public image links in `image` and `imageBack`. Ask the identification question in `front`, then reveal the answer image and explanation.
-
-### Exam-style MCQ practice
-
-Use `Stem`, choice columns, `Answer`, and `Explanation`. Single-answer questions grade immediately; multi-answer questions require check.
-
-### Memorizing terms inside sentences
-
-Use cloze syntax like `The [[kidney]] filters blood.` Typing accepts `kidney` or the full sentence.
-
-### Mixed topic bank
-
-Use one worksheet per topic and mix regular recall, cloze, MCQs, and image cards in the same sheet.
-
 ## Troubleshooting
 
-- Keyboard shortcuts do nothing: click the card once or close open modals. flashflow blurs controls after bank changes and shortcut actions.
-- Quiz letters do not match: verify choice columns begin at `A` and continue without gaps.
-- Multi-answer quiz grades wrong: selected choices must exactly match all correct choices.
-- Image does not show: make the Drive file public or shared as anyone with the link.
-- Sample loading fails from `file://`: run the toolbox through a local server or import the sample file manually.
-- Explanation disappears: flashflow hides explanation text when it duplicates the answer exactly.
-- Progress is missing: browser storage may have been cleared; restore from progress JSON if available.
+### Keyboard shortcuts do nothing
+
+Close any open modal or menu, then click the card once. Shortcuts are ignored while typing in ordinary inputs, except rating after typing reveal.
+
+### Quiz letters do not match choices
+
+Choice columns must start at `A` and continue without gaps. If using exact choice text as the answer, make sure it matches the choice text.
+
+### Multi-answer quiz grades wrong
+
+The selected set must exactly match the correct set. `A|C`, `A, C`, and `1|3` are accepted answer styles.
+
+### Image does not show
+
+Make the Drive file public to anyone with the link. Some school or organization Drive policies can still block embeds.
+
+### Explanation disappears
+
+flashflow hides the explanation when it duplicates the answer exactly. This prevents redundant answer/explanation lines.
+
+### A card is not returning
+
+Check whether timed review is on, whether the card is fully learned, and whether a filter is active. Learned cards stop appearing in the normal queue.
+
+### You want to review only a rating group
+
+Use the card filter: `again`, `hard`, `good`, `easy`, `skipped`, `learned`, or `repeating`.
+
+### You are moving devices or clearing browser data
+
+Export progress JSON first, then restore it later.
