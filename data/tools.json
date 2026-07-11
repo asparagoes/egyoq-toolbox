@@ -69,6 +69,26 @@
     ]
   },
   {
+    "title": "Photo Space Calculator",
+    "description": "Preview a casual photo inside the rotated pink frame, calculate visible transparent space, and export a transparent PNG with 300 DPI metadata.",
+    "url": "./tool/photo-space-calculator/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "./tool/photo-space-calculator/favicon.svg",
+    "emoji": "📐",
+    "tags": [
+      "photo",
+      "image",
+      "transparent",
+      "png",
+      "dpi",
+      "frame",
+      "editor",
+      "layout",
+      "space",
+      "calculator"
+    ]
+  },
+  {
     "title": "Test Tool",
     "description": "No description provided.",
     "url": "./tool/test-tool/",

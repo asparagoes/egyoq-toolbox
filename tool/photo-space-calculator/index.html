@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Photo Space Calculator</title>
+  <meta name="description" content="Calculate transparent padding space and expanded PNG size for a rotated portrait frame." />
+  <meta name="tool:description" content="Preview a casual photo inside the rotated pink frame, calculate visible transparent space, and export a transparent PNG with 300 DPI metadata." />
+  <meta name="tool:tags" content="photo,image,transparent,png,dpi,frame,editor,layout,space,calculator" />
+  <meta name="tool:emoji" content="📐" />
+  <meta name="tool:favicon" content="./favicon.svg" />
+  <meta name="theme-color" content="#e91e80" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div>
+        <h1>Photo Space Calculator</h1>
+        <p>300 DPI transparent space calculator</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <label class="button primary" for="photoInput">Upload photo</label>
+      <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+      <button class="button" id="resetButton" type="button" disabled>Reset</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="preview-panel" aria-label="Photo preview">
+      <div class="stage-toolbar">
+        <div class="file-status" id="fileStatus">No photo loaded</div>
+        <label class="switch">
+          <input id="guideToggle" type="checkbox" checked />
+          <span>Center guide</span>
+        </label>
+      </div>
+
+      <div class="stage-wrap">
+        <div class="stage" id="stage" aria-label="Template preview">
+          <canvas id="previewCanvas" class="preview-canvas" width="1212" height="1091"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <aside class="control-panel">
+      <section class="panel-section">
+        <div class="section-heading">
+          <h2>Adjust</h2>
+          <span id="imageMeta">Upload a photo</span>
+        </div>
+
+        <div class="nudge-grid" aria-label="Nudge controls">
+          <button class="icon-button spacer" type="button" disabled aria-hidden="true"></button>
+          <button class="icon-button" id="nudgeUp" type="button" disabled aria-label="Nudge up">^</button>
+          <button class="icon-button spacer" type="button" disabled aria-hidden="true"></button>
+          <button class="icon-button" id="nudgeLeft" type="button" disabled aria-label="Nudge left">&lt;</button>
+          <button class="icon-button" id="nudgeDown" type="button" disabled aria-label="Nudge down">v</button>
+          <button class="icon-button" id="nudgeRight" type="button" disabled aria-label="Nudge right">&gt;</button>
+        </div>
+
+        <button class="button full pick-button" id="pickCenterButton" type="button" disabled>Pick subject center</button>
+
+        <label class="field">
+          <span>Nudge step</span>
+          <select id="nudgeStep">
+            <option value="1">1 px</option>
+            <option value="5" selected>5 px</option>
+            <option value="10">10 px</option>
+            <option value="25">25 px</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Zoom</span>
+          <input id="zoomRange" type="range" min="1" max="3" step="0.001" value="1" disabled />
+        </label>
+        <div class="zoom-readout" id="zoomReadout">100.0%</div>
+      </section>
+
+      <section class="panel-section">
+        <div class="section-heading">
+          <h2>Transparent Space</h2>
+          <span>Original photo pixels</span>
+        </div>
+
+        <div class="offset-grid" id="offsetGrid">
+          <div class="offset-card"><span>Top space</span><strong id="topPx">0.0 px</strong></div>
+          <div class="offset-card"><span>Bottom space</span><strong id="bottomPx">0.0 px</strong></div>
+          <div class="offset-card"><span>Left space</span><strong id="leftPx">0.0 px</strong></div>
+          <div class="offset-card"><span>Right space</span><strong id="rightPx">0.0 px</strong></div>
+        </div>
+
+        <div class="output-size">
+          <div>
+            <span>Added space</span>
+            <strong id="addedSize">0 x 0 px</strong>
+          </div>
+          <div>
+            <span>Export size</span>
+            <strong id="exportSize">0 x 0 px</strong>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Unit</th><th>Top space</th><th>Bottom space</th><th>Left space</th><th>Right space</th></tr>
+            </thead>
+            <tbody id="unitRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel-section actions">
+        <button class="button full" id="copyButton" type="button" disabled>Copy space sizes</button>
+        <button class="button primary full" id="exportButton" type="button" disabled>Export transparent PNG</button>
+        <div class="export-status" id="exportStatus" role="status" aria-live="polite"></div>
+      </section>
+    </aside>
+  </main>
+
+  <script src="./script.js"></script>
+</body>
+</html>
