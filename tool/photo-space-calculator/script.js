@@ -38,8 +38,6 @@
     nudgeRight: document.getElementById("nudgeRight"),
     pickCenterButton: document.getElementById("pickCenterButton"),
     nudgeStep: document.getElementById("nudgeStep"),
-    zoomRange: document.getElementById("zoomRange"),
-    zoomReadout: document.getElementById("zoomReadout"),
     topPx: document.getElementById("topPx"),
     bottomPx: document.getElementById("bottomPx"),
     leftPx: document.getElementById("leftPx"),
@@ -72,7 +70,6 @@
     imageWidth: 0,
     imageHeight: 0,
     baseScale: 1,
-    zoom: 1,
     x: 0,
     y: 0,
     pickingCenter: false,
@@ -87,7 +84,6 @@
     els.photoInput.addEventListener("change", handleFileSelect);
     els.guideToggle.addEventListener("change", render);
     els.resetButton.addEventListener("click", resetPlacement);
-    els.zoomRange.addEventListener("input", handleZoom);
     els.pickCenterButton.addEventListener("click", togglePickCenter);
     els.copyButton.addEventListener("click", copyOffsets);
     els.exportButton.addEventListener("click", exportTransparentPng);
@@ -115,7 +111,6 @@
       state.imageUrl = url;
       state.imageWidth = image.naturalWidth;
       state.imageHeight = image.naturalHeight;
-      state.zoom = 1;
       state.baseScale = getCoverScale(state.imageWidth, state.imageHeight);
       els.stage.classList.add("has-photo");
       els.fileStatus.textContent = file.name;
@@ -132,7 +127,7 @@
   }
 
   function setEnabled(enabled) {
-    [els.resetButton, els.nudgeUp, els.nudgeDown, els.nudgeLeft, els.nudgeRight, els.pickCenterButton, els.zoomRange, els.copyButton, els.exportButton].forEach((element) => {
+    [els.resetButton, els.nudgeUp, els.nudgeDown, els.nudgeLeft, els.nudgeRight, els.pickCenterButton, els.copyButton, els.exportButton].forEach((element) => {
       element.disabled = !enabled;
     });
   }
@@ -140,25 +135,9 @@
   function resetPlacement() {
     if (!state.image) return;
     setPickingCenter(false);
-    state.zoom = 1;
-    els.zoomRange.value = "1";
     const scale = getScale();
     state.x = (CONFIG.opening.x - CONFIG.frame.x) + (CONFIG.opening.width - state.imageWidth * scale) / 2;
     state.y = (CONFIG.opening.y - CONFIG.frame.y) + (CONFIG.opening.height - state.imageHeight * scale) / 2;
-    render();
-  }
-
-  function handleZoom() {
-    if (!state.image) return;
-    const previousScale = getScale();
-    const centerX = CONFIG.frame.width / 2;
-    const centerY = CONFIG.frame.height / 2;
-    const imageCenterX = (centerX - state.x) / previousScale;
-    const imageCenterY = (centerY - state.y) / previousScale;
-    state.zoom = Number(els.zoomRange.value);
-    const nextScale = getScale();
-    state.x = centerX - imageCenterX * nextScale;
-    state.y = centerY - imageCenterY * nextScale;
     render();
   }
 
@@ -172,7 +151,7 @@
   }
 
   function getScale() {
-    return state.baseScale * state.zoom;
+    return state.baseScale;
   }
 
   function getCoverScale(imageWidth, imageHeight) {
@@ -184,7 +163,6 @@
     drawPhotoOrPlaceholder();
     if (els.guideToggle.checked) drawGuide();
     drawTemplateLayers();
-    els.zoomReadout.textContent = `${(state.zoom * 100).toFixed(1)}%`;
     updateOffsets();
   }
 
