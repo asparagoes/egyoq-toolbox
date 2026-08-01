@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FB DP Preview</title>
+  <meta
+    name="description"
+    content="Upload your cover photo and profile picture to see how they crop and align across Facebook desktop, mobile, and feed posts."
+  />
+  <meta
+    name="tool:description"
+    content="Upload your cover photo and profile picture to see how they crop and align across Facebook desktop, mobile, and feed posts."
+  />
+  <meta name="tool:tags" content="facebook,cover,profile,preview,crop,safe zone,social media" />
+  <meta name="tool:emoji" content="🖼️" />
+  <meta name="theme-color" content="#0866FF" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-eyebrow">Social Media Tools</div>
+        <h1>FB DP Preview</h1>
+        <p>Upload your assets to see a pixel-accurate preview of how Facebook crops them. Layouts automatically scale to your screen without breaking the safe zones.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload & Controls Panel -->
+  <div class="panel upload-panel">
+    
+    <div class="controls-row" style="margin-bottom: 1.5rem;">
+        <label for="pageNameInput" class="setting-label" style="display: block; margin-bottom: 0.5rem; color: #a3b8cc; font-size: 0.9rem;">Page Name</label>
+        <input type="text" id="pageNameInput" value="SPC Society of United Laboratory Scientists" style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid #4a5b70; background: rgba(0,0,0,0.2); color: white; font-family: inherit; font-size: 1rem;">
+    </div>
+
+    <div class="upload-grid">
+      <!-- Cover Upload -->
+      <div class="upload-zone" id="coverUploadZone">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="var(--fb-blue)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.15-4.17z"/></svg>
+        <h3>Cover Photo</h3>
+        <p>Recommended: 820 × 360px</p>
+        <input type="file" id="coverInput" accept="image/png, image/jpeg, image/webp" hidden>
+        <button class="btn btn-primary" id="coverBtn">Select Cover</button>
+      </div>
+
+      <!-- Profile Upload -->
+      <div class="upload-zone" id="profileUploadZone">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="var(--fb-blue)"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <h3>Profile Picture</h3>
+        <p>Recommended: 170 × 170px</p>
+        <input type="file" id="profileInput" accept="image/png, image/jpeg, image/webp" hidden>
+        <button class="btn btn-primary" id="profileBtn">Select Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Previews Area -->
+  <div class="previews-wrapper" id="previewsWrapper" style="display: none;">
+    
+    <!-- Desktop Preview -->
+    <div class="preview-section">
+      <div class="preview-header">
+        <h3>Desktop View <span>820 × 312 px</span></h3>
+      </div>
+      <div class="fb-mockup desktop">
+        <div class="fb-cover"></div>
+        <div class="fb-profile-section">
+          <div class="fb-avatar"></div>
+          <div class="fb-profile-body">
+            <div class="fb-profile-top">
+              <div class="fb-info">
+                <h2 class="page-name-display">SPC Society of United Laboratory Scientists</h2>
+                <p><strong>12K</strong> followers • <strong>27</strong> following</p>
+              </div>
+              <div class="fb-actions">
+                <button class="btn btn-gray">Following ▾</button>
+                <button class="btn btn-blue">Message</button>
+                <button class="btn btn-gray">...</button>
+              </div>
+            </div>
+            <p class="fb-desc">One of San Pedro College's departmental organizations manned and operated by the BSMLS officers</p>
+          </div>
+        </div>
+        <div class="fb-tabs">
+          <span class="active">Posts</span><span>About</span><span>Mentions</span><span>Reels</span><span>Photos</span><span>Live</span><span>More ▾</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Device Grid (Mobile & Tablet) -->
+    <div class="device-grid">
+      <!-- Mobile Preview -->
+      <div class="preview-section">
+        <div class="preview-header">
+          <h3>Mobile View <span>640 × 360 px</span></h3>
+        </div>
+        <div class="fb-mockup mobile">
+          <div class="fb-cover"></div>
+          <div class="fb-profile-section stacked-profile">
+            <div class="fb-avatar"></div>
+            <div class="fb-info">
+              <h2 class="page-name-display">SPC Society of United Laboratory Scientists</h2>
+              <p><strong>12K</strong> followers • <strong>27</strong> following</p>
+              <p class="fb-desc">One of San Pedro College's departmental organizations manned and operated by the BSMLS officers</p>
+            </div>
+          </div>
+          <div class="fb-actions centered-actions">
+            <button class="btn btn-gray">Following ▾</button>
+            <button class="btn btn-blue">Message</button>
+            <button class="btn btn-gray">...</button>
+          </div>
+          <div class="fb-tabs">
+            <span class="active">Posts</span><span>About</span><span>Photos</span><span>Reels</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tablet Preview -->
+      <div class="preview-section">
+        <div class="preview-header">
+          <h3>Tablet View <span>~820 × 323 px</span></h3>
+        </div>
+        <div class="fb-mockup tablet">
+          <div class="fb-cover"></div>
+          <div class="fb-profile-section stacked-profile">
+            <div class="fb-avatar"></div>
+            <div class="fb-info">
+              <h2 class="page-name-display">SPC Society of United Laboratory Scientists</h2>
+              <p><strong>12K</strong> followers • <strong>27</strong> following</p>
+              <p class="fb-desc">One of San Pedro College's departmental organizations manned and operated by the BSMLS officers</p>
+            </div>
+          </div>
+          <div class="fb-actions centered-actions">
+            <button class="btn btn-gray">Following ▾</button>
+            <button class="btn btn-blue">Message</button>
+            <button class="btn btn-gray">...</button>
+          </div>
+          <div class="fb-tabs">
+            <span class="active">Posts</span><span>About</span><span>Photos</span><span>Reels</span><span>Events</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Post Preview -->
+    <div class="preview-section">
+        <div class="preview-header">
+            <h3>News Feed Post Preview <span>500 × 500 px</span></h3>
+        </div>
+        <div class="fb-mockup post-preview">
+            <div class="post-header">
+              <div class="post-avatar"></div>
+              <div class="post-meta">
+                <strong class="page-name-display">SPC Society of United Laboratory Scientists</strong>
+                <span>Just now • 🌍</span>
+              </div>
+            </div>
+            <div class="post-body">
+              <p>In a world where unity sparks brilliance, a new light emerges. This S.Y 2025-2026, the Society of United Laboratory Scientists proudly unveils its new brand identity... ✨</p>
+            </div>
+            <div class="post-image fb-cover"></div>
+        </div>
+    </div>
+
+    <div class="panel action-bar">
+      <button class="btn btn-ghost" id="resetBtn">Reset Images</button>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div>Made with 🧡 by <a href="https://www.instagram.com/egyoq" target="_blank" rel="noopener noreferrer">egyoq</a>.</div>
+    <a class="footer-home" href="../../">_(: 」∠)_</a>
+  </footer>
+</div>
+
+<script src="./script.js"></script>
+<script type="module" src="../../assets/js/emoji-replacer.js"></script>
+</body>
+</html>
