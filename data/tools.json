@@ -1,5 +1,22 @@
 [
   {
+    "title": "FB DP Preview",
+    "description": "Upload your cover photo and profile picture to see how they crop and align across Facebook desktop, mobile, and feed posts.",
+    "url": "./tool/fb-dp-preview/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "./tool/fb-dp-preview/favicon.svg",
+    "emoji": "🖼️",
+    "tags": [
+      "facebook",
+      "cover",
+      "profile",
+      "preview",
+      "crop",
+      "safe zone",
+      "social media"
+    ]
+  },
+  {
     "title": "flashflow",
     "description": "Minimal flashcards and native MCQ quiz cards with CSV/XLSX import, cloze blanks, optional review steps, and compact bank management.",
     "url": "./tool/flashflow/",
