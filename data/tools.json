@@ -52,6 +52,24 @@
     ]
   },
   {
+    "title": "Grid Splitter",
+    "description": "Load a PDF or Image and turn it into a perfectly sliced grid.",
+    "url": "./tool/grid-splitter/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "./tool/grid-splitter/favicon.svg",
+    "emoji": "✂️",
+    "tags": [
+      "grid",
+      "split",
+      "image",
+      "pdf",
+      "slice",
+      "crop",
+      "utility",
+      "tool"
+    ]
+  },
+  {
     "title": "Hangman Quiz — Christianity Perspectives",
     "description": "Team-based Hangman quiz for classroom teaching about Christian perspectives on the human person.",
     "url": "./tool/hangman/",
