@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grid Splitter</title>
+  <meta
+    name="description"
+    content="Load a PDF or Image and turn it into a perfectly sliced grid."
+  />
+  <meta
+    name="tool:description"
+    content="Load a PDF or Image and turn it into a perfectly sliced grid."
+  />
+  <meta name="tool:tags" content="grid,split,image,pdf,slice,crop,utility,tool" />
+  <meta name="tool:emoji" content="✂️" />
+  <meta name="theme-color" content="#080d14" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  
+  <!-- Fonts from template -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="./style.css" />
+
+  <!-- Client-side processing libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-eyebrow">Image & PDF Utility</div>
+        <h1>Grid Splitter</h1>
+        <p>Upload a file and slice it into a precise grid. Everything is processed instantly and securely in your browser.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Control Panel -->
+  <div class="panel">
+    <!-- Status pills -->
+    <div class="status-bar">
+      <div class="stat-pill" id="fileTag"><div class="dot"></div>No file loaded</div>
+      <div class="stat-pill" id="typeTag">Unknown type</div>
+      <div class="stat-pill" id="gridTag">3x3 Grid</div>
+    </div>
+
+    <!-- Settings Grid -->
+    <div class="settings-grid">
+      <div class="setting-item">
+        <span class="setting-label">Columns</span>
+        <input id="cols" type="number" min="0" max="50" value="3" />
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">Rows</span>
+        <input id="rows" type="number" min="0" max="50" value="3" />
+      </div>
+      <div class="setting-item">
+        <span class="setting-label">Download format</span>
+        <select id="downloadMode">
+          <option value="zip" selected>ZIP Archive</option>
+          <option value="individual">Individual Files</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Schema note -->
+    <div class="schema-note" style="margin-top:12px;">
+      <b>Supported formats:</b> <code>.PDF</code> <code>.PNG</code> <code>.JPG</code> <code>.WEBP</code>. The grid size calculates exact bounding boxes based on the source document's native resolution and dimensions.
+    </div>
+  </div>
+
+  <!-- Action Bar Panel -->
+  <div class="panel sticky-panel">
+    <div class="action-bar">
+      <label class="file-label">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span id="fileNameDisplay">No file chosen</span>
+        <input id="fileInput" type="file" accept=".pdf, .png, .jpg, .jpeg, .webp" style="display:none;" />
+      </label>
+      
+      <button class="btn btn-primary" id="splitBtn" disabled>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        Split & Download
+      </button>
+
+      <button class="btn btn-ghost" id="resetBtn">Reset</button>
+    </div>
+  </div>
+  
+  <div id="statusMessage" class="schema-note hidden" style="text-align: center; margin-top: 20px;"></div>
+
+</div>
+
+<script src="./script.js"></script>
+<script type="module" src="../../assets/js/emoji-replacer.js"></script>
+</body>
+</html>
