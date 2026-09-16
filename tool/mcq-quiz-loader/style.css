@@ -1160,3 +1160,6 @@
     }
 
     .hidden { display: none !important; }
+
+.choice-label input[type=checkbox] { display: none; }
+.check-answer-btn { margin-top: 12px; }

@@ -26,6 +26,7 @@ const UI = {
   shuffleC: document.getElementById('shuffleC'),
   showExp: document.getElementById('showExp'),
   requireAll: document.getElementById('requireAll'),
+  instantFeedback: document.getElementById('instantFeedback'),
   limit: document.getElementById('limit'),
   bankTag: document.getElementById('bankTag'),
   modeTag: document.getElementById('modeTag'),
@@ -62,6 +63,7 @@ let pool = [];
 let answers = new Map();
 let choiceMaps = new Map();
 let unitStates = new Map();
+let checkedQuestions = new Set();
 let currentSetIndex = 0;
 let cursor = 0;
 let toastTimer = null;
@@ -203,6 +205,20 @@ function parseAnswer(val, choiceEntries = []) {
   }
   return null;
 }
+function parseAnswers(val, choiceEntries = []) {
+  if (val === undefined || val === null) return [];
+  return [...new Set(String(val).split(/[;,|]+/).map(part => parseAnswer(part, choiceEntries)).filter(index => index !== null))].sort((a, b) => a - b);
+}
+function getSelectedAnswers(q) {
+  const value = answers.get(q.id);
+  if (value === undefined) return [];
+  return (Array.isArray(value) ? value : [value]).slice().sort((a, b) => a - b);
+}
+function isAnswerCorrect(q) {
+  const selected = getSelectedAnswers(q);
+  const correct = q.answers || [q.answer];
+  return selected.length === correct.length && selected.every((value, index) => value === correct[index]);
+}
 
 function normalizeRow(row, idx) {
   const id = (row.ID ?? row.Id ?? row.id ?? `q${idx + 1}`).toString().trim();
@@ -212,10 +228,10 @@ function normalizeRow(row, idx) {
   const choiceEntries = getChoiceEntries(row);
   const choices = choiceEntries.map(entry => entry.value);
   const choiceLabels = choiceEntries.map(entry => entry.label);
-  const ans = parseAnswer(row.Answer ?? row.answer ?? row.Correct ?? row.correct, choiceEntries);
+  const correctAnswers = parseAnswers(row.Answer ?? row.answer ?? row.Correct ?? row.correct, choiceEntries);
   const explanation = (row.Explanation ?? row.explanation ?? '').toString();
-  if (!stem || choices.length < 1 || ans === null) return null;
-  return { id, topic, diff, stem, choices, choiceLabels, answer: ans, explanation };
+  if (!stem || choices.length < 1 || !correctAnswers.length) return null;
+  return { id, topic, diff, stem, choices, choiceLabels, answer: correctAnswers[0], answers: correctAnswers, isMultiAnswer: correctAnswers.length > 1, explanation };
 }
 
 function simpleCSVParse(text) {
@@ -397,7 +413,7 @@ function getCurrentPool() {
 function getReviewState(q) {
   const chosen = answers.get(q.id);
   if (chosen === undefined) return 'unanswered';
-  return chosen === q.answer ? 'correct' : 'incorrect';
+  return isAnswerCorrect(q) ? 'correct' : 'incorrect';
 }
 
 function getReviewCounts(items = pool) {
@@ -574,6 +590,7 @@ function serializeSession() {
       shuffleC: UI.shuffleC.checked,
       showExp: UI.showExp.checked,
       requireAll: UI.requireAll.checked,
+      instantFeedback: UI.instantFeedback.checked,
       limit: UI.limit.value,
       splitBySet: UI.splitBySet.checked,
       currentSetIndex,
@@ -585,6 +602,7 @@ function serializeSession() {
     answers: Array.from(answers.entries()),
     choiceMaps: Array.from(choiceMaps.entries()),
     unitStates: Object.fromEntries(Array.from(unitStates.entries())),
+    checkedQuestions: Array.from(checkedQuestions),
   };
 }
 
@@ -608,6 +626,7 @@ function restoreSession() {
     UI.shuffleC.checked = data.settings?.shuffleC !== false;
     UI.showExp.checked = data.settings?.showExp !== false;
     UI.requireAll.checked = !!data.settings?.requireAll;
+    UI.instantFeedback.checked = !!data.settings?.instantFeedback;
     UI.splitBySet.checked = !!data.settings?.splitBySet;
     UI.limit.value = String(data.settings?.limit || (bank.length || 50));
     UI.exportScope.value = ['current', 'full', 'range'].includes(data.settings?.exportScope) ? data.settings.exportScope : 'current';
@@ -618,6 +637,7 @@ function restoreSession() {
     answers = new Map(Array.isArray(data.answers) ? data.answers : []);
     choiceMaps = new Map(Array.isArray(data.choiceMaps) ? data.choiceMaps : []);
     unitStates = new Map(Object.entries(data.unitStates || {}).map(([key, value]) => [key, normalizeUnitState(value)]));
+    checkedQuestions = new Set(Array.isArray(data.checkedQuestions) ? data.checkedQuestions.map(String) : []);
     updateFileNameDisplay(bankLabel);
     rebuildUnits({ resetStates: false });
     pool = getCurrentPool();
@@ -653,6 +673,28 @@ function refreshDerivedState({ resetStates = false } = {}) {
 function escHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+function applyQuestionFeedback(card, q) {
+  const map = choiceMaps.get(q.id) || buildChoiceMap(q);
+  const selected = getSelectedAnswers(q);
+  const correctAnswers = q.answers || [q.answer];
+  card.querySelectorAll('.choice-label').forEach(label => label.classList.remove('correct', 'wrong'));
+  selected.forEach(choice => {
+    const label = card.querySelector(`label[for="${q.id}_${map.indexOf(choice)}"]`);
+    if (label) label.classList.add(correctAnswers.includes(choice) ? 'correct' : 'wrong');
+  });
+  correctAnswers.forEach(choice => {
+    const label = card.querySelector(`label[for="${q.id}_${map.indexOf(choice)}"]`);
+    if (label) label.classList.add('correct');
+  });
+  const exp = card.querySelector('.explanation');
+  if (UI.showExp.checked && exp) {
+    const correctText = correctAnswers.map(choice => answerTextFor(q, choice)).join('; ');
+    const correct = isAnswerCorrect(q);
+    exp.style.display = 'block';
+    exp.className = `explanation ${correct ? 'correct-exp' : 'wrong-exp'}`;
+    exp.innerHTML = `<div class="exp-label" style="color:var(--${correct ? 'green' : 'red'})">${correct ? 'Correct ✓' : 'Incorrect ✗'}</div>${correct ? '' : `<div style="margin-bottom:6px;font-size:12px;color:var(--text-3)">Correct answer${correctAnswers.length > 1 ? 's' : ''}: <b style="color:var(--text)">${escHtml(correctText)}</b></div>`}${escHtml(q.explanation) || 'No explanation provided.'}`;
+  }
+}
 function renderQuestion(q, index, total, single) {
   const card = document.createElement('div');
   card.className = 'qcard';
@@ -676,17 +718,17 @@ function renderQuestion(q, index, total, single) {
     const label = document.createElement('label');
     label.className = 'choice-label';
     label.htmlFor = `${q.id}_${dispIdx}`;
-    const checked = answers.get(q.id) === origIdx;
+    const checked = getSelectedAnswers(q).includes(origIdx);
     if (checked) label.classList.add('selected');
     label.innerHTML = `
-      <input type="radio" name="${q.id}" id="${q.id}_${dispIdx}" value="${dispIdx}" ${checked ? 'checked' : ''} ${getCurrentUnitState().submitted ? 'disabled' : ''}>
+      <input type="${q.isMultiAnswer ? 'checkbox' : 'radio'}" name="${q.id}" id="${q.id}_${dispIdx}" value="${dispIdx}" ${checked ? 'checked' : ''} ${getCurrentUnitState().submitted || checkedQuestions.has(q.id) ? 'disabled' : ''}>
       <div class="choice-letter">${q.choiceLabels?.[origIdx] || indexToLabel(dispIdx)}</div>
       <div class="choice-text">${escHtml(String(txt))}</div>`;
     choicesDiv.appendChild(label);
   });
 
   choicesDiv.addEventListener('click', e => {
-    if (getCurrentUnitState().submitted) return;
+    if (getCurrentUnitState().submitted || q.isMultiAnswer || checkedQuestions.has(q.id)) return;
     const label = e.target.closest('.choice-label');
     if (!label) return;
     const input = label.querySelector(`input[name="${q.id}"]`);
@@ -703,14 +745,18 @@ function renderQuestion(q, index, total, single) {
   });
 
   choicesDiv.addEventListener('change', () => {
-    if (getCurrentUnitState().submitted) return;
-    const sel = card.querySelector(`input[name="${q.id}"]:checked`);
-    if (!sel) return;
-    const dispIdx = parseInt(sel.value, 10);
-    const origIdx = map[dispIdx];
-    answers.set(q.id, origIdx);
+    if (getCurrentUnitState().submitted || checkedQuestions.has(q.id)) return;
+    const selectedInputs = [...card.querySelectorAll(`input[name="${q.id}"]:checked`)];
+    const selected = selectedInputs.map(input => map[parseInt(input.value, 10)]).sort((a, b) => a - b);
+    if (selected.length) answers.set(q.id, q.isMultiAnswer ? selected : selected[0]);
+    else answers.delete(q.id);
     card.querySelectorAll('.choice-label').forEach(l => l.classList.remove('selected'));
-    sel.closest('.choice-label').classList.add('selected');
+    selectedInputs.forEach(input => input.closest('.choice-label').classList.add('selected'));
+    if (!q.isMultiAnswer && UI.instantFeedback.checked && selected.length) {
+      checkedQuestions.add(q.id);
+      card.querySelectorAll('input').forEach(input => input.disabled = true);
+      applyQuestionFeedback(card, q);
+    }
     updateTop();
     saveSession();
   });
@@ -723,6 +769,23 @@ function renderQuestion(q, index, total, single) {
   card.appendChild(stem);
   card.appendChild(choicesDiv);
 
+  if (q.isMultiAnswer && !getCurrentUnitState().submitted) {
+    const checkBtn = document.createElement('button');
+    checkBtn.className = 'btn btn-primary small check-answer-btn';
+    checkBtn.type = 'button';
+    checkBtn.textContent = checkedQuestions.has(q.id) ? 'Answer checked' : 'Check Selected';
+    checkBtn.disabled = checkedQuestions.has(q.id) || !getSelectedAnswers(q).length;
+    choicesDiv.addEventListener('change', () => { checkBtn.disabled = !getSelectedAnswers(q).length; });
+    checkBtn.onclick = () => {
+      checkedQuestions.add(q.id);
+      card.querySelectorAll('input').forEach(input => input.disabled = true);
+      checkBtn.textContent = 'Answer checked';
+      checkBtn.disabled = true;
+      applyQuestionFeedback(card, q);
+      saveSession();
+    };
+    card.appendChild(checkBtn);
+  }
   if (single) {
     const nav = document.createElement('div');
     nav.className = 'q-nav';
@@ -759,6 +822,7 @@ function renderQuestion(q, index, total, single) {
   }
 
   card.appendChild(explain);
+  if (checkedQuestions.has(q.id)) applyQuestionFeedback(card, q);
   return card;
 }
 
@@ -768,6 +832,11 @@ function applyFeedback() {
   pool.forEach(q => {
     const card = document.getElementById(`card_${q.id}`);
     if (!card) return;
+    if (q.isMultiAnswer) {
+      if (!isAnswerCorrect(q)) wrong.add(q.id);
+      applyQuestionFeedback(card, q);
+      return;
+    }
     const labels = card.querySelectorAll('.choice-label');
     labels.forEach(l => l.classList.remove('correct', 'wrong'));
 
@@ -816,7 +885,7 @@ function applyFeedback() {
 function showResults() {
   const state = getCurrentUnitState();
   const total = pool.length;
-  const correct = pool.filter(q => answers.get(q.id) === q.answer).length;
+  const correct = pool.filter(isAnswerCorrect).length;
   const pct = total ? Math.round((100 * correct) / total) : 0;
 
   UI.scoreBig.textContent = `${pct}%`;
@@ -1150,6 +1219,7 @@ async function onLoad() {
       answers = new Map();
       choiceMaps = new Map();
       unitStates = new Map();
+      checkedQuestions = new Set();
       buildBankSession({ resetStates: true });
       fileDirty = false;
       showToast(`Loaded ${loaded.length} questions successfully.`, 'success');
@@ -1171,7 +1241,7 @@ async function onLoad() {
 function onSubmit() {
   if (!pool.length) return;
   if (UI.requireAll.checked) {
-    const unanswered = pool.filter(q => answers.get(q.id) === undefined);
+    const unanswered = pool.filter(q => !getSelectedAnswers(q).length);
     if (unanswered.length) {
       showToast(`${unanswered.length} question(s) still unanswered.`, 'error');
       return;
@@ -1202,6 +1272,7 @@ function toggleRetryMode() {
   }
   state.retryMode = true;
   state.retrySourceIDs = [...state.wrongIDs];
+  state.wrongIDs.forEach(id => checkedQuestions.delete(id));
   state.submitted = false;
   state.reviewFilter = 'all';
   state.cursor = 0;
@@ -1247,6 +1318,7 @@ function onReset() {
   answers = new Map();
   choiceMaps = new Map();
   unitStates = new Map();
+  checkedQuestions = new Set();
   currentSetIndex = 0;
   cursor = 0;
   fileDirty = false;
@@ -1256,6 +1328,7 @@ function onReset() {
   UI.shuffleC.checked = true;
   UI.showExp.checked = true;
   UI.requireAll.checked = false;
+  UI.instantFeedback.checked = false;
   UI.exportScope.value = 'current';
   UI.exportSetStart.value = '';
   UI.exportSetEnd.value = '';
@@ -1321,6 +1394,7 @@ UI.shuffleC.addEventListener('change', () => {
 });
 UI.showExp.addEventListener('change', render);
 UI.requireAll.addEventListener('change', saveSession);
+UI.instantFeedback.addEventListener('change', saveSession);
 UI.limit.addEventListener('change', () => {
   if (!bank.length) return;
   resetStructuralState({ preserveAnswers: true });
