@@ -5,28 +5,89 @@ async function hash(s){const b=await crypto.subtle.digest('SHA-256',new TextEnco
 function inline(s){return esc(s).replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img alt="$1" src="$2">').replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/`([^`]+)`/g,'<code>$1</code>')}
 function splitSource(md){const quiz=(md.match(/:::quiz\s*([\s\S]*?)\s*:::endquiz/i)||[])[1];const answers=(md.match(/:::answers\s*([\s\S]*?)\s*:::endanswers/i)||[])[1];if(!quiz)throw Error('Missing :::quiz and :::endquiz block.');if(!answers)throw Error('Missing :::answers and :::endanswers block.');return{quiz,answers}}
 function parseQuestions(md){
- const lines=md.replace(/\r/g,'').split('\n'),items=[];let pre=[],cur=null,pendingSection='',sharedChoices=[],readingShared=false;
+ const lines=md.replace(/\r/g,'').split('\n'),items=[];
+ let pre=[],cur=null,activeSection='',pendingInstruction=[],sharedChoices=[],readingShared=false,sectionHasQuestion=false;
  const pushCurrent=()=>{if(cur){items.push(cur);cur=null}};
- for(const raw of lines){const s=raw.trim(),qmatch=s.match(/^Q(?:([0-9]+))?[.:)]\s*(.+)/i),heading=s.match(/^(#{2,3})\s+(.+)/);
-  if(qmatch){pushCurrent();cur={number:qmatch[1]||String(items.length+1),stem:qmatch[2],choices:[],extra:[],section:pendingSection,sharedChoices:sharedChoices.slice()};pendingSection='';continue}
-  if(/^COLUMN-B:$/i.test(s)){pushCurrent();readingShared=true;sharedChoices=[];continue}
-  const choice=s.match(/^([A-Z])[.)]\s+(.+)/);if(readingShared&&choice){sharedChoices.push({label:choice[1],text:choice[2]});continue}if(cur&&choice){cur.choices.push({label:choice[1],text:choice[2]});continue}
-  if(heading){pushCurrent();readingShared=false;sharedChoices=[];pendingSection=heading[2];continue}
-  if(cur)cur.extra.push(raw);else if(pendingSection){if(s)pre.push('## '+pendingSection);pendingSection='';pre.push(raw)}else pre.push(raw)
+ for(const raw of lines){
+  const s=raw.trim();
+  if(!s) continue;
+  const qmatch=s.match(/^Q(?:([0-9]+))?[.:)]\s*(.+)/i);
+  const heading=s.match(/^(#{2,3})\s+(.+)/);
+  if(heading){
+   pushCurrent();
+   activeSection=heading[2].trim();
+   pendingInstruction=[];
+   sharedChoices=[];
+   readingShared=false;
+   sectionHasQuestion=false;
+   continue;
+  }
+  if(/^COLUMN-B:$/i.test(s)){
+   pushCurrent();
+   readingShared=true;
+   sharedChoices=[];
+   continue;
+  }
+  const choice=s.match(/^([A-Z])[.)]\s+(.+)/);
+  if(readingShared&&choice){sharedChoices.push({label:choice[1],text:choice[2]});continue}
+  if(cur&&choice){cur.choices.push({label:choice[1],text:choice[2]});continue}
+  if(qmatch){
+   pushCurrent();
+   const firstInSection=!sectionHasQuestion;
+   cur={
+    number:qmatch[1]||String(items.length+1),
+    stem:qmatch[2],choices:[],extra:[],
+    section:firstInSection?activeSection:'',
+    sectionContext:activeSection,
+    instruction:firstInSection?pendingInstruction.join('\n'):'',
+    instructionContext:pendingInstruction.join('\n'),
+    sharedChoices:sharedChoices.slice()
+   };
+   sectionHasQuestion=true;
+   readingShared=false;
+   continue;
+  }
+  if(s.startsWith('>')){
+   const instruction=s.replace(/^>\s*/, '');
+   if(activeSection&&!sectionHasQuestion) pendingInstruction.push(instruction);
+   else if(cur) cur.extra.push(raw);
+   else pre.push(raw);
+   continue;
+  }
+  if(cur) cur.extra.push(raw);
+  else if(activeSection&&!sectionHasQuestion) pendingInstruction.push(s);
+  else pre.push(raw);
  }
- pushCurrent();return{preamble:pre.join('\n'),items}
+ pushCurrent();
+ return{preamble:pre.join('\n'),items}
 }
 function parseAnswers(md){const lines=md.replace(/\r/g,'').split('\n'),map=new Map();let current=null,preamble=[];
  for(const raw of lines){const s=raw.trim(),m=s.match(/^Q(?:([0-9]+))?[.:)]\s*(.+)/i);if(m){current=m[1]||String(map.size+1);map.set(current,[m[2]])}else if(current)map.get(current).push(raw);else preamble.push(raw)}
  return{preamble:preamble.join('\n'),map}
 }
 function simpleBlocks(md){let out=[];for(const raw of md.split('\n')){const s=raw.trim();if(!s)continue;let m;if((m=s.match(/^(#{1,3})\s+(.+)/)))out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`);else if((m=s.match(/^>\s*(.+)/)))out.push(`<blockquote>${inline(m[1])}</blockquote>`);else out.push(`<p>${inline(s)}</p>`)}return out.join('')}
-function questionHtml(q,answerText='',isAnswer=false){const shared=(q.section&&q.sharedChoices?.length)?`<div class="matching-bank"><div class="matching-label">Column B</div>${q.sharedChoices.map(c=>`<div>${c.label}. ${inline(c.text)}</div>`).join('')}</div>`:'';let body=`<div class="single-question-wrap">${q.section?`<h2 class="part-heading">${inline(q.section)}</h2>`:''}${shared}<div class="question${isAnswer?' answer-card':''}"><div class="question-title"><span class="qnum">${q.number}.</span>${inline(q.stem)}</div>`;
- if(q.choices.length){let correctLabel='';const lm=answerText.trim().match(/^\*{0,2}([A-Z])[.)]/i);if(lm)correctLabel=lm[1].toUpperCase();body+=q.choices.map(c=>`<div class="answer-choice ${isAnswer&&c.label===correctLabel?'correct-answer':''}">${c.label}. ${inline(c.text)}${isAnswer&&c.label===correctLabel?' <strong> (Correct answer)</strong>':''}</div>`).join('')}
+function questionHtml(q,answerText='',isAnswer=false){
+ const showContext=viewMode==='single';
+ const sectionTitle=q.section||(showContext?q.sectionContext:'');
+ const sectionInstruction=q.instruction||(showContext?q.instructionContext:'');
+ const showShared=q.sharedChoices?.length&&(q.section||showContext);
+ const shared=showShared?`<div class="matching-bank"><div class="matching-label">Column B</div>${q.sharedChoices.map(c=>`<div>${c.label}. ${inline(c.text)}</div>`).join('')}</div>`:'';
+ let body=`<div class="single-question-wrap">${sectionTitle?`<h2 class="part-heading">${inline(sectionTitle)}</h2>`:''}${sectionInstruction?`<blockquote class="part-instruction">${inline(sectionInstruction)}</blockquote>`:''}${shared}<div class="question${isAnswer?' answer-card':''}"><div class="question-title"><span class="qnum">${q.number}.</span>${inline(q.stem)}</div>`;
+ if(q.choices.length){
+  let correctLabel='';
+  const lm=answerText.trim().match(/^\*{0,2}([A-Z])[.)]/i);
+  if(lm)correctLabel=lm[1].toUpperCase();
+  body+=q.choices.map(c=>`<div class="answer-choice ${isAnswer&&c.label===correctLabel?'correct-answer':''}">${c.label}. ${inline(c.text)}${isAnswer&&c.label===correctLabel?' <strong>(Correct answer)</strong>':''}</div>`).join('')
+ }
  const extra=simpleBlocks(q.extra.join('\n'));if(extra)body+=extra;
  if(isAnswer&&!q.choices.length)body+=`<div class="written-answer"><strong>Correct answer / guide:</strong> ${inline(answerText.replace(/^\*\*|\*\*$/g,'').trim())}</div>`;
- else if(isAnswer&&answerText.replace(/^\*{0,2}[A-Z][.)]\s*/i,'').trim()){const explanation=answerText.replace(/^\*{0,2}[A-Z][.)]\s*/i,'').replace(/^\*\*|\*\*$/g,'').trim();const chosen=q.choices.find(c=>answerText.trim().match(new RegExp('^\\*{0,2}'+c.label+'[.)]','i')));if(explanation&&(!chosen||!explanation.startsWith(chosen.text)))body+=`<div class="written-answer"><strong>Answer note:</strong> ${inline(explanation)}</div>`}
- return body+'</div></div>'}
+ else if(isAnswer&&answerText.replace(/^\*{0,2}[A-Z][.)]\s*/i,'').trim()){
+  const explanation=answerText.replace(/^\*{0,2}[A-Z][.)]\s*/i,'').replace(/^\*\*|\*\*$/g,'').trim();
+  const chosen=q.choices.find(c=>answerText.trim().match(new RegExp('^\\*{0,2}'+c.label+'[.)]','i')));
+  if(explanation&&(!chosen||!explanation.startsWith(chosen.text)))body+=`<div class="written-answer"><strong>Answer note:</strong> ${inline(explanation)}</div>`
+ }
+ return body+'</div></div>'
+}
 function getRenderedParts(which){const qp=parseQuestions(parsed.quiz);if(which==='quiz')return{header:simpleBlocks(qp.preamble),items:qp.items.map(q=>questionHtml(q))};const ap=parseAnswers(parsed.answers);return{header:simpleBlocks(ap.preamble),items:qp.items.map(q=>questionHtml(q,(ap.map.get(String(q.number))||['No answer provided.']).join(' ').trim(),true))}}
 function render(which=currentView){if(!parsed)return;els.paper.style.setProperty('--quiz-font-size',quizFontSize+'px');currentView=which;const parts=getRenderedParts(which);singleIndex=Math.max(0,Math.min(singleIndex,parts.items.length-1));els.paper.classList.toggle('single-paper',viewMode==='single');els.paper.innerHTML=viewMode==='single'?(parts.items[singleIndex]||'<p>No question found.</p>'):parts.header+parts.items.join('');els.singleNav.classList.toggle('hidden',viewMode!=='single'||parts.items.length<2);els.questionCounter.textContent=`Question ${singleIndex+1} of ${parts.items.length}`;els.prevQuestion.disabled=singleIndex===0;els.nextQuestion.disabled=singleIndex>=parts.items.length-1;els.quizTab.classList.toggle('active',which==='quiz');els.answerTab.classList.toggle('active',which==='answers');}
 function showView(name){els.setup.classList.toggle('hidden',name!=='setup');els.viewer.classList.toggle('hidden',name!=='viewer');els.locked.classList.toggle('hidden',name!=='locked')}

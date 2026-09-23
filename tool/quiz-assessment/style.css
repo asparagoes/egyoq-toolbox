@@ -23,3 +23,5 @@ body{color-scheme:light}.timer{color:#1f2937}.dialog{box-shadow:0 24px 70px rgba
 .paper .single-question-wrap{width:100%}
 
 .matching-bank{margin:0 0 1.25rem;padding:0;line-height:1.75}.matching-label{font-weight:700;margin-bottom:3px}.matching-bank div:not(.matching-label){padding:0;border:0;background:transparent}
+
+.part-instruction{margin:0 0 1.25rem!important}.paper .part-heading+.part-instruction{margin-top:-6px!important}
