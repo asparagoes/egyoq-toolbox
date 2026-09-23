@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tutoring Quiz Viewer</title>
+<meta name="theme-color" content="#0b111a">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body><main class="wrap">
+<header class="hero"><div><div class="eyebrow">Traditional tutoring assessment</div><h1>Quiz Viewer</h1><p>Load one Markdown file, set the session, then hand the screen to the student.</p></div><button id="helpBtn" class="btn ghost">Generate bank</button></header>
+<section id="setup" class="panel">
+ <div class="section-head"><div><span class="step">Tutor setup</span><h2>Prepare a session</h2></div><span id="fileState" class="pill">No file</span></div>
+ <label class="drop"><input id="file" type="file" accept=".md,.markdown,text/markdown,text/plain"><b>Choose Markdown quiz</b><small id="fileName">.md file with quiz and answer blocks</small></label>
+ <div class="grid">
+  <label>Duration (minutes)<input id="minutes" type="number" min="1" max="600" value="30"></label>
+  <label>Warning at (minutes left)<input id="warning" type="number" min="1" max="60" value="5"></label>
+  <label>Tutor PIN<input id="pin" type="password" inputmode="numeric" minlength="4" placeholder="At least 4 characters"></label>
+  <label class="check"><input id="allowAnswers" type="checkbox"><span>Allow answer viewer before timeout</span></label>
+ </div>
+ <div class="actions"><button id="previewBtn" class="btn ghost" disabled>Preview quiz</button><button id="startBtn" class="btn primary" disabled>Start student session</button></div>
+ <p class="note">Browser-only protection is practical, not tamper-proof. Keep the original Markdown away from the student and supervise the device.</p>
+</section>
+<section id="viewer" class="hidden">
+ <div class="sticky panel"><div><span id="status" class="pill live">Session active</span><div id="timer" class="timer">30:00</div></div><div class="viewer-actions"><button id="quizTab" class="btn tab active">Quiz</button><button id="answerTab" class="btn tab">Answers</button><button id="viewModeBtn" class="btn tab">Single question</button><div class="font-tools" aria-label="Font size controls"><button id="fontDown" class="btn icon-btn" type="button" aria-label="Decrease quiz font size" title="Decrease font size"><span class="font-symbol">A</span><span>−</span></button><button id="fontUp" class="btn icon-btn" type="button" aria-label="Increase quiz font size" title="Increase font size"><span class="font-symbol">A</span><span>+</span></button></div><button id="endBtn" class="btn danger">End</button></div></div>
+ <article id="paper" class="paper"></article><nav id="singleNav" class="single-nav hidden"><button id="prevQuestion" class="btn ghost">Previous</button><span id="questionCounter">Question 1 of 1</span><button id="nextQuestion" class="btn primary">Next</button></nav>
+</section>
+<section id="locked" class="panel locked hidden"><div class="lock-icon">⌛</div><h2>Quiz time has ended</h2><p>The quiz content is no longer available. Ask the tutor to open the answer viewer or reset the session.</p><div class="actions center"><button id="unlockAnswersBtn" class="btn primary">Tutor: view answers</button><button id="resetLockedBtn" class="btn ghost">Tutor: new session</button></div></section>
+<footer>Made for screen-based quizzes answered on paper.</footer>
+</main>
+<div id="modal" class="modal hidden"><div class="backdrop" data-close></div><div class="dialog"><button class="x" data-close>×</button><h2 id="modalTitle">Markdown syntax</h2><div id="modalBody"></div></div></div>
+<div id="toast" class="toast"></div>
+<script src="script.js"></script></body></html>
