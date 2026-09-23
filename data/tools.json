@@ -3,7 +3,7 @@
     "title": "FB DP Preview",
     "description": "Upload your cover photo and profile picture to see how they crop and align across Facebook desktop, mobile, and feed posts.",
     "url": "./tool/fb-dp-preview/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/fb-dp-preview.png",
     "favicon": "./tool/fb-dp-preview/favicon.svg",
     "emoji": "🖼️",
     "tags": [
@@ -55,7 +55,7 @@
     "title": "Grid Splitter",
     "description": "Load a PDF or Image and turn it into a perfectly sliced grid.",
     "url": "./tool/grid-splitter/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/grid-splitter.png",
     "favicon": "./tool/grid-splitter/favicon.svg",
     "emoji": "✂️",
     "tags": [
@@ -127,6 +127,15 @@
     "title": "Test Tool",
     "description": "No description provided.",
     "url": "./tool/test-tool/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "",
+    "emoji": "",
+    "tags": []
+  },
+  {
+    "title": "Tutoring Quiz Viewer",
+    "description": "No description provided.",
+    "url": "./tool/quiz-assessment/",
     "thumbnail": "./assets/thumbs/default.png",
     "favicon": "",
     "emoji": "",
