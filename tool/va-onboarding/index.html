@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="va-onboarding-build" content="cloudflare-worker-20261018b">
+  <title>Employer & Virtual Assistant Onboarding — EGYoq Toolbox</title>
+  <meta name="tool:description" content="Employer-facing onboarding proposal form for a Creative & Operations Virtual Assistant.">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css?v=cloudflare-worker-20261018b">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand-link" href="../../index.html" aria-label="EGYoq Toolbox home">EGYoq Toolbox</a>
+    <span class="topbar-context">Employer onboarding · <strong>Cloudflare email v20261018b</strong></span>
+  </header>
+
+  <main class="shell">
+    <aside class="sidebar" aria-label="Onboarding navigation">
+      <div class="sidebar-head">
+        <p class="eyebrow">ONBOARDING PROPOSAL</p>
+        <h1>Creative &amp; Operations<br>Virtual Assistant</h1>
+        <p class="subtitle">Working arrangements &amp; responsibilities</p>
+      </div>
+      <div class="profile-cards" id="identity-summary"></div>
+      <div class="progress-wrap">
+        <div class="progress-row">
+          <span class="progress-title">Your progress</span>
+          <span id="progress-label" class="progress-label" aria-live="polite">0 of 7 sections answered</span>
+        </div>
+        <div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div>
+      </div>
+      <nav id="section-nav"></nav>
+      <p class="sidebar-note">Review each proposal, suggest revisions where necessary, and confirm the final details before submitting.</p>
+    </aside>
+
+    <section class="mainpane" aria-label="Proposal form">
+      <div id="notice" class="notice" role="status" hidden></div>
+      <div class="section-header">
+        <p class="eyebrow" id="step-label">SECTION 1 OF 7</p>
+        <h2 id="section-title" class="section-title"></h2>
+        <p id="section-intro" class="section-intro"></p>
+      </div>
+      <div id="section-content"></div>
+      <div class="actions">
+        <button id="prev" class="action-btn secondary" type="button">Previous</button>
+        <button id="next" class="action-btn primary" type="button">Next section <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+  </main>
+
+  <script src="./questions.js?v=cloudflare-worker-20261018b"></script>
+  <script src="./config.js?v=cloudflare-worker-20261018b"></script>
+  <script src="./pdf-generator.js?v=cloudflare-worker-20261018b"></script>
+  <script src="./script.js?v=cloudflare-worker-20261018b"></script>
+</body>
+</html>
