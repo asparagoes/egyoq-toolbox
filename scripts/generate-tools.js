@@ -5,6 +5,8 @@ console.log("Script started");
 
 const ROOT = process.cwd();
 const TOOLS_DIR = path.join(ROOT, "tool");
+// Keep standalone forms accessible by URL without including them in the public tool directory.
+const EXCLUDED_TOOL_SLUGS = new Set(["va-onboarding"]);
 const THUMBS_DIR = path.join(ROOT, "assets", "thumbs");
 const OUTPUT_DIR = path.join(ROOT, "data");
 const OUTPUT_FILE = path.join(OUTPUT_DIR, "tools.json");
@@ -186,6 +188,7 @@ function main() {
     .filter(entry => entry.isDirectory())
     .map(entry => entry.name)
     .filter(slug => exists(path.join(TOOLS_DIR, slug, "index.html")))
+    .filter(slug => !EXCLUDED_TOOL_SLUGS.has(slug))
     .sort((a, b) => a.localeCompare(b));
 
   console.log("Found tool folders:", toolFolders);
