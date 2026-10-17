@@ -1,5 +1,14 @@
 [
   {
+    "title": "Employer & Virtual Assistant Onboarding — EGYoq Toolbox",
+    "description": "Employer-facing onboarding proposal form for a Creative & Operations Virtual Assistant.",
+    "url": "./tool/va-onboarding/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "./tool/va-onboarding/favicon.svg",
+    "emoji": "",
+    "tags": []
+  },
+  {
     "title": "FB DP Preview",
     "description": "Upload your cover photo and profile picture to see how they crop and align across Facebook desktop, mobile, and feed posts.",
     "url": "./tool/fb-dp-preview/",
@@ -136,7 +145,7 @@
     "title": "Tutoring Quiz Viewer",
     "description": "No description provided.",
     "url": "./tool/quiz-assessment/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/quiz-assessment.png",
     "favicon": "",
     "emoji": "",
     "tags": []
