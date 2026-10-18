@@ -86,6 +86,23 @@
     ]
   },
   {
+    "title": "Lecture to PDF",
+    "description": "Extract distinct slides from lecture videos, review them, and download a PDF. Everything stays in your browser.",
+    "url": "./tool/lecture-to-pdf/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "./tool/lecture-to-pdf/favicon.svg",
+    "emoji": "🎞️",
+    "tags": [
+      "video",
+      "lecture",
+      "slides",
+      "pdf",
+      "extract",
+      "study",
+      "presentation"
+    ]
+  },
+  {
     "title": "MCQ Quiz Loader",
     "description": "Load XLSX or CSV question banks for any subject and turn them into a self-graded MCQ quiz with explanations.",
     "url": "./tool/mcq-quiz-loader/",
