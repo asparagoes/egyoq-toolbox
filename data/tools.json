@@ -89,7 +89,7 @@
     "title": "Lecture to PDF",
     "description": "Extract distinct slides from lecture videos, review them, and download a PDF. Everything stays in your browser.",
     "url": "./tool/lecture-to-pdf/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/lecture-to-pdf.png",
     "favicon": "./tool/lecture-to-pdf/favicon.svg",
     "emoji": "🎞️",
     "tags": [
