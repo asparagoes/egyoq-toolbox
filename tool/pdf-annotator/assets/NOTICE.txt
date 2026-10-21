@@ -1,0 +1,6 @@
+Google Material Symbols
+Copyright Google LLC.
+Licensed under the Apache License, Version 2.0.
+Source: https://fonts.google.com/icons
+This subset was downloaded through the Google Fonts CSS API.
+See LICENSE-Material-Symbols.txt for the full license.
