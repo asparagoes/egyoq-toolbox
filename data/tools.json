@@ -121,6 +121,15 @@
     ]
   },
   {
+    "title": "PDF Annotator",
+    "description": "No description provided.",
+    "url": "./tool/pdf-annotator/",
+    "thumbnail": "./assets/thumbs/default.png",
+    "favicon": "./tool/pdf-annotator/favicon.svg",
+    "emoji": "",
+    "tags": []
+  },
+  {
     "title": "Photo Space Calculator",
     "description": "Preview a casual photo inside the rotated pink frame, calculate visible transparent space, and export a transparent PNG with 300 DPI metadata.",
     "url": "./tool/photo-space-calculator/",
@@ -157,21 +166,5 @@
     "favicon": "",
     "emoji": "",
     "tags": []
-  },
-  {
-    "title": "PDF Annotator",
-    "description": "Highlight, add text and notes, draw, and export annotated PDFs. Your files stay on your device.",
-    "url": "./tool/pdf-annotator/",
-    "thumbnail": "./assets/thumbs/default.png",
-    "favicon": "./tool/pdf-annotator/favicon.svg",
-    "emoji": "✍️",
-    "tags": [
-      "pdf",
-      "study",
-      "annotation",
-      "notes",
-      "highlight",
-      "drawing"
-    ]
   }
 ]
