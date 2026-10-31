@@ -1,4 +1,4 @@
-const questions = [
+const defaultQuestions = [
   {round:1, category:"Biblical Foundation", answer:"IMAGE OF GOD", clue:"Humanity has dignity and value because people are created to reflect God.", bonus:"Why does being made in the image of God give every person dignity?"},
   {round:1, category:"Biblical Foundation", answer:"BODY AND SOUL", clue:"Christianity teaches that humans are a unity of physical and spiritual dimensions.", bonus:"Why does Christianity reject the idea that only the soul matters?"},
   {round:1, category:"Biblical Foundation", answer:"COMMUNION", clue:"Human beings are relational and are called to live with God and with others.", bonus:"How does communion show that the human person is not isolated?"},
@@ -24,7 +24,10 @@ const questions = [
   {round:4, category:"Final Challenge", answer:"HUMAN PERSON IS MADE FOR GOD", clue:"This summarizes the Christian belief that humans find their purpose, dignity, and fulfillment in God.", bonus:"Explain how this phrase summarizes the full lesson."}
 ];
 
-const tieBreaker = {round:"TB", category:"Tie-Breaker", answer:"PERSONS IN COMMUNION", clue:"This phrase describes humans as relational beings called to community and love.", bonus:"Why are persons in communion central to the Christian view of the human person?"};
+const defaultTieBreaker = {round:"TB", category:"Tie-Breaker", answer:"PERSONS IN COMMUNION", clue:"This phrase describes humans as relational beings called to community and love.", bonus:"Why are persons in communion central to the Christian view of the human person?"};
+let questions = defaultQuestions;
+let tieBreaker = defaultTieBreaker;
+let bankReadVersion = 0;
 
 const BG_MUSIC_SRC = "./assets/audio/background-music.mp3";
 
@@ -56,9 +59,10 @@ let audioCtx = null;
 let solveAttempted = false;
 let questionStartState = null;
 let lastAnsweredState = null;
+let cancelRoulette = () => {};
 
 function norm(s){return String(s).toUpperCase().replace(/\s+/g," ").trim()}
-function answerLetters(){return [...new Set(norm(currentQuestion.answer).replace(/ /g,"").split(""))]}
+function answerLetters(){return [...new Set(norm(currentQuestion.answer).match(/[A-Z]/g) || [])]}
 function isSolved(){return answerLetters().every(l => guessedLetters.has(l))}
 function setStatus(msg){$("statusText").textContent = msg}
 function updateScores(){$("leftScore").textContent=leftScore;$("rightScore").textContent=rightScore}
@@ -215,7 +219,7 @@ function renderWord(revealAll=false){
       slot.className = "slot";
       const char = document.createElement("div");
       char.className = "char";
-      char.textContent = revealAll || guessedLetters.has(ch) ? ch : "";
+      char.textContent = revealAll || !/[A-Z]/.test(ch) || guessedLetters.has(ch) ? ch : "";
       const line = document.createElement("div");
       line.className = "line";
       slot.append(char,line);
@@ -226,6 +230,7 @@ function renderWord(revealAll=false){
 }
 
 function chooseStartingTeam(callback){
+  cancelRoulette();
   const team = Math.random() < .5 ? "Left Team" : "Right Team";
   const wrap = $("rouletteWrap");
   const wheel = $("rouletteWheel");
@@ -241,14 +246,22 @@ function chooseStartingTeam(callback){
   playRouletteSound();
 
   let timer;
-  function close(){
+  let resultTimer;
+  let closed = false;
+  cancelRoulette = () => {
+    closed = true;
     clearTimeout(timer);
-    wrap.style.display = "none";
+    clearTimeout(resultTimer);
+    wrap.style.display = 'none';
+  };
+  function close(){
+    if(closed) return;
+    cancelRoulette();
     if(callback) callback(team);
   }
   $("rouletteCloseBtn").onclick = close;
 
-  setTimeout(() => {
+  resultTimer = setTimeout(() => {
     text.textContent = `${team} starts!`;
     currentTurn = team;
     updateTurnUI();
@@ -480,7 +493,7 @@ function startGame(){
 }
 
 function finishGame(afterTie=false){
-  if(!afterTie && leftScore === rightScore){
+  if(!afterTie && tieBreaker && leftScore === rightScore){
     $("tieModal").style.display = "flex";
     playButtonPress();
     return;
@@ -505,8 +518,9 @@ function finishGame(afterTie=false){
   playWin();
 }
 
-function resetGame(){
-  if(!confirm("Reset the entire game?")) return;
+function resetGame(askConfirmation=true){
+  if(askConfirmation && !confirm("Reset the entire game?")) return;
+  cancelRoulette();
   currentIndex = -1;
   currentQuestion = null;
   guessedLetters = new Set();
@@ -520,6 +534,7 @@ function resetGame(){
   roundSolved = false;
   gameFinished = false;
   usingTieBreaker = false;
+  answerRevealed = false;
   solveAttempted = false;
   questionStartState = null;
   lastAnsweredState = null;
@@ -539,6 +554,59 @@ function resetGame(){
   $("wordDisplay").innerHTML = "";
   drawFigure();
 }
+
+function applyBank(nextQuestions, name, nextTieBreaker=null){
+  questions = nextQuestions;
+  tieBreaker = nextTieBreaker;
+  resetGame(false);
+  const label = `${name} · ${questions.length} question${questions.length === 1 ? '' : 's'}`;
+  $("bankStatus").textContent = label;
+  $("bankStatus").classList.remove('bank-error');
+  $("activeBankLabel").textContent = label;
+  $("winnerBanner").style.display = 'none';
+}
+
+$("bankFile").addEventListener('change', async event => {
+  const file = event.target.files[0];
+  const version = ++bankReadVersion;
+  if(!file) return;
+  $("openingStartBtn").disabled = true;
+  $("bankStatus").textContent = 'Reading bank…';
+  try {
+    if(!/\.txt$/i.test(file.name)) throw new Error('Choose a .txt file.');
+    if(file.size > 1024 * 1024) throw new Error('Choose a text file smaller than 1 MB.');
+    const parsed = HangmanBank.parseBank(await file.text());
+    if(version !== bankReadVersion) return;
+    applyBank(parsed, file.name);
+  } catch(error) {
+    if(version !== bankReadVersion) return;
+    $("bankStatus").textContent = `${error.message}\nYour previous bank is still selected.`;
+    $("bankStatus").classList.add('bank-error');
+  } finally {
+    if(version === bankReadVersion){
+      $("openingStartBtn").disabled = false;
+      event.target.value = '';
+      $("openingStartBtn").focus();
+    }
+  }
+});
+$("defaultBankBtn").onclick = () => {
+  ++bankReadVersion;
+  $("openingStartBtn").disabled = false;
+  $("bankFile").value = '';
+  applyBank(defaultQuestions, 'Theology default', defaultTieBreaker);
+  $("openingStartBtn").focus();
+};
+$("changeBankBtn").onclick = () => {
+  if(gameStarted && !gameFinished && !confirm('Change question bank? This will clear the current game and scores.')) return;
+  resetGame(false);
+  showStartAfterHelp = false;
+  ["helpModal","shortcutsModal","bonusModal","tieModal","winnerModal","solveModal","rouletteWrap","settingsPanel"].forEach(id => $(id).style.display = 'none');
+  $("startOverlay").classList.remove('show');
+  $("winnerBanner").style.display = 'none';
+  $("openingScreen").style.display = 'flex';
+  $("bankFile").focus();
+};
 
 function returnQuestion(){
   if(!gameStarted || !currentQuestion){

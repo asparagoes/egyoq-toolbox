@@ -14,6 +14,22 @@
   --soft-shadow:0 2px 0 rgba(65,61,56,.14);
 }
 
+/* Keep bank setup usable on small screens and at browser zoom. */
+.opening-screen { overflow-y: auto; }
+.opening-card { max-height: calc(100dvh - 48px); overflow-y: auto; }
+.bank-picker { margin: 24px 0; padding: 18px; text-align: left; border: 1px dashed var(--border); border-radius: 14px; }
+.bank-picker h2 { font-size: 22px; margin: 0 0 12px; }
+.bank-picker label { display: block; font-weight: bold; margin-bottom: 8px; }
+.bank-picker input { width: 100%; font: inherit; }
+.bank-picker p { font-size: 15px; line-height: 1.5; margin: 12px 0 0; }
+.bank-picker code { font-size: 12px; overflow-wrap: anywhere; }
+.bank-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.bank-actions .btn { font-size: 15px; min-height: 44px; padding: 8px 12px; text-decoration: none; }
+#bankStatus { white-space: pre-line; overflow-wrap: anywhere; font-weight: bold; }
+#bankStatus.bank-error { color: #a31535; }
+.bank-picker .bank-privacy { font-size: 13px; font-weight: normal; }
+.bank-picker :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
 * {
   box-sizing: border-box;
   transition-property: transform, filter, box-shadow, background-color, border-color;

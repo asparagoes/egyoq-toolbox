@@ -1,6 +1,28 @@
-# Hangman Quiz - Christianity Perspectives
+# Hangman Quiz — Your Words & Questions
 
-A team-based interactive hangman quiz game for teaching Christianity perspectives about the human person.
+A team-based hangman quiz for any subject, with an optional built-in theology bank.
+
+## Custom text-file banks
+
+On the opening screen, upload a UTF-8 `.txt` file, then press **Begin**. Each non-empty line is one entry:
+
+```text
+MITOCHONDRIA | Which organelles produce most of a cell's ATP?
+WATER | What compound has the formula H2O? | Name its three common states. | Chemistry
+TEAMWORK
+```
+
+Use `ANSWER | Question or clue | Optional bonus question | Optional category`. Plain words or phrases are also accepted with a generic clue. Blank lines and lines starting with `#` are ignored. Do not include column headings or use `|` inside a field. See [sample-bank.txt](sample-bank.txt).
+
+Answers support A–Z, spaces, numbers and basic punctuation (80 characters maximum, at least one letter). Numbers and punctuation are visible automatically; only letters need guessing. Use up to 500 entries and a file under 1 MB. Invalid files show line-numbered errors and leave the selected bank intact.
+
+Files are read locally in the current tab and are not uploaded or saved. Refreshing restores the theology default. **Settings → Change question bank** returns to setup and clears the game after confirmation. Reset keeps the selected bank. Custom banks use rounds of five entries, preserve file order, and end in a draw if scores are tied; they never use the theology tie-breaker. The default bank retains its existing tie-breaker.
+
+Run parser and game-flow checks from the repository root:
+
+```text
+node --test tool/hangman/tests/*.test.cjs
+```
 
 ## 📁 Project Structure
 

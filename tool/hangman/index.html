@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hangman Quiz — Christianity Perspectives</title>
+  <title>Hangman Quiz — Your Words &amp; Questions</title>
 
-  <meta name="description" content="Team-based Hangman quiz on Christian perspectives about the human person — 20 questions, team scoring, bonus questions, and classroom-friendly UI." />
-  <meta name="tool:description" content="Team-based Hangman quiz for classroom teaching about Christian perspectives on the human person." />
-  <meta name="tool:tags" content="quiz,hangman,education,christianity,classroom,team game" />
+  <meta name="description" content="Upload a text file of words, questions and answers for a team-based Hangman quiz on any subject, or play the included theology bank." />
+  <meta name="tool:description" content="Team-based Hangman for any subject. Upload your own words, questions and answers as a text file." />
+  <meta name="tool:tags" content="quiz,hangman,education,words,questions,upload,classroom,team game" />
   <meta name="tool:emoji" content="🪓" />
   <meta name="theme-color" content="#0b1220" />
 
@@ -17,15 +17,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cause&family=Special+Elite&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/styles.css?v=20261031b">
 </head>
 
 <body>
   <div class="opening-screen" id="openingScreen">
     <div class="opening-card">
       <button class="btn title-fullscreen" id="titleFullscreenBtn" title="Fullscreen" aria-label="Fullscreen"><span class="icon icon-fullscreen" aria-hidden="true"></span></button>
-      <h1>THEOLOGY QUIZ</h1>
-      <p>Christianity Perspectives About the Human Person</p>
+      <h1>HANGMAN QUIZ</h1>
+      <p>Your words. Your questions. Any subject.</p>
+      <section class="bank-picker" aria-labelledby="bankPickerTitle">
+        <h2 id="bankPickerTitle">Choose your question bank</h2>
+        <label for="bankFile">Upload a .txt file</label>
+        <input id="bankFile" type="file" accept=".txt,text/plain" aria-describedby="bankFormat bankStatus" />
+        <p id="bankFormat">One entry per line: <code>ANSWER | Question or clue</code><br>Optional: <code>ANSWER | Clue | Bonus question | Category</code><br>Or use one word / phrase per line. Answers support A–Z, spaces, numbers and punctuation; include at least one letter. Save as UTF-8 text.</p>
+        <div class="bank-actions">
+          <a class="btn" href="./sample-bank.txt" download>Download sample .txt</a>
+          <button class="btn" id="defaultBankBtn" type="button">Use theology default</button>
+        </div>
+        <p id="bankStatus" role="status" aria-live="polite">Theology default · 20 questions</p>
+        <p class="bank-privacy">Files stay in this browser tab. Upload again after refreshing. Loading a bank starts a fresh game.</p>
+      </section>
       <button class="btn primary" id="openingStartBtn"><span class="icon icon-play" aria-hidden="true"></span><span>Begin</span></button>
     </div>
   </div>
@@ -41,6 +53,8 @@
   <aside class="settings-panel" id="settingsPanel">
     <h3>Settings</h3>
     <button class="btn" id="closeSettingsBtn">Close</button>
+    <button class="btn" id="changeBankBtn" type="button">Change question bank</button>
+    <p class="settings-note" id="activeBankLabel">Theology default · 20 questions</p>
     <label>Music volume <input type="range" id="musicVolume" min="0" max="1" step="0.05" value="0.65"></label>
     <label>SFX volume <input type="range" id="sfxVolume" min="0" max="1" step="0.05" value="0.45"></label>
     <button class="btn music-toggle" id="musicToggleBtn"><span class="icon icon-music" aria-hidden="true"></span><span>Play Music</span></button>
@@ -240,6 +254,7 @@
 
   <audio id="backgroundAudio" src="./assets/audio/background-music.mp3" loop preload="auto"></audio>
 
-  <script src="./js/game.js"></script>
+  <script src="./js/bank-parser.js?v=20261031b"></script>
+  <script src="./js/game.js?v=20261031b"></script>
 </body>
 </html>

@@ -1,0 +1,10 @@
+# Hangman question bank — save as UTF-8 .txt
+# ANSWER | Question or clue | Optional bonus question | Optional category
+# Blank lines and lines starting with # are ignored. Do not add a column header.
+# Use | only between fields. Commas are fine inside questions.
+# Plain words / phrases also work, as shown on the last line.
+MITOCHONDRIA | Which organelles produce most of a cell's ATP? | Explain why cells need ATP. | Biology
+PHOTOSYNTHESIS | What process lets plants turn light energy into chemical energy? | Name two inputs needed for this process. | Biology
+WATER | What compound has the formula H2O? | Name its three common states. | Chemistry
+ICE-CREAM | What frozen dessert is made from milk or cream? | Describe your favorite flavor. | Everyday words
+TEAMWORK
