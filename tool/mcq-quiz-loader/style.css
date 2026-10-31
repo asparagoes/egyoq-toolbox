@@ -1165,29 +1165,29 @@
 .check-answer-btn { margin-top: 12px; }
 
 /* Floating ribbon: fixed positioning leaves the quiz layout unchanged. */
-.has-quiz-ribbon .wrap { padding-top: 64px; }
 .ribbon-tab {
   position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  right: calc(16px + env(safe-area-inset-right, 0px));
   z-index: 41;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   min-height: 44px;
-  padding: env(safe-area-inset-top, 0px) 20px 6px;
+  padding: 10px 14px;
   border: 1px solid var(--border-bright);
-  border-top: 0;
-  border-radius: 0 0 14px 14px;
+  border-radius: 999px;
   background: var(--surface2);
   color: var(--teal);
   box-shadow: var(--shadow);
   cursor: pointer;
+  font-size: 12px;
   font-weight: 700;
 }
-.ribbon-tab span { display: inline-block; margin-left: 8px; }
-.ribbon-tab[aria-expanded="true"] span { transform: rotate(180deg); }
+.ribbon-tab[aria-expanded="true"] { border-color: var(--teal); background: var(--surface3); }
 .quiz-ribbon.sticky-panel {
   position: fixed;
-  top: calc(52px + env(safe-area-inset-top, 0px));
+  top: calc(12px + env(safe-area-inset-top, 0px));
   left: max(12px, calc((100vw - 880px) / 2));
   right: max(12px, calc((100vw - 880px) / 2));
   z-index: 40;
@@ -1210,8 +1210,9 @@
   pointer-events: auto;
 }
 .ribbon-heading { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-.ribbon-auto-hide { display: flex; align-items: center; gap: 8px; margin-left: auto; color: var(--text-2); font-size: 12px; cursor: pointer; }
-.ribbon-auto-hide input { accent-color: var(--teal); width: 18px; height: 18px; }
+.ribbon-auto-hide { display: flex; align-items: center; gap: 5px; min-height: 32px; margin-left: auto; color: var(--text-2); font-size: 11px; cursor: pointer; }
+.ribbon-auto-hide input { accent-color: var(--teal); width: 13px; height: 13px; margin: 0; }
+.ribbon-close { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; }
 .ribbon-tab:focus-visible, .quiz-ribbon :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
 #quiz, .qcard, #results { scroll-margin-top: 64px; }
 @media (max-width: 700px) {

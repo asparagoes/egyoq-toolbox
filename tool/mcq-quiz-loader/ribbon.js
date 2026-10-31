@@ -8,7 +8,7 @@
   tab.className = 'ribbon-tab';
   tab.id = 'quizToolsToggle';
   tab.setAttribute('aria-controls', 'quizToolsRibbon');
-  tab.innerHTML = 'Quiz tools <span aria-hidden="true">⌄</span>';
+  tab.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Quiz tools</span>';
   panel.id = 'quizToolsRibbon';
   panel.setAttribute('role', 'region');
   panel.setAttribute('aria-label', 'Quiz tools');
@@ -16,7 +16,7 @@
 
   const heading = document.createElement('div');
   heading.className = 'ribbon-heading';
-  heading.innerHTML = '<strong>Quiz tools</strong><label class="ribbon-auto-hide"><input type="checkbox" checked> Auto-hide on scroll</label><button type="button" class="btn btn-ghost small" aria-label="Close quiz tools">Close ↑</button>';
+  heading.innerHTML = '<strong>Quiz tools</strong><label class="ribbon-auto-hide"><input type="checkbox" checked> Auto-hide on scroll</label><button type="button" class="btn btn-ghost ribbon-close" aria-label="Close quiz tools" title="Close quiz tools"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>';
   panel.prepend(heading);
   const autoHide = heading.querySelector('input');
   const closeButton = heading.querySelector('button');
