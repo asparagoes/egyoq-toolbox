@@ -70,8 +70,8 @@
     ]
   },
   {
-    "title": "Hangman Quiz — Christianity Perspectives",
-    "description": "Team-based Hangman quiz for classroom teaching about Christian perspectives on the human person.",
+    "title": "Hangman Quiz — Your Words &amp; Questions",
+    "description": "Team-based Hangman for any subject. Upload your own words, questions and answers as a text file.",
     "url": "./tool/hangman/",
     "thumbnail": "./assets/thumbs/hangman.png",
     "favicon": "./tool/hangman/favicon.svg",
@@ -80,7 +80,9 @@
       "quiz",
       "hangman",
       "education",
-      "christianity",
+      "words",
+      "questions",
+      "upload",
       "classroom",
       "team game"
     ]
@@ -124,7 +126,7 @@
     "title": "PDF Annotator",
     "description": "No description provided.",
     "url": "./tool/pdf-annotator/",
-    "thumbnail": "./assets/thumbs/default.png",
+    "thumbnail": "./assets/thumbs/pdf-annotator.png",
     "favicon": "./tool/pdf-annotator/favicon.svg",
     "emoji": "",
     "tags": []
